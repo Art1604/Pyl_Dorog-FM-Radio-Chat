@@ -1193,10 +1193,48 @@ height:99px;
 }
 
 .gallery{margin-top:9px;background:#f1f1f1;border:1px solid #999;padding:8px}.gallery[hidden]{display:none}.gallery-tabs{display:flex;flex-wrap:wrap;gap:5px;border-bottom:1px solid #aaa;padding-bottom:7px}.gallery-tabs button{padding:7px 10px}.gallery-tabs button.selected{background:#bdbdbd;font-weight:bold;border-color:#666}.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(85px,1fr));gap:8px;max-height:335px;overflow-y:auto;padding:10px 3px}.gallery-tile{min-width:0;height:96px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;background:#fff;border:1px solid #aaa;padding:6px;overflow:hidden}.gallery-tile:hover{border-color:#444;background:#e6e6e6}.gallery-tile .smiley{max-width:none;max-height:none;transform:scale(.65);transform-origin:center}.gallery-tile .smiley-media{width:70px;height:65px;max-width:70px;max-height:65px;object-fit:contain}.gallery-tile dotlottie-player{width:65px;height:65px}.gallery-code{font:11px Consolas,monospace;color:#555}.gallery-tile:disabled{opacity:.85}.smiley-lottie{display:inline-block;vertical-align:middle;width:55px;height:55px}.textbody dotlottie-player{width:55px;height:55px}.gallery .muted{margin:6px 2px}.gallery-fallback{font-size:11px}.gallery-notice{color:#6a4b0d}
+
+/* Оригинальная прямоугольная компоновка, но в холодной серой гамме */
+:root{--panel:#d5d5d5;--line:#858585;--inset:#f6f6f6;background:#c9c9c9;color:#242424}
+.wrap{max-width:1150px}
+.bevel{background:#d6d6d6;border:1px solid #898989;box-shadow:inset 1px 1px #fff,inset -1px -1px #aaa;border-radius:0}
+button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface,.people,.column-title,.login-strip,.send-box,.state,.gallery,.notice,.log{border-radius:0!important}
+/* Одно цельное окно, как в оригинале Волнореза */
+.chat-grid{background:#a3a3a3;display:grid;grid-template-columns:minmax(0, 1fr) 220px;gap:1px;padding:1px;border:1px solid #818181;margin-top:8px}
+.chat-grid>div{min-width:0;background:#f8f8f8;display:flex;flex-direction:column}
+.column-title{background:linear-gradient(#e8e8e8,#c5c5c5);color:#333;border:0;border-bottom:1px solid #999;min-height:28px;padding:6px 8px;font-size:12px}
+.chatsurface{height:430px;min-height:300px;background:#fff;border:0;box-shadow:none;padding:8px 10px;flex:1;font-size:13px}
+.people{height:430px;min-height:300px;background:#f5f5f5;border:0;box-shadow:none;padding:0 6px;flex:1;font-size:12px}
+.msg{padding:5px 4px;border-bottom:0;line-height:1.45}
+.msg:nth-child(even){background:#f0f0f0}
+.nick{color:#454545}
+.person{padding:5px 7px;border-bottom:1px solid #dedede}
+/* Узкая нижняя панель во всю ширину окна */
+.send-box{background:#d2d2d2;border:1px solid #858585;border-top:0;margin-top:0;padding:7px 8px}
+.send-box>label{display:none}
+.send-row{display:flex;align-items:stretch;gap:5px;margin:0}
+.send-row textarea{height:37px;min-height:37px;max-height:105px;resize:vertical;border:1px solid #aaa;padding:8px 10px;background:#fff;line-height:20px}
+.send-row button{min-height:37px;white-space:nowrap;padding:6px 16px;background:linear-gradient(#ebebeb,#bababa);border:1px solid #8b8b8b}
+.send-box>.controls{padding-top:6px;gap:8px}
+#emotesButton{padding:5px 10px;font-size:12px}
+#sendState{font-size:11px}
+.login-strip{background:#d4d4d4}
+.state{background:#f1f1f1}
+.gallery{background:#dedede;border:1px solid #888;padding:6px}
+.gallery-tabs{gap:0;border-bottom:1px solid #999;padding:0;background:#c8c8c8}
+.gallery-tabs button{border:1px solid #aaa;border-bottom:0;margin-right:-1px;background:#dedede;box-shadow:none;padding:7px 12px;font-size:12px}
+.gallery-tabs button.selected{background:#fff;border-color:#888;color:#252525}
+.gallery-grid{background:#fff;padding:8px}
+@media(max-width:680px){.chat-grid{grid-template-columns:minmax(0,1fr) 130px}.chatsurface,.people{height:360px;min-height:260px}.send-row button{width:auto;min-width:95px}.people{font-size:11px;padding:0 2px}.column-title{font-size:11px}.send-box>.controls{align-items:flex-start}}
+@media(max-width:420px){.chat-grid{grid-template-columns:minmax(0,1fr) 105px}.chatsurface{padding:5px}.gallery-tabs button{padding:7px 6px}}
+/* Понятные состояния подключения и ресурсные анимации */
+.gallery-tile video,.textbody video{display:inline-block;max-width:100%;object-fit:contain;background:transparent}
+.state.bad{border-color:#a55}.send-error{color:#9c2626!important}
+@media(prefers-reduced-motion:reduce){.gallery-tile video,.textbody video{animation:none}}
 </style>
 </head>
 <body><div class="wrap">
-<header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — радио и серый HTML5-чат</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
+<header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — серый прямоугольный HTML5-чат v4</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
 <section class="bevel"><h2>🎵 Прямой эфир</h2><audio controls preload="none"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Аудио не поддерживается.</audio><div class="muted">Прямой поток станции. Не зависит от подключения чата.</div></section>
 <section class="bevel"><div class="head"><h2>💬 Оригинальный HTML5-чат Волнореза</h2><div class="controls"><button id="connect">Подключить гостевой чат</button><button id="disconnect" disabled>Отключить</button></div></div>
 <div id="status" class="state" role="status">Не подключено</div>
@@ -1205,7 +1243,7 @@ height:99px;
 <div><div class="column-title">Сообщения <span class="count" id="msgCount"></span></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">После подключения здесь появятся сообщения, если сервер разрешает гостевое чтение.</div></div></div>
 <div><div class="column-title">👥 Участники <span class="count" id="userCount"></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
-<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><textarea id="messageInput" rows="2" maxlength="1000" placeholder="Сначала подключись и войди гостем…" disabled></textarea><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><button type="button" id="emotesButton" disabled>😊 Смайлы / GIF / анимашки</button><span class="muted" id="sendState">Отправка станет доступна только после подтверждения входа сервером.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="gif" class="selected">GIF</button><button type="button" data-category="mp4">🎬 Анимашки</button><button type="button" data-category="lottie">✨ Lottie</button><button type="button" data-category="basic">🙂 Смайлы</button><button type="button" data-category="stickers">Стикеры</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны даже без входа. Отправка доступна только после входа гостем.</p><div class="gallery-grid" id="galleryGrid"></div></section></form>
+<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><textarea id="messageInput" rows="2" maxlength="1000" placeholder="Сначала подключись и войди гостем…" disabled></textarea><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><button type="button" id="emotesButton">😊 Смайлы — оригинальные разделы</button><span class="muted" id="sendState">Отправка станет доступна только после подтверждения входа сервером.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны даже без входа. Отправка доступна только после входа гостем.</p><div class="gallery-grid" id="galleryGrid"></div></section></form>
 <p class="muted">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
 <div class="notice"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
@@ -1221,6 +1259,14 @@ const SMILES=JSON.parse(document.getElementById('smiles-json').textContent);
 const $=id=>document.getElementById(id);
 const E={connect:$('connect'),disconnect:$('disconnect'),login:$('guestLogin'),nick:$('nickname'),identity:$('myIdentity'),status:$('status'),log:$('log'),messages:$('messages'),users:$('users'),msgCount:$('msgCount'),userCount:$('userCount'),form:$('sendForm'),input:$('messageInput'),send:$('sendButton'),sendState:$('sendState'),emotes:$('emotesButton'),picker:$('smilesPicker')};
 let socket=null,authorized=false,currentUser=null,salt='',attempts=0,historySize=0,roster=new Map(),pending=false,initDone=false,initTimer=null;
+let stopped=true,retryTimer=null,retryCount=0,loginTimer=null,guestAllowed=null;
+const retryDelays=[2000,4000,8000,15000,30000];
+const videoObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
+ for(const entry of entries){const v=entry.target;
+  if(entry.isIntersecting){if(!v.src)v.src=v.dataset.src||'';v.play().catch(()=>{});}
+  else v.pause();
+ }
+},{rootMargin:'100px'}):null;
 const clock=()=>new Date().toLocaleTimeString('ru-RU',{hour12:false});
 function log(t){E.log.textContent+=`[${clock()}] ${t}\n`;if(E.log.textContent.length>12000)E.log.textContent=E.log.textContent.slice(-9000);E.log.scrollTop=E.log.scrollHeight;}
 function info(t,cls=''){E.status.className='state'+(cls?' '+cls:'');E.status.textContent=t;log(t);}
@@ -1228,12 +1274,20 @@ function note(t,cls=''){E.sendState.className='muted '+cls;E.sendState.textConte
 function safe(t,n=1500){return (typeof t==='string'||typeof t==='number')?String(t).slice(0,n):'';}
 function placeholder(node,t){node.replaceChildren();const e=document.createElement('div');e.className='muted';e.textContent=t;node.append(e);}
 function socketSend(payload){if(!socket||socket.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(payload));return true;}
-function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket;E.disconnect.disabled=!socket;E.login.disabled=!online||!initDone||authorized;E.nick.disabled=!online||!initDone;E.input.disabled=!online||!authorized;E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
+function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!initDone;E.input.disabled=!online||!authorized;E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
 function smileNode(id){const s=SMILES[id];if(!s){const text=document.createElement('span');text.textContent='%'+id+'%';return text;}
  if(s.kind==='lottie'){const el=document.createElement('dotlottie-player');el.className='smiley-lottie';el.setAttribute('src',s.file);el.setAttribute('autoplay','');el.setAttribute('loop','');el.setAttribute('title','Lottie-смайл '+id);el.setAttribute('aria-label','Lottie-смайл '+id);return el;}
- if(s.kind==='mp4'){const video=document.createElement('video');video.className='smiley-media';video.src=s.file;video.loop=true;video.preload='none';video.muted=true;video.playsInline=true;video.autoplay=true;video.setAttribute('aria-label','Смайл '+id);video.addEventListener('error',()=>{video.replaceWith(document.createTextNode('%'+id+'%'));});return video;}
+ if(s.kind==='mp4'){
+  const video=document.createElement('video');video.className='smiley-media';
+  video.dataset.src=s.file;video.loop=true;video.preload='metadata';video.muted=true;
+  video.playsInline=true;video.setAttribute('playsinline','');video.setAttribute('aria-label','Анимация '+id);
+  video.addEventListener('error',()=>{const fallback=document.createElement('span');fallback.className='gallery-fallback';fallback.textContent='Анимация %'+id+'% недоступна';video.replaceWith(fallback);});
+  if(videoObserver)videoObserver.observe(video);
+  else {video.src=s.file;video.play().catch(()=>{});}
+  return video;
+ }
  if(s.cls){const el=document.createElement('span');el.className='smiley msg-smile '+s.cls;el.title='Смайл '+id;el.setAttribute('role','img');el.setAttribute('aria-label','Смайл '+id);return el;}
- const img=document.createElement('img');img.className='smiley-media';img.src=s.file;img.alt='Смайл '+id;return img;
+ const img=document.createElement('img');img.className='smiley-media';img.src=s.file;img.loading='lazy';img.alt='Смайл '+id;img.addEventListener('error',()=>{img.replaceWith(document.createTextNode('%'+id+'%'));});return img;
 }
 function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));target.append(smileNode(m[1]));p=m.index+m[0].length;}if(p<str.length)target.append(document.createTextNode(str.slice(p)));}
 function showMessage(m){if(!m||typeof m!=='object')return;const first=E.messages.querySelector('.muted');if(first&&E.messages.children.length===1)E.messages.replaceChildren();
@@ -1244,44 +1298,89 @@ function renderUsers(){E.users.replaceChildren();E.userCount.textContent='('+ros
 function failSend(t){pending=false;updateButtons();note(t,'send-error');log(t);}
 function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получено событие не в JSON.');return;}if(!obj||typeof obj!=='object')return;const cmd=String(obj.cmd||'неизвестно');
  switch(cmd){
- case 'initialize':salt=typeof obj.salt==='string'?obj.salt:'';initDone=true;info('✅ Чтение чата подключено. Можно войти гостем.','ok');updateButtons();break;
+ case 'initialize':salt=typeof obj.salt==='string'?obj.salt:'';initDone=true;retryCount=0;clearTimeout(initTimer);initTimer=null;info('✅ Чтение чата подключено. Можно войти гостем.','ok');updateButtons();break;
  case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;placeholder(E.messages,'История пуста.');arr.slice(-180).forEach(showMessage);log('История: '+arr.length+' сообщений');break;}
  case 'add_msg':showMessage(obj.msg);log('Новое сообщение');break;
  case 'set_users_list':{const arr=Array.isArray(obj.users)?obj.users:[];roster.clear();arr.forEach(u=>{if(u&&typeof u==='object')roster.set(userKey(u),u);});renderUsers();log('Участники: '+roster.size);break;}
  case 'add_user':case 'update_user':{const u=obj.user;if(u&&typeof u==='object'){roster.set(userKey(u),u);renderUsers();}break;}
  case 'remove_user':{const u=obj.user;if(u&&typeof u==='object'){roster.delete(userKey(u));renderUsers();}break;}
- case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}currentUser=obj.user;authorized=true;pending=false;E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();break;}
- case 'logout':authorized=false;currentUser=null;pending=false;E.identity.textContent='Не авторизован';note('Сервер завершил гостевой вход.','send-error');updateButtons();break;
+ case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;pending=false;E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();break;}
+ case 'logout':clearTimeout(loginTimer);loginTimer=null;authorized=false;currentUser=null;pending=false;E.identity.textContent='Не авторизован';note('Сервер завершил гостевой вход.','send-error');updateButtons();break;
  case 'set_nick':E.nick.value=safe(obj.nick,30);E.identity.textContent='В чате: '+safe(obj.nick,50);log('Ник подтверждён сервером');break;
  case 'accept_msg':pending=false;updateButtons();E.input.value='';note('✅ Сообщение принято сервером.','send-good');log('Сообщение принято сервером');break;
  case 'reject_msg':failSend('❌ Сервер отклонил сообщение. Проверь права гостя и правила чата.');break;
- case 'set_unauth_login':log('Гостевой вход по настройкам станции: '+(obj.value?'разрешён':'запрещён'));if(obj.value===false&&!authorized)note('Станция сообщает, что гостевой вход закрыт.','send-error');break;
- case 'error':log('Ошибка от сервера: '+safe(obj.name||obj.code||obj.message,100));note('Сервер вернул ошибку. Смотри журнал.','send-error');break;
+ case 'set_unauth_login':guestAllowed=obj.value!==false;log('Гостевой вход по настройкам станции: '+(guestAllowed?'разрешён':'запрещён'));if(!guestAllowed&&!authorized){clearTimeout(loginTimer);note('Станция запретила гостевой вход. Читать сообщения и смотреть смайлы можно. Для отправки открой оригинальный чат Волнореза.','send-error');}updateButtons();break;
+ case 'error':{const err=safe(obj.name||obj.code||obj.message,100)||'неизвестная';log('Ошибка от сервера: '+err);clearTimeout(loginTimer);loginTimer=null;note('Волнорез вернул ошибку: '+err+'. Гостевой вход или отправка могли быть отклонены.','send-error');updateButtons();break;}
  default:log('Служебное событие: '+cmd);
  }
 }
-function disconnect(){if(socket){const old=socket;socket=null;try{old.close(1000,'bye');}catch{}}authorized=false;currentUser=null;initDone=false;pending=false;clearTimeout(initTimer);updateButtons();info('Отключено');}
-E.connect.addEventListener('click',()=>{if(socket)return;E.log.textContent='';roster.clear();renderUsers();historySize=0;E.msgCount.textContent='(0)';placeholder(E.messages,'Загружаем сообщения…');authorized=false;initDone=false;salt='';pending=false;E.identity.textContent='Не авторизован';info('Подключаемся к Волнорезу…');
- let ws;try{ws=new WebSocket(WSURL);}catch(e){info('Ошибка WebSocket: '+e.message,'bad');return;}socket=ws;updateButtons();const started=performance.now();
- ws.addEventListener('open',()=>{if(socket!==ws)return;log('OPEN за '+Math.round(performance.now()-started)+' мс');socketSend({cmd:'init_connection'});log('SEND init_connection');updateButtons();});
+function resetAccess(){
+ authorized=false;currentUser=null;initDone=false;pending=false;clearTimeout(initTimer);initTimer=null;
+ clearTimeout(loginTimer);loginTimer=null;E.identity.textContent='Не авторизован';updateButtons();
+}
+function scheduleReconnect(code){
+ if(stopped)return;
+ if(retryCount>=retryDelays.length){info('Не удалось восстановить связь после '+retryCount+' попыток. Нажми «Подключить», чтобы попробовать ещё раз.','bad');stopped=true;updateButtons();return;}
+ const delay=retryDelays[retryCount++];
+ info('Соединение закрыто (код '+code+'). Повторная попытка '+retryCount+'/'+retryDelays.length+' через '+(delay/1000)+' сек.','bad');
+ retryTimer=setTimeout(()=>{retryTimer=null;if(!stopped)connect(false);},delay);
+}
+function disconnect(){
+ stopped=true;clearTimeout(retryTimer);retryTimer=null;retryCount=0;
+ const ws=socket;socket=null;if(ws){try{ws.close(1000,'manual disconnect');}catch{}}
+ resetAccess();E.connect.disabled=false;E.disconnect.disabled=true;info('Отключено по кнопке пользователя.');
+}
+function connect(fresh=true){
+ if(socket||stopped)return;
+ if(fresh){E.log.textContent='';roster.clear();renderUsers();historySize=0;E.msgCount.textContent='(0)';placeholder(E.messages,'Загружаем сообщения…');retryCount=0;guestAllowed=null;}
+ resetAccess();salt='';info(fresh?'Подключаемся к Волнорезу…':'Повторное подключение к Волнорезу…');
+ let ws;
+ try{ws=new WebSocket(WSURL);}catch(e){info('Ошибка открытия WebSocket: '+e.message,'bad');scheduleReconnect('constructor');return;}
+ socket=ws;updateButtons();const started=performance.now();
+ ws.addEventListener('open',()=>{
+  if(socket!==ws)return;
+  log('OPEN за '+Math.round(performance.now()-started)+' мс');
+  if(socketSend({cmd:'init_connection'}))log('SEND init_connection');
+  updateButtons();
+  clearTimeout(initTimer);
+  initTimer=setTimeout(()=>{
+   if(socket===ws&&!initDone){log('Нет ответа на init_connection за 15 секунд; закрываем соединение и попробуем заново.');
+    try{ws.close(4000,'init timeout');}catch{} }
+  },15000);
+ });
  ws.addEventListener('message',event=>{if(socket===ws&&typeof event.data==='string')handle(event.data);});
- ws.addEventListener('error',()=>{if(socket===ws)info('Ошибка соединения WebSocket.','bad');});
- ws.addEventListener('close',event=>{if(socket!==ws)return;socket=null;authorized=false;initDone=false;pending=false;updateButtons();info('Соединение закрыто: '+event.code,event.code===1000?'':'bad');});
- initTimer=setTimeout(()=>{if(socket===ws&&!initDone)info('OPEN, но сервер не ответил на init_connection.','bad');},12000);
-});
+ ws.addEventListener('error',()=>{if(socket===ws)log('Сетевая ошибка WebSocket. Ожидаем закрытия соединения.');});
+ ws.addEventListener('close',event=>{
+  if(socket!==ws)return;
+  socket=null;resetAccess();note('Для отправки нужно снова войти гостем.','send-note');
+  scheduleReconnect(event.code);
+  if(stopped)info('Соединение закрыто: '+event.code,event.code===1000?'':'bad');
+ });
+ // Если OPEN вообще не пришёл, также устраняем зависшее CONNECTING.
+ setTimeout(()=>{if(socket===ws&&ws.readyState===WebSocket.CONNECTING){log('Тайм-аут открытия WebSocket (20 сек).');try{ws.close();}catch{}}},20000);
+}
+E.connect.addEventListener('click',()=>{if(socket)return;stopped=false;clearTimeout(retryTimer);retryTimer=null;connect(true);});
 E.disconnect.addEventListener('click',disconnect);
-E.login.addEventListener('click',()=>{if(!socket||!initDone||authorized)return;note('Запрашиваем гостевой вход…');log('SEND login: гостевой вход без пароля');E.login.disabled=true;socketSend({cmd:'login',login:'',password:''});setTimeout(()=>{if(socket&&!authorized){E.login.disabled=false;note('Сервер пока не подтвердил гостевой вход. Если гости запрещены, используй сайт Волнореза.','send-error');}},8000);});
+E.login.addEventListener('click',()=>{
+ if(!socket||!initDone||authorized||guestAllowed===false)return;
+ note('Запрашиваем гостевой вход у Волнореза…');log('SEND login: гостевой режим, без пароля');
+ E.login.disabled=true;
+ if(!socketSend({cmd:'login',login:'',password:''})){note('Нет соединения.','send-error');updateButtons();return;}
+ clearTimeout(loginTimer);const loginSocket=socket;
+ loginTimer=setTimeout(()=>{
+  loginTimer=null;
+  if(socket===loginSocket&&!authorized){note('Сервер не подтвердил гостевой вход за 10 секунд. Отправка недоступна.','send-error');updateButtons();}
+ },10000);
+});
 E.nick.addEventListener('change',()=>{if(!authorized)return;const nick=E.nick.value.trim().slice(0,30);if(!nick)return;if(nick===currentUser?.nick)return;socketSend({cmd:'set_nick',nick});log('Запрошена смена ника');});
 E.form.addEventListener('submit',event=>{event.preventDefault();if(!authorized||pending||!socket)return;const text=E.input.value.trim();if(!text)return;if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}pending=true;updateButtons();const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');socketSend({cmd:'send_message',text,local_id:localId});note('Ожидаем подтверждение Волнореза…');log('SEND send_message ('+text.length+' символов)');setTimeout(()=>{if(pending){pending=false;updateButtons();note('Нет подтверждения отправки. Не повторяй сразу: сообщение могло дойти.','send-note');}},9000);});
-const cats={gif:[],mp4:[],lottie:[],basic:[],stickers:[]};
+const cats={classic:[],retro:[],emoji:[],stickers:[],gif:[],animashki:[]};
+const groupToCategory={1:'classic',2:'retro',6:'emoji',8:'stickers',9:'gif',10:'animashki'};
 for(const [id,s] of Object.entries(SMILES)){
- if(s.group===2||s.file.toLowerCase().endsWith('.gif'))cats.gif.push(id);
- else if(s.kind==='mp4')cats.mp4.push(id);
- else if(s.kind==='lottie')cats.lottie.push(id);
- else if(s.group===8)cats.stickers.push(id);
- else cats.basic.push(id);
+ const cat=groupToCategory[s.group];
+ if(cat)cats[cat].push(id);
 }
-let activeCat='gif';let tabToken=0;
+let activeCat='classic';let tabToken=0;
 const gallery=$('galleryGrid'),galleryTabs=$('galleryTabs'),galleryHint=$('galleryHint');
 function showTab(category){
  if(!cats[category])return;activeCat=category;
@@ -1301,9 +1400,9 @@ function showTab(category){
 }
 galleryTabs.addEventListener('click',e=>{const btn=e.target.closest('button[data-category]');if(btn)showTab(btn.dataset.category);});
 E.emotes.addEventListener('click',()=>{E.picker.hidden=!E.picker.hidden;if(!E.picker.hidden)showTab(activeCat);});
-showTab('gif');
+showTab('classic');
 $('copy').addEventListener('click',async()=>{const txt=E.log.textContent;try{await navigator.clipboard.writeText(txt);$('copy').textContent='Скопировано';}catch{window.prompt('Скопируй журнал:',txt);}});
-window.addEventListener('pagehide',()=>{if(socket)socket.close(1000);});
+window.addEventListener('pagehide',()=>{stopped=true;clearTimeout(retryTimer);if(socket)socket.close(1000);});
 updateButtons();log('Готово. Подключи чат, затем нажми «Войти гостем».');
 })();
 </script></body></html>
