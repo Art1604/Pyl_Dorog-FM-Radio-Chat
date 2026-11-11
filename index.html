@@ -1404,6 +1404,10 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 @media(max-width:680px){.nick-change-row input{width:155px;flex:1;min-width:110px}}
 </style>
 <style>
+.chatsurface .msg[data-our-gif-id] .our-gif-message{max-width:180px;max-height:180px}
+.chatsurface .msg[data-our-gif-id] .msg-body{border-left:2px solid #999;padding-left:5px}
+</style>
+<style>
 /* v3.7: собственные GIF, серый прямоугольный каталог */
 .gallery-tile.our-gif-tile{height:96px;min-height:96px;padding:4px}
 .gallery-tile.our-gif-tile img{display:block;max-width:100%;max-height:86px;width:auto;height:auto;object-fit:contain}
@@ -1674,6 +1678,9 @@ function localDayKey(date){
 }
 function showMessage(m){
  if(!m||typeof m!=='object')return;
+ const invisibleGif=decodeInvisibleGif(m.text??m.message??m.msg??m.body??'');
+ if(invisibleGif){m={...m,text:ourGifUrl(invisibleGif),_ourGifKey:String(m.id??m.time??Date.now())};}
+
  const first=E.messages.querySelector('.muted');
  if(first&&E.messages.children.length===1)E.messages.replaceChildren();
  const nick=safe(m.nick||m.user?.nick||m.username||m.user_name,100)||'Слушатель';
@@ -1688,6 +1695,7 @@ function showMessage(m){
  }
  const grouped=!!(lastShownMessage&&dateKey&&lastShownMessage.day===dateKey&&lastShownMessage.uid===uid);
  const d=document.createElement('div');d.className='msg'+(grouped?'':' msg-first');
+ if(m._ourGifKey)d.dataset.ourGifId=String(m._ourGifKey);
  const messageId=m.id;
  if(messageId!=null&&/^\d+$/.test(String(messageId))){d.dataset.msgId=String(messageId);d.dataset.msgUid=uid;}
  let type=m.utype??m.user?.type??m.type;
@@ -1759,7 +1767,7 @@ function failSend(t){const wasGif=pendingOurGif;pending=false;pendingOurGif=fals
 function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получено событие не в JSON.');return;}if(!obj||typeof obj!=='object')return;const cmd=String(obj.cmd||'неизвестно');
  switch(cmd){
  case 'initialize':salt=typeof obj.salt==='string'?obj.salt:'';initDone=true;retryCount=0;clearTimeout(initTimer);initTimer=null;info('✅ Чат подключён. Выполняется гостевой вход…','ok');updateButtons();requestGuestLogin();break;
- case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;lastShownMessage=null;placeholder(E.messages,'История пуста.');arr.slice(-180).forEach(showMessage);log('История: '+arr.length+' сообщений');break;}
+ case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;lastShownMessage=null;placeholder(E.messages,'История пуста.');arr.slice(-180).forEach(showMessage);redrawOurGifMessages();log('История: '+arr.length+' сообщений');break;}
  case 'add_msg':showMessage(obj.msg);notifyIfPrivate(obj,'add_msg');log('Новое сообщение');break;
  case 'delete_message':removeConfirmedMessage(obj.id);break;
  case 'private_message':case 'add_private_msg':case 'add_private_message':case 'new_private_message':case 'add_pm':notifyIfPrivate(obj,cmd);log('Личное сообщение от сервера');break;
@@ -1769,8 +1777,8 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
  case 'logout':clearTimeout(loginTimer);loginTimer=null;authorized=false;currentUser=null;pending=false;refreshDeleteControls();E.identity.textContent='Не авторизован';note('Сервер завершил гостевой вход.','send-error');updateButtons();break;
  case 'set_nick':nickRequestInFlight=false;E.nick.value=safe(obj.nick,30);E.identity.textContent='В чате: '+safe(obj.nick,50);if(currentUser)currentUser.nick=safe(obj.nick,30);desiredGuestNick=safe(obj.nick,30);try{localStorage.setItem('pylfm_guest_nick',desiredGuestNick);}catch{}nickChangeStatus.className='';nickChangeStatus.textContent='Ник сохранён';log('Ник подтверждён сервером');break;
- case 'accept_msg':{const wasGif=pendingOurGif;pending=false;pendingOurGif=false;updateButtons();E.input.value='';note(wasGif?'GIF-ссылка принята Волнорезом. Проверь, как она видна в оригинальном чате.':'✅ Сообщение принято сервером.',wasGif?'send-gif-status':'send-good');log('Сообщение принято сервером');break;}
- case 'reject_msg':failSend(pendingOurGif?'Волнорез отклонил ссылку на GIF. Файл загружен правильно, но сервер может запрещать внешние ссылки.':'❌ Сервер отклонил сообщение. Проверь права гостя и правила чата.');break;
+ case 'accept_msg':{const wasGif=pendingOurGif;pending=false;pendingOurGif=false;updateButtons();E.input.value='';note(wasGif?'Невидимый код GIF принят сервером. Проверь, появился ли GIF в нашем чате.':'✅ Сообщение принято сервером.',wasGif?'send-gif-status':'send-good');log('Сообщение принято сервером');break;}
+ case 'reject_msg':failSend(pendingOurGif?'Волнорез отклонил невидимый код GIF. Сервер не поддерживает этот способ.':'❌ Сервер отклонил сообщение. Проверь права гостя и правила чата.');break;
  case 'set_unauth_login':guestAllowed=obj.value!==false;log('Гостевой вход по настройкам станции: '+(guestAllowed?'разрешён':'запрещён'));if(!guestAllowed&&!authorized){clearTimeout(loginTimer);loginTimer=null;note('Станция запретила гостевой вход. Читать сообщения и смотреть смайлы можно.','send-error');}else if(guestAllowed&&initDone&&!authorized)requestGuestLogin();updateButtons();break;
  case 'error':{const err=safe(obj.name||obj.code||obj.message,100)||'неизвестная';log('Ошибка от сервера: '+err);clearTimeout(loginTimer);loginTimer=null;note('Волнорез вернул ошибку: '+err+'. Гостевой вход или отправка могли быть отклонены.','send-error');updateButtons();break;}
  default:log('Служебное событие: '+cmd);
@@ -1890,8 +1898,11 @@ E.input.addEventListener('input',()=>{
 E.form.addEventListener('submit',event=>{
  event.preventDefault();
  const text=E.input.value.replace(/[\r\n]+/g,' ').trim();
+ const ourGifName=ourGifNameFromText(text);
+ if(ourGifName){submitOurGif(ourGifName);return;}
  const isOurGif=text.includes(new URL(OUR_GIFS_DIR,document.baseURI).href)&&/\.gif(?:[?#\s]|$)/i.test(text);
  if(!text){note('Сначала выбери GIF или напиши сообщение.','send-error');return;}
+ if(isOurGif){note('Ссылка на наш GIF не отправляется как текст. Выбери GIF во вкладке «Наши».','send-error');return;}
  if(!authorized||!socket||socket.readyState!==WebSocket.OPEN){note('Сообщение не отправлено: нет подключения или гостевого входа.','send-error');return;}
  if(pending){note('Предыдущее сообщение ещё ожидает ответа сервера.',isOurGif?'send-gif-status':'send-error');return;}
  if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}
@@ -1928,6 +1939,69 @@ function validOurGifName(name){
  return typeof name==='string'&&name.length<180&&/^[^/\\?#<>]+\.gif$/i.test(name)&&name!=='.'&&name!=='..';
 }
 function ourGifUrl(name){return new URL(OUR_GIFS_DIR+encodeURIComponent(name),document.baseURI).href;}
+/* v4.1 — Экспериментальный канал без дополнительного сервера.
+   Волнорез получает строку из невидимых Unicode-символов. Наш сайт
+   узнаёт в ней имя GIF и показывает анимацию. Если Волнорез очищает
+   невидимые символы, этот метод НЕ сработает — никаких гарантий нет.
+   В оригинальном чате может остаться пустая строка сообщения с ником.
+   Никаких токенов, скрытых API или сторонних ресурсов не используется. */
+const OUR_GIF_START='\u2063\u2063';
+const OUR_GIF_END='\u2064';
+const OUR_GIF_ZERO='\u200b',OUR_GIF_ONE='\u200c';
+function ourGifNameFromText(text){
+ try{
+  const url=new URL(String(text).trim());
+  const base=new URL(OUR_GIFS_DIR,document.baseURI);
+  if(url.origin!==base.origin||!url.pathname.startsWith(base.pathname)||url.search||url.hash)return null;
+  const name=decodeURIComponent(url.pathname.slice(base.pathname.length));
+  return validOurGifName(name)&&String(text).trim()===ourGifUrl(name)?name:null;
+ }catch(_){return null;}
+}
+function encodeInvisibleGif(name){
+ if(!validOurGifName(name))return null;
+ const bytes=new TextEncoder().encode(name);
+ if(bytes.length>100)return null;
+ let bits='';
+ for(const b of bytes)for(let shift=7;shift>=0;shift--)bits+=(b&(1<<shift))?OUR_GIF_ONE:OUR_GIF_ZERO;
+ return OUR_GIF_START+bits+OUR_GIF_END;
+}
+function decodeInvisibleGif(text){
+ if(typeof text!=='string'||!text.startsWith(OUR_GIF_START)||!text.endsWith(OUR_GIF_END))return null;
+ const bits=text.slice(OUR_GIF_START.length,-OUR_GIF_END.length);
+ if(!bits||bits.length%8||bits.length>800||/[^\u200b\u200c]/u.test(bits))return null;
+ const bytes=new Uint8Array(bits.length/8);
+ for(let i=0;i<bytes.length;i++){
+  let n=0;for(let j=0;j<8;j++)n=(n<<1)|(bits[i*8+j]===OUR_GIF_ONE?1:0);
+  bytes[i]=n;
+ }
+ try{
+  const name=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+  return validOurGifName(name)?name:null;
+ }catch(_){return null;}
+}
+/* История приходит из того же WS-чата; специальных серверных хранилищ нет. */
+function redrawOurGifMessages(){}
+function submitOurGif(name){
+ if(!authorized||!socket||socket.readyState!==WebSocket.OPEN){note('GIF не отправлен: дождись гостевого входа во Волнорез.','send-error');return;}
+ if(pending){note('Предыдущее сообщение ещё ожидает ответа Волнореза.','send-error');return;}
+ if(!ourGifsCache||!ourGifsCache.includes(name)){note('GIF не найден в коллекции GitHub. Открой вкладку «Наши» повторно.','send-error');return;}
+ const encoded=encodeInvisibleGif(name);
+ if(!encoded||encoded.length>1000){note('Имя GIF слишком длинное для невидимого сообщения.','send-error');return;}
+ pending=true;pendingOurGif=true;updateButtons();
+ const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');
+ if(!socketSend({cmd:'send_message',text:encoded,local_id:localId})){
+  failSend('Не удалось отправить GIF: связь с Волнорезом отсутствует.');return;
+ }
+ note('Пробуем отправить GIF невидимым кодом. Ждём подтверждения сервера…','send-gif-status');
+ log('Экспериментальная отправка GIF '+name+' (невидимый Unicode-код)');
+ setTimeout(()=>{
+  if(pending&&pendingOurGif){
+   pending=false;pendingOurGif=false;updateButtons();
+   note('Волнорез не подтвердил невидимое GIF-сообщение. Возможно, сервер его фильтрует. GIF не подтверждён.','send-error');
+  }
+ },9000);
+}
+
 async function loadOurGifs(){
  if(ourGifsLoading)return ourGifsLoading;
  ourGifsLoading=(async()=>{
@@ -1957,7 +2031,7 @@ async function showOurGifs(){
  const filenames=await loadOurGifs();
  if(activeCat!=='ours'||token!==tabToken)return;
  if(!filenames.length){galleryHint.textContent='Пока нет GIF. Добавь файлы в assets/our-gifs/ на GitHub. Если они уже загружены, обнови страницу или файл list.json.';return;}
- galleryHint.textContent='Наши GIF — '+filenames.length+'. На нашем сайте отображаются как анимация; Волнорез может показывать только ссылку.';
+ galleryHint.textContent='Наши GIF — '+filenames.length+'. Экспериментальная отправка через невидимый код: на Волнорезе может появиться пустое сообщение. Работает, только если сервер сохраняет код без изменений.';
  const frag=document.createDocumentFragment();
  for(const name of filenames){
   const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title='Вставить '+name;
@@ -1966,7 +2040,7 @@ async function showOurGifs(){
   tile.addEventListener('click',()=>{
    if(!authorized||E.input.disabled){note('Сначала дождись автоматического гостевого входа.','send-note');return;}
    const url=ourGifUrl(name);E.input.setRangeText(url,E.input.selectionStart,E.input.selectionEnd,'end');E.input.focus();
-   note('GIF выбран. Нажми «Отправить»: появится подтверждение сервера или причина ошибки.','send-gif-status');
+   note('GIF выбран. Нажми «Отправить». Сайт попробует передать невидимый код через Волнорез — это экспериментальный способ.','send-gif-status');
   });frag.append(tile);
  }
  gallery.append(frag);gallery.scrollTop=0;
