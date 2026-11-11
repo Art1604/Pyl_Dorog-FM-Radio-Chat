@@ -1366,12 +1366,15 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 #status, #sendState { display:none !important; }
 #status.bad { display:block !important; }
 #sendState.send-error { display:inline-block !important; }
-/* Отправка своего GIF: видимый статус вместо скрытой служебной строки. */
-#sendState.send-gif-status { display:inline-block !important; color:#444 !important; }
-#sendState.send-gif-status.send-error { color:#9c2626 !important; }
 /* Не оставляем пустой ряд под строкой отправки. */
 #sendForm > .controls { padding:0; min-height:0; }
 
+
+/* Наши GIF: общая закреплённая анимация из GitHub, без передачи в Волнорез. */
+.chatsurface .our-gif-pinned{display:flex;gap:9px;align-items:center;background:#e6e6e6;border:1px solid #aaa;padding:5px 8px;margin:4px 3px 7px;color:#333;font-size:12px}
+.chatsurface .our-gif-pinned img{display:block;width:68px;height:68px;object-fit:contain;border:1px solid #999;background:#fff}
+.chatsurface .our-gif-pinned .our-gif-text{display:flex;flex-direction:column;gap:3px}
+.gallery-tile.our-gif-tile img{max-width:70px;max-height:65px;object-fit:contain}
 </style>
 <style>
 /* v2.2 — поле → смайлы → Отправить, крайний элемент справа */
@@ -1402,17 +1405,6 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .nick-change-row #nickChangeStatus{font-size:12px;color:#555}
 .nick-change-row #nickChangeStatus.nick-error{color:#8c2525}
 @media(max-width:680px){.nick-change-row input{width:155px;flex:1;min-width:110px}}
-</style>
-<style>
-.chatsurface .msg[data-our-gif-id] .our-gif-message{max-width:180px;max-height:180px}
-.chatsurface .msg[data-our-gif-id] .msg-body{border-left:2px solid #999;padding-left:5px}
-</style>
-<style>
-/* v3.7: собственные GIF, серый прямоугольный каталог */
-.gallery-tile.our-gif-tile{height:96px;min-height:96px;padding:4px}
-.gallery-tile.our-gif-tile img{display:block;max-width:100%;max-height:86px;width:auto;height:auto;object-fit:contain}
-.chatsurface .our-gif-message{display:block;max-width:170px;max-height:160px;width:auto;height:auto;margin:5px 0 2px;border:1px solid #aaa;background:#eee;object-fit:contain}
-.chatsurface .our-gif-link{display:inline-block;overflow-wrap:anywhere}
 </style>
 <style>
 /* v3.6: ник внутри строки отправки, как в оригинале; без панели и кнопки сохранения. */
@@ -1467,7 +1459,6 @@ const $=id=>document.getElementById(id);
 const nickSave=$('saveNickname'),nickChangeStatus=$('nickChangeStatus');
 const E={connect:$('connect'),disconnect:$('disconnect'),login:$('guestLogin'),nick:$('nickname'),identity:$('myIdentity'),status:$('status'),log:$('log'),messages:$('messages'),users:$('users'),msgCount:$('msgCount'),userCount:$('userCount'),form:$('sendForm'),input:$('messageInput'),send:$('sendButton'),sendState:$('sendState'),emotes:$('emotesButton'),picker:$('smilesPicker')};
 let socket=null,authorized=false,currentUser=null,salt='',attempts=0,historySize=0,roster=new Map(),pending=false,initDone=false,initTimer=null;
-let pendingOurGif=false;
 let stopped=true,retryTimer=null,retryCount=0,loginTimer=null,guestAllowed=null;
 // Автоматический гостевой вход: разрешение всегда подтверждает сервер Волнореза.
 let guestLoginAttempted=false, desiredGuestNick='';
@@ -1555,26 +1546,7 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
  if(s.cls){const el=document.createElement('span');el.className='smiley msg-smile '+s.cls;el.title='Смайл '+id;el.setAttribute('role','img');el.setAttribute('aria-label','Смайл '+id);return el;}
  const img=document.createElement('img');img.className='smiley-media';img.src=s.file;img.loading='lazy';img.alt='Смайл '+id;img.addEventListener('error',()=>{img.replaceWith(document.createTextNode(inGallery?'Смайл недоступен':'%'+id+'%'));});return img;
 }
-/* Только свои GIF из папки этого сайта. Ссылки извне остаются обычным текстом. */
-function appendChatText(target,text){
- const regex=/https?:\/\/[^\s<>"']+/g;let pos=0,match;
- while((match=regex.exec(text))){
-  if(match.index>pos)target.append(document.createTextNode(text.slice(pos,match.index)));
-  const raw=match[0];let url=null;
-  try{
-   const candidate=new URL(raw);
-   if(candidate.origin===location.origin&&candidate.pathname.startsWith(new URL('./assets/our-gifs/',document.baseURI).pathname)&&/\.gif$/i.test(candidate.pathname))url=candidate;
-  }catch(_){/* некорректная ссылка остаётся текстом */}
-  if(url){
-   const link=document.createElement('a');link.className='our-gif-link';link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.title='Наш GIF — открыть отдельно';
-   const img=document.createElement('img');img.className='our-gif-message';img.src=url.href;img.alt='GIF из коллекции «Наши»';img.loading='lazy';
-   img.addEventListener('error',()=>{link.textContent=url.href;});link.append(img);target.append(link);
-  } else target.append(document.createTextNode(raw));
-  pos=match.index+raw.length;
- }
- if(pos<text.length)target.append(document.createTextNode(text.slice(pos)));
-}
-function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)appendChatText(target,str.slice(p,m.index));const b=document.createElement('button');b.type='button';b.className='chat-smile-action';b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';b.append(smileNode(m[1]));target.append(b);p=m.index+m[0].length;}if(p<str.length)appendChatText(target,str.slice(p));}
+function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));const b=document.createElement('button');b.type='button';b.className='chat-smile-action';b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';b.append(smileNode(m[1]));target.append(b);p=m.index+m[0].length;}if(p<str.length)target.append(document.createTextNode(str.slice(p)));}
 let currentAirHost='';
 function comparableNick(v){return String(v||'').normalize('NFKC').trim().replace(/^@/,'').replace(/\s+/g,' ').toLocaleLowerCase('ru-RU');}
 function isCurrentDJ(nick){return !!currentAirHost&&comparableNick(nick)===comparableNick(currentAirHost);}
@@ -1678,11 +1650,8 @@ function localDayKey(date){
 }
 function showMessage(m){
  if(!m||typeof m!=='object')return;
- const invisibleGif=decodeInvisibleGif(m.text??m.message??m.msg??m.body??'');
- if(invisibleGif){m={...m,text:ourGifUrl(invisibleGif),_ourGifKey:String(m.id??m.time??Date.now())};}
-
  const first=E.messages.querySelector('.muted');
- if(first&&E.messages.children.length===1)E.messages.replaceChildren();
+ if(first&&(E.messages.children.length===1||(E.messages.children.length===2&&E.messages.firstElementChild===pinned)))first.remove();
  const nick=safe(m.nick||m.user?.nick||m.username||m.user_name,100)||'Слушатель';
  const uid=String(m.uid??m.user?.id??m.user_id??nick);
  const when=messageDate(m.time??m.timestamp??m.created_at);
@@ -1695,7 +1664,6 @@ function showMessage(m){
  }
  const grouped=!!(lastShownMessage&&dateKey&&lastShownMessage.day===dateKey&&lastShownMessage.uid===uid);
  const d=document.createElement('div');d.className='msg'+(grouped?'':' msg-first');
- if(m._ourGifKey)d.dataset.ourGifId=String(m._ourGifKey);
  const messageId=m.id;
  if(messageId!=null&&/^\d+$/.test(String(messageId))){d.dataset.msgId=String(messageId);d.dataset.msgUid=uid;}
  let type=m.utype??m.user?.type??m.type;
@@ -1763,11 +1731,11 @@ function renderUsers(){
   const icon=iconForRole(role);if(icon)e.append(icon);e.append(btn);E.users.append(e);
  }
 }
-function failSend(t){const wasGif=pendingOurGif;pending=false;pendingOurGif=false;updateButtons();note(t,wasGif?'send-error send-gif-status':'send-error');log(t);}
+function failSend(t){pending=false;updateButtons();note(t,'send-error');log(t);}
 function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получено событие не в JSON.');return;}if(!obj||typeof obj!=='object')return;const cmd=String(obj.cmd||'неизвестно');
  switch(cmd){
  case 'initialize':salt=typeof obj.salt==='string'?obj.salt:'';initDone=true;retryCount=0;clearTimeout(initTimer);initTimer=null;info('✅ Чат подключён. Выполняется гостевой вход…','ok');updateButtons();requestGuestLogin();break;
- case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;lastShownMessage=null;placeholder(E.messages,'История пуста.');arr.slice(-180).forEach(showMessage);redrawOurGifMessages();log('История: '+arr.length+' сообщений');break;}
+ case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;lastShownMessage=null;placeholder(E.messages,'История пуста.');arr.slice(-180).forEach(showMessage);log('История: '+arr.length+' сообщений');break;}
  case 'add_msg':showMessage(obj.msg);notifyIfPrivate(obj,'add_msg');log('Новое сообщение');break;
  case 'delete_message':removeConfirmedMessage(obj.id);break;
  case 'private_message':case 'add_private_msg':case 'add_private_message':case 'new_private_message':case 'add_pm':notifyIfPrivate(obj,cmd);log('Личное сообщение от сервера');break;
@@ -1777,8 +1745,8 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
  case 'logout':clearTimeout(loginTimer);loginTimer=null;authorized=false;currentUser=null;pending=false;refreshDeleteControls();E.identity.textContent='Не авторизован';note('Сервер завершил гостевой вход.','send-error');updateButtons();break;
  case 'set_nick':nickRequestInFlight=false;E.nick.value=safe(obj.nick,30);E.identity.textContent='В чате: '+safe(obj.nick,50);if(currentUser)currentUser.nick=safe(obj.nick,30);desiredGuestNick=safe(obj.nick,30);try{localStorage.setItem('pylfm_guest_nick',desiredGuestNick);}catch{}nickChangeStatus.className='';nickChangeStatus.textContent='Ник сохранён';log('Ник подтверждён сервером');break;
- case 'accept_msg':{const wasGif=pendingOurGif;pending=false;pendingOurGif=false;updateButtons();E.input.value='';note(wasGif?'Невидимый код GIF принят сервером. Проверь, появился ли GIF в нашем чате.':'✅ Сообщение принято сервером.',wasGif?'send-gif-status':'send-good');log('Сообщение принято сервером');break;}
- case 'reject_msg':failSend(pendingOurGif?'Волнорез отклонил невидимый код GIF. Сервер не поддерживает этот способ.':'❌ Сервер отклонил сообщение. Проверь права гостя и правила чата.');break;
+ case 'accept_msg':pending=false;updateButtons();E.input.value='';note('✅ Сообщение принято сервером.','send-good');log('Сообщение принято сервером');break;
+ case 'reject_msg':failSend('❌ Сервер отклонил сообщение. Проверь права гостя и правила чата.');break;
  case 'set_unauth_login':guestAllowed=obj.value!==false;log('Гостевой вход по настройкам станции: '+(guestAllowed?'разрешён':'запрещён'));if(!guestAllowed&&!authorized){clearTimeout(loginTimer);loginTimer=null;note('Станция запретила гостевой вход. Читать сообщения и смотреть смайлы можно.','send-error');}else if(guestAllowed&&initDone&&!authorized)requestGuestLogin();updateButtons();break;
  case 'error':{const err=safe(obj.name||obj.code||obj.message,100)||'неизвестная';log('Ошибка от сервера: '+err);clearTimeout(loginTimer);loginTimer=null;note('Волнорез вернул ошибку: '+err+'. Гостевой вход или отправка могли быть отклонены.','send-error');updateButtons();break;}
  default:log('Служебное событие: '+cmd);
@@ -1895,33 +1863,7 @@ E.input.addEventListener('input',()=>{
   E.input.setSelectionRange(before,before);
  }
 });
-E.form.addEventListener('submit',event=>{
- event.preventDefault();
- const text=E.input.value.replace(/[\r\n]+/g,' ').trim();
- const ourGifName=ourGifNameFromText(text);
- if(ourGifName){submitOurGif(ourGifName);return;}
- const isOurGif=text.includes(new URL(OUR_GIFS_DIR,document.baseURI).href)&&/\.gif(?:[?#\s]|$)/i.test(text);
- if(!text){note('Сначала выбери GIF или напиши сообщение.','send-error');return;}
- if(isOurGif){note('Ссылка на наш GIF не отправляется как текст. Выбери GIF во вкладке «Наши».','send-error');return;}
- if(!authorized||!socket||socket.readyState!==WebSocket.OPEN){note('Сообщение не отправлено: нет подключения или гостевого входа.','send-error');return;}
- if(pending){note('Предыдущее сообщение ещё ожидает ответа сервера.',isOurGif?'send-gif-status':'send-error');return;}
- if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}
- pending=true;pendingOurGif=isOurGif;updateButtons();
- const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');
- try{
-  if(!socketSend({cmd:'send_message',text,local_id:localId})){
-   failSend('Нет соединения с сервером Волнореза.');return;
-  }
- }catch(err){failSend('Не удалось отправить сообщение через соединение с Волнорезом.');return;}
- note(isOurGif?'Отправляем ссылку на GIF во Волнорез…':'Ожидаем подтверждение Волнореза…',isOurGif?'send-gif-status':'');
- log('SEND send_message ('+text.length+' символов)'+(isOurGif?' [наш GIF]':''));
- setTimeout(()=>{
-  if(pending){
-   const wasGif=pendingOurGif;pending=false;pendingOurGif=false;updateButtons();
-   note(wasGif?'Волнорез не подтвердил отправку GIF-ссылки. Возможно, сервер блокирует ссылки. Проверь оригинальный чат.':'Нет подтверждения отправки. Не повторяй сразу: сообщение могло дойти.',wasGif?'send-error send-gif-status':'send-note');
-  }
- },9000);
-});
+E.form.addEventListener('submit',event=>{event.preventDefault();if(!authorized||pending||!socket)return;const text=E.input.value.replace(/[\r\n]+/g,' ').trim();if(!text)return;if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}pending=true;updateButtons();const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');socketSend({cmd:'send_message',text,local_id:localId});note('Ожидаем подтверждение Волнореза…');log('SEND send_message ('+text.length+' символов)');setTimeout(()=>{if(pending){pending=false;updateButtons();note('Нет подтверждения отправки. Не повторяй сразу: сообщение могло дойти.','send-note');}},9000);});
 const cats={classic:[],retro:[],emoji:[],stickers:[],gif:[],animashki:[],ours:[]};
 const groupToCategory={1:'classic',2:'retro',6:'emoji',8:'stickers',9:'gif',10:'animashki'};
 for(const [id,s] of Object.entries(SMILES)){
@@ -1930,123 +1872,74 @@ for(const [id,s] of Object.entries(SMILES)){
 }
 let activeCat='classic';let tabToken=0;
 const gallery=$('galleryGrid'),galleryTabs=$('galleryTabs'),galleryHint=$('galleryHint');
-/* Пользовательские GIF: загрузи .gif в assets/our-gifs/ на GitHub.
-   GitHub API возвращает список файлов, список JSON — резервный путь. */
+/* Файлы для раздела «Наши» берутся из GitHub Pages. Безопасный показ,
+   не отправляем собственные GIF в сервер Волнореза и не вмешиваемся в send_message. */
 const OUR_GIFS_DIR='./assets/our-gifs/';
 const OUR_GIFS_API='https://api.github.com/repos/Art1604/Pyl_Dorog-FM-Radio-Chat/contents/assets/our-gifs?ref=main';
-let ourGifsCache=null,ourGifsLoading=null;
-function validOurGifName(name){
- return typeof name==='string'&&name.length<180&&/^[^/\\?#<>]+\.gif$/i.test(name)&&name!=='.'&&name!=='..';
-}
+const OUR_DEFAULT_GIF='dance-dancing.gif';
+function validOurGifName(name){return typeof name==='string'&&name.length<180&&/^[^/\\?#<>]+\.gif$/i.test(name);}
 function ourGifUrl(name){return new URL(OUR_GIFS_DIR+encodeURIComponent(name),document.baseURI).href;}
-/* v4.1 — Экспериментальный канал без дополнительного сервера.
-   Волнорез получает строку из невидимых Unicode-символов. Наш сайт
-   узнаёт в ней имя GIF и показывает анимацию. Если Волнорез очищает
-   невидимые символы, этот метод НЕ сработает — никаких гарантий нет.
-   В оригинальном чате может остаться пустая строка сообщения с ником.
-   Никаких токенов, скрытых API или сторонних ресурсов не используется. */
-const OUR_GIF_START='\u2063\u2063';
-const OUR_GIF_END='\u2064';
-const OUR_GIF_ZERO='\u200b',OUR_GIF_ONE='\u200c';
-function ourGifNameFromText(text){
- try{
-  const url=new URL(String(text).trim());
-  const base=new URL(OUR_GIFS_DIR,document.baseURI);
-  if(url.origin!==base.origin||!url.pathname.startsWith(base.pathname)||url.search||url.hash)return null;
-  const name=decodeURIComponent(url.pathname.slice(base.pathname.length));
-  return validOurGifName(name)&&String(text).trim()===ourGifUrl(name)?name:null;
- }catch(_){return null;}
-}
-function encodeInvisibleGif(name){
- if(!validOurGifName(name))return null;
- const bytes=new TextEncoder().encode(name);
- if(bytes.length>100)return null;
- let bits='';
- for(const b of bytes)for(let shift=7;shift>=0;shift--)bits+=(b&(1<<shift))?OUR_GIF_ONE:OUR_GIF_ZERO;
- return OUR_GIF_START+bits+OUR_GIF_END;
-}
-function decodeInvisibleGif(text){
- if(typeof text!=='string'||!text.startsWith(OUR_GIF_START)||!text.endsWith(OUR_GIF_END))return null;
- const bits=text.slice(OUR_GIF_START.length,-OUR_GIF_END.length);
- if(!bits||bits.length%8||bits.length>800||/[^\u200b\u200c]/u.test(bits))return null;
- const bytes=new Uint8Array(bits.length/8);
- for(let i=0;i<bytes.length;i++){
-  let n=0;for(let j=0;j<8;j++)n=(n<<1)|(bits[i*8+j]===OUR_GIF_ONE?1:0);
-  bytes[i]=n;
- }
- try{
-  const name=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
-  return validOurGifName(name)?name:null;
- }catch(_){return null;}
-}
-/* История приходит из того же WS-чата; специальных серверных хранилищ нет. */
-function redrawOurGifMessages(){}
-function submitOurGif(name){
- if(!authorized||!socket||socket.readyState!==WebSocket.OPEN){note('GIF не отправлен: дождись гостевого входа во Волнорез.','send-error');return;}
- if(pending){note('Предыдущее сообщение ещё ожидает ответа Волнореза.','send-error');return;}
- if(!ourGifsCache||!ourGifsCache.includes(name)){note('GIF не найден в коллекции GitHub. Открой вкладку «Наши» повторно.','send-error');return;}
- const encoded=encodeInvisibleGif(name);
- if(!encoded||encoded.length>1000){note('Имя GIF слишком длинное для невидимого сообщения.','send-error');return;}
- pending=true;pendingOurGif=true;updateButtons();
- const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');
- if(!socketSend({cmd:'send_message',text:encoded,local_id:localId})){
-  failSend('Не удалось отправить GIF: связь с Волнорезом отсутствует.');return;
- }
- note('Пробуем отправить GIF невидимым кодом. Ждём подтверждения сервера…','send-gif-status');
- log('Экспериментальная отправка GIF '+name+' (невидимый Unicode-код)');
- setTimeout(()=>{
-  if(pending&&pendingOurGif){
-   pending=false;pendingOurGif=false;updateButtons();
-   note('Волнорез не подтвердил невидимое GIF-сообщение. Возможно, сервер его фильтрует. GIF не подтверждён.','send-error');
-  }
- },9000);
-}
-
+let ourGifsCache=null;
 async function loadOurGifs(){
- if(ourGifsLoading)return ourGifsLoading;
- ourGifsLoading=(async()=>{
-  let names=[];
+ if(ourGifsCache)return ourGifsCache;
+ let names=[];
+ try{
+  const res=await fetch(new URL(OUR_GIFS_DIR+'list.json',document.baseURI),{cache:'no-store'});
+  if(!res.ok)throw Error('list.json not found');
+  const data=await res.json();
+  names=(Array.isArray(data)?data:(Array.isArray(data?.files)?data.files:[])).filter(validOurGifName);
+ }catch(_){/* резервный список GitHub API */}
+ if(!names.length){
   try{
-   const response=await fetch(OUR_GIFS_API,{headers:{'Accept':'application/vnd.github+json'}});
-   if(!response.ok)throw Error('GitHub API: '+response.status);
-   const data=await response.json();
-   if(!Array.isArray(data))throw Error('Неверный список файлов');
-   names=data.filter(x=>x&&x.type==='file'&&validOurGifName(x.name)).map(x=>x.name);
-  }catch(_){
-   try{
-    const response=await fetch(new URL(OUR_GIFS_DIR+'list.json',document.baseURI),{cache:'no-store'});
-    if(!response.ok)throw Error('Нет списка');
-    const data=await response.json();
-    names=(Array.isArray(data)?data:(data.files||[])).filter(validOurGifName);
-   }catch(__){names=[];}
-  }
-  ourGifsCache=[...new Set(names)].sort((a,b)=>a.localeCompare(b,['ru','en'],{numeric:true}));
-  return ourGifsCache;
- })();
- try{return await ourGifsLoading;}finally{ourGifsLoading=null;}
-}
-async function showOurGifs(){
- gallery.replaceChildren();galleryHint.textContent='Загружаем ваши GIF из GitHub…';
- const token=++tabToken;
- const filenames=await loadOurGifs();
- if(activeCat!=='ours'||token!==tabToken)return;
- if(!filenames.length){galleryHint.textContent='Пока нет GIF. Добавь файлы в assets/our-gifs/ на GitHub. Если они уже загружены, обнови страницу или файл list.json.';return;}
- galleryHint.textContent='Наши GIF — '+filenames.length+'. Экспериментальная отправка через невидимый код: на Волнорезе может появиться пустое сообщение. Работает, только если сервер сохраняет код без изменений.';
- const frag=document.createDocumentFragment();
- for(const name of filenames){
-  const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title='Вставить '+name;
-  const img=document.createElement('img');img.alt=name;img.src=ourGifUrl(name);img.loading='lazy';
-  img.addEventListener('error',()=>{tile.disabled=true;tile.textContent='GIF недоступен';});tile.append(img);
-  tile.addEventListener('click',()=>{
-   if(!authorized||E.input.disabled){note('Сначала дождись автоматического гостевого входа.','send-note');return;}
-   const url=ourGifUrl(name);E.input.setRangeText(url,E.input.selectionStart,E.input.selectionEnd,'end');E.input.focus();
-   note('GIF выбран. Нажми «Отправить». Сайт попробует передать невидимый код через Волнорез — это экспериментальный способ.','send-gif-status');
-  });frag.append(tile);
+   const res=await fetch(OUR_GIFS_API,{headers:{Accept:'application/vnd.github+json'}});
+   if(res.ok){const data=await res.json();if(Array.isArray(data))names=data.filter(x=>x?.type==='file'&&validOurGifName(x.name)).map(x=>x.name);}
+  }catch(_){}
  }
- gallery.append(frag);gallery.scrollTop=0;
+ if(!names.length)names=[OUR_DEFAULT_GIF];
+ ourGifsCache=[...new Set(names)];
+ return ourGifsCache;
+}
+// Закреплённый GIF одинаков для всех посетителей, т.к. берётся из статических файлов.
+const pinned=document.createElement('div');
+pinned.className='our-gif-pinned';
+pinned.setAttribute('aria-label','Наш общий GIF из GitHub');
+const pinnedImg=document.createElement('img');
+pinnedImg.src=ourGifUrl(OUR_DEFAULT_GIF);
+pinnedImg.alt='Танцующий GIF';
+pinnedImg.loading='lazy';
+const pinnedText=document.createElement('div');pinnedText.className='our-gif-text';
+const pinnedTitle=document.createElement('strong');pinnedTitle.textContent='Наш GIF 💃';
+const pinnedSubtitle=document.createElement('span');pinnedSubtitle.textContent='Закреплён в чате для всех посетителей сайта';
+pinnedText.append(pinnedTitle,pinnedSubtitle);pinned.append(pinnedImg,pinnedText);
+function ensurePinnedGif(){if(E.messages.firstElementChild!==pinned)E.messages.prepend(pinned);}
+const pinnedObserver=new MutationObserver(()=>{if(E.messages.firstElementChild!==pinned)ensurePinnedGif();});
+pinnedObserver.observe(E.messages,{childList:true});
+ensurePinnedGif();
+async function showOurGifs(){
+ const token=++tabToken;
+ gallery.replaceChildren();galleryHint.textContent='Загружаем наши GIF из GitHub…';
+ const names=await loadOurGifs();
+ if(activeCat!=='ours'||token!==tabToken)return;
+ galleryHint.textContent='Наши GIF доступны на сайте. Танцующий GIF закреплён в чате для всех. Нажатие на другие GIF показывает локальный предпросмотр, но не отправляет их другим участникам.';
+ const tiles=document.createDocumentFragment();
+ for(const name of names){
+  const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title='Посмотреть '+name;
+  const img=document.createElement('img');img.src=ourGifUrl(name);img.alt=name;img.loading='lazy';
+  img.addEventListener('error',()=>{tile.disabled=true;tile.title='Файл недоступен';});
+  tile.append(img);
+  tile.addEventListener('click',()=>{
+   pinnedImg.src=ourGifUrl(name);
+   pinnedTitle.textContent=name===OUR_DEFAULT_GIF?'Наш GIF 💃':'Предпросмотр: '+name;
+   pinnedSubtitle.textContent=name===OUR_DEFAULT_GIF?'Закреплён в чате для всех посетителей сайта':'Выбранный предпросмотр виден только в этом браузере';
+   ensurePinnedGif();
+   note('GIF показан в нашем чате. Это просмотр из GitHub, без отправки сообщения.','send-note');
+  });
+  tiles.append(tile);
+ }
+ gallery.append(tiles);gallery.scrollTop=0;
 }
 function showTab(category){
- if(!Object.prototype.hasOwnProperty.call(cats,category))return;activeCat=category;
+ if(!cats[category])return;activeCat=category;
  for(const button of galleryTabs.querySelectorAll('button')){const active=button.dataset.category===category;button.classList.toggle('selected',active);button.setAttribute('aria-selected',String(active));}
  if(category==='ours'){showOurGifs();return;}
  gallery.replaceChildren();const ids=cats[category];galleryHint.textContent=ids.length+' элементов · Просмотр доступен всем. Для отправки нужен гостевой вход и разрешение сервера.';
