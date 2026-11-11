@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#c9c9c9">
+<meta name="description" content="ПыЛь_ДоРоГ FM — радио и чат слушателей">
+<title>ПыЛь_ДоРоГ FM — радио и чат</title>
+<link rel="preconnect" href="https://volnorez.com" crossorigin>
+<style>
+:root{color-scheme:light;--bg:#cacaca;--panel:#d7d7d7;--hi:#fff;--low:#888;--ink:#292929}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font:14px Arial,Helvetica,sans-serif;color:var(--ink)}
+body{background:linear-gradient(135deg,#e4e4e4,#bdbdbd);min-height:100dvh}
+button,a{font:inherit}a{color:#314c62}
+.app{min-height:100dvh;display:flex;flex-direction:column;gap:8px;padding:8px}
+.bevel{background:var(--panel);border-top:1px solid var(--hi);border-left:1px solid var(--hi);border-right:1px solid var(--low);border-bottom:1px solid var(--low);box-shadow:inset 1px 1px #ffffff70}
+.head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px;background:linear-gradient(#f0f0f0,#cecece)}
+.brand{font-weight:700;letter-spacing:.15px;padding:10px 12px;background:linear-gradient(#f5f5f5,#d6d6d6);border:1px solid #aaa;border-top-color:#fff;border-left-color:#fff}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.nav details{position:relative}
+.nav summary{list-style:none;cursor:pointer;min-width:165px;padding:9px 27px 9px 12px;background:linear-gradient(#f2f2f2,#d5d5d5);border:1px solid #888;border-top-color:#fff;border-left-color:#fff}
+.nav summary::-webkit-details-marker{display:none}
+.nav summary:after{content:'▾';position:absolute;right:10px;color:#555}
+.nav details[open] summary{background:#e4e4e4}
+.dropdown{position:absolute;left:0;top:calc(100% + 3px);z-index:20;width:max-content;max-width:min(300px,90vw);padding:6px;background:#dfdfdf;border:1px solid #999;box-shadow:2px 4px 12px #0003}
+.dropdown a{display:block;padding:9px 11px;text-decoration:none;color:#222;border-radius:3px}
+.dropdown a:hover,.dropdown a:focus-visible{background:#eee}
+.nav summary:focus-visible,.dropdown a:focus-visible,.direct:focus-visible{outline:2px solid #555;outline-offset:2px}
+.content{display:grid;grid-template-rows:auto minmax(510px,1fr);gap:8px;flex:1;min-height:0}
+.player{padding:10px;background:linear-gradient(#eee,#d3d3d3)}
+.section-title{margin:0 0 8px;font-size:14px;font-weight:700}
+.player-inner{min-height:68px;padding:8px;background:#e6e6e6;border:1px solid #909090;border-top-color:white;border-left-color:white}
+.chat-shell{min-height:0;padding:8px;background:linear-gradient(#dedede,#c7c7c7)}
+.chat-frame{height:100%;min-height:490px;position:relative;background:#d8d8d8;border:1px solid #888;border-top-color:#fff;border-left-color:#fff;padding:6px}
+#volnorez_chat{width:100%;height:100%;min-height:475px}
+/* Только серый интерфейс. К оригинальным изображениям, GIF и Lottie смайлов фильтры и transform не применяем. */
+#volnorez_chat .chat_cont{background:#e0e0e0 !important;color:#292929 !important}
+#volnorez_chat .chat_users_container{background:#d9d9d9 !important}
+#volnorez_chat .chat_history_container{background:#e0e0e0 !important}
+#volnorez_chat .chat_message_input,#volnorez_chat .chat_nick_input{background:#f3f3f3 !important;color:#222 !important}
+#volnorez_chat .chat_msg_text img,#volnorez_chat .chat_smileys img,#volnorez_chat .chat_bottom img{filter:none !important;transform:none !important;max-width:none;object-fit:contain}
+#volnorez_chat .chat_msg_text img{vertical-align:middle;float:none}
+.fallback{display:none;position:absolute;inset:6px;padding:16px;background:#d3d3d3;align-items:center;justify-content:center;text-align:center}
+.fallback.visible{display:flex}
+.fallback-card{max-width:450px;background:#ececec;border:1px solid #999;border-top-color:white;border-left-color:white;padding:20px;line-height:1.5}
+.fallback-card h2{margin:0 0 10px;font-size:17px}
+.direct{display:inline-block;margin-top:8px;padding:9px 12px;background:linear-gradient(#fff,#ccc);border:1px solid #999;color:#292929;text-decoration:none}
+.foot{font-size:12px;text-align:center;color:#555}
+@media(max-width:720px){.app{padding:4px;gap:5px}.head{gap:6px}.brand{width:100%;text-align:center}.nav{width:100%}.nav details{flex:1;min-width:0}.nav summary{min-width:0}.content{grid-template-rows:auto minmax(560px,1fr);gap:5px}.chat-frame{min-height:550px}#volnorez_chat{min-height:535px}.player,.chat-shell{padding:5px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="head bevel">
+<div class="brand">🎙️ ПыЛь_ДоРоГ FM — Радио и чат</div>
+<nav class="nav" aria-label="Ссылки радиостанции">
+<details><summary>Перейти на Волнорез</summary><div class="dropdown">
+<a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">💻 Обычный сайт</a>
+<a href="https://m.volnorez.com/pyl_dorog-fm" target="_blank" rel="noopener noreferrer">📱 Мобильная версия</a>
+</div></details>
+<details><summary>Разное</summary><div class="dropdown">
+<a href="https://vk.com/dust_dorogfm" target="_blank" rel="noopener noreferrer">📢 Группа ПыЛь_ДоРоГ FM</a>
+<a href="https://vk.com/topic-227352123_52478122" target="_blank" rel="noopener noreferrer">📝 Книга жалоб и предложений</a>
+<a href="https://vk.com/topic-227352123_52496434" target="_blank" rel="noopener noreferrer">🎵 Стол заказов</a>
+</div></details>
+</nav>
+</header>
+<main class="content">
+<section class="player bevel" aria-label="Плеер Волнореза">
+<h1 class="section-title">Онлайн-эфир станции</h1>
+<div class="player-inner">
+<div id="vplayer001e157d">
+            <a href="https://volnorez.com/pyl_dorog-fm" title="радио ПыЛь_ДоРоГ FM">радио ПыЛь_ДоРоГ FM</a>
+            <script async type="text/javascript"
+              src="https://volnorez.com/plugins/jscode/player_js/001e157d/%7B%22share%22%3A%22source%22%2C%22skin%22%3A%22skin2%22%2C%22style%22%3A%7B%22bg_clr%22%3A%22237%2C237%2C237%22%2C%22b_clr%22%3A%22179%2C179%2C179%22%2C%22icon_clr%22%3A%2266%2C66%2C66%22%2C%22ch%22%3A%2237%22%2C%22bg_clr1%22%3A%22243%2C243%2C243%22%2C%22bg_clr2%22%3A%22196%2C196%2C196%22%2C%22bg_clr3%22%3A%22183%2C183%2C183%22%2C%22bg_clr4%22%3A%22167%2C167%2C167%22%2C%22txt_clr%22%3A%22205%2C209%2C205%22%7D%7D">
+            </script>
+          </div>
+</div>
+</section>
+<section class="chat-shell bevel" aria-label="Чат Волнореза">
+<div class="chat-frame">
+<div
+            id="volnorez_chat"
+            data-code="001e157d"
+            data-skin-params="'bg_clr':'224,224,224','panel_clr':'214,214,214','ib_clr':'247,247,247','msgbg_clr':'239,239,239','omsgbg_clr':'231,231,231','txt_clr':'32,32,32','b_clr':'186,186,186','icon_clr':'108,108,108','label_clr':'78,78,78','dj_clr':'52,52,52'"
+            data-skin="skin_4">
+          </div>
+<div class="fallback" id="chat-fallback" role="status" aria-live="polite"><div class="fallback-card">
+<h2>Не удалось загрузить чат Волнореза</h2>
+<p>Внешний чат может быть недоступен из-за настроек браузера или ограничений сервиса. Родные смайлы работают только вместе с чатом Волнореза.</p>
+<a class="direct" href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Открыть оригинальный чат ↗</a>
+</div></div>
+</div></section>
+</main>
+<footer class="foot">ПыЛь_ДоРоГ FM · Оригинальный плеер и чат: Volnorez</footer>
+</div>
+<script async src="https://volnorez.com/plugins/jscode/chat_js"></script>
+<script>
+(function(){
+  const root=document.getElementById('volnorez_chat');
+  const fallback=document.getElementById('chat-fallback');
+  // Не подменяем чат самодельным: это сохранило бы вид, но не общие сообщения и не родные смайлы.
+  function verify(){
+    if(!root || !root.querySelector('.chat_cont,.vchat_cont,iframe,[class*="chat_"]')){
+      fallback.classList.add('visible');
+    }else{
+      fallback.classList.remove('visible');
+    }
+  }
+  // Даём внешнему скрипту время, а при позднем подключении убираем заглушку.
+  const watch=new MutationObserver(()=>{if(root.querySelector('.chat_cont,.vchat_cont,iframe,[class*="chat_"]'))fallback.classList.remove('visible')});
+  watch.observe(root,{childList:true,subtree:true});
+  window.setTimeout(verify,12000);
+  window.setTimeout(()=>watch.disconnect(),60000);
+  document.querySelectorAll('.nav details').forEach(d=>d.addEventListener('toggle',()=>{
+    if(d.open)document.querySelectorAll('.nav details').forEach(other=>{if(other!==d)other.open=false});
+  }));
+})();
+</script>
+</body>
+</html>
