@@ -1283,6 +1283,30 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .chat-dj-strip .dj-online{color:#555!important}
 .nick-action:hover,.person-action:hover{color:#111!important}
 
+
+/* v1.7 — лента сообщений ближе к Волнорезу: дата, время, группировка ников */
+.chatsurface .chat-day{margin:12px 0 9px;display:flex;align-items:center;gap:10px;color:#666;font-size:11px;text-align:center}
+.chatsurface .chat-day::before,.chatsurface .chat-day::after{content:"";height:1px;background:#c7c7c7;flex:1}
+.chatsurface .msg{background:transparent!important;padding:2px 4px 3px!important;border:0!important;overflow-wrap:anywhere}
+.chatsurface .msg.msg-first{padding-top:9px!important}
+.chatsurface .msg-head{display:flex;align-items:center;gap:3px;min-height:21px}
+.chatsurface .msg-head .nick-action{text-decoration:none;text-align:left;font-size:13px}
+.chatsurface .msg-body{display:flex;align-items:flex-start;gap:8px;min-width:0;padding-left:22px}
+.chatsurface .msg:not(.msg-first) .msg-body{padding-left:22px}
+.chatsurface .textbody{display:inline;min-width:0;flex:1;white-space:pre-wrap;overflow-wrap:anywhere}
+.chatsurface .msg-time{font-size:10px;color:#858585;line-height:20px;white-space:nowrap;margin-left:auto;flex-shrink:0;font-variant-numeric:tabular-nums}
+.chatsurface .msg .chat-role-icon{flex:none;margin-right:1px;min-width:19px}
+.chatsurface .msg-head-spacer{display:inline-block;width:19px;flex-shrink:0}
+@media(max-width:500px){.chatsurface .msg-body{padding-left:10px}.chatsurface .msg:not(.msg-first) .msg-body{padding-left:10px}}
+
+/* Настройка звука личных сообщений — серое оформление Волнореза */
+.chat-options{margin:8px 0;border:1px solid #999;background:#d6d6d6;padding:8px}
+.chat-options[hidden]{display:none}
+.chat-options .chat-checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;font:13px Arial,sans-serif;color:#333}
+.chat-options input[type=checkbox]{width:16px;height:16px;accent-color:#777}
+.chat-options .sound-preview{margin-top:8px;padding:6px 10px}
+.chat-options .sound-help{display:block;margin-top:6px;color:#555;font-size:12px}
+.chat-options-toggle{font-size:13px}
 </style>
 </head>
 <body><div id="nickPopover" class="nick-popover" hidden role="dialog" aria-label="Действия с ником"><strong id="nickSelected"></strong><button type="button" id="mentionSelected">Написать @нику</button><button type="button" id="copySelected">Скопировать ник</button><button type="button" id="closeNick">Закрыть</button></div><div class="wrap">
@@ -1293,14 +1317,20 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
   <div class="airitem" id="airTrackBox" hidden><span class="airlabel">🎵 Сейчас играет</span><span id="airTrack" class="airvalue"></span></div>
 </div>
 <div class="airfoot"><span id="airStatus" role="status">Информация об эфире: проверяем источник…</span><button type="button" id="refreshAir" title="Обновить сведения об эфире">Обновить сведения</button><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener">Смотреть эфир на Волнорезе</a></div></section>
-<section class="bevel"><div class="head"><h2>💬 Оригинальный HTML5-чат Волнореза</h2><div class="controls"><button id="connect">Подключить гостевой чат</button><button id="disconnect" disabled>Отключить</button></div></div>
-<div id="status" class="state" role="status">Не подключено</div>
+<section class="bevel"><div class="head"><h2>💬 Чат Волнореза — серый стиль</h2><div class="controls"><button id="connect">Подключить снова</button><button id="disconnect" disabled>Отключить</button></div></div>
+<div class="controls"><button id="chatOptionsToggle" type="button" class="chat-options-toggle" aria-controls="chatOptions" aria-expanded="false">⚙ Настройки чата</button></div>
+<div id="chatOptions" class="chat-options" hidden>
+  <label class="chat-checkbox-row"><input id="personalSoundEnabled" type="checkbox" checked><span>Звук личных сообщений</span></label>
+  <button id="personalSoundTest" type="button" class="sound-preview">▶ Проверить звук</button>
+  <span class="sound-help">Звук включается только для входящих личных сообщений, если Волнорез передаёт их этому подключению. Общие сообщения не озвучиваются.</span>
+</div>
+<div id="status" class="state" role="status">Подключение к чату…</div>
 <div class="login-strip" id="loginStrip"><div class="controls"><label for="nickname">Твой ник:</label><input id="nickname" maxlength="30" placeholder="Имя в чате" autocomplete="nickname" disabled><button id="guestLogin" disabled>Войти гостем</button><span class="muted" id="myIdentity">Не авторизован в чате</span></div></div>
 <div class="chat-grid">
-<div><div class="column-title">Сообщения <span class="count" id="msgCount"></span></div><div id="chatDjStrip" class="chat-dj-strip" hidden><span class="dj-label">🎙️ Ведущий в эфире:</span><button id="chatDjName" class="dj-name" type="button" data-chat-nick="" title="Нажми, чтобы обратиться к ведущему"></button><span class="dj-online">● В эфире</span></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">После подключения здесь появятся сообщения, если сервер разрешает гостевое чтение.</div></div></div>
-<div><div class="column-title">👥 Участники <span class="count" id="userCount"></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
+<div><div class="column-title">Сообщения <span class="count" id="msgCount" hidden></span></div><div id="chatDjStrip" class="chat-dj-strip" hidden><span class="dj-label">🎙️ Ведущий в эфире:</span><button id="chatDjName" class="dj-name" type="button" data-chat-nick="" title="Нажми, чтобы обратиться к ведущему"></button><span class="dj-online">● В эфире</span></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">Загружаем сообщения из чата Волнореза…</div></div></div>
+<div><div class="column-title">👥 Участники <span class="count" id="userCount" hidden></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
-<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><textarea id="messageInput" rows="2" maxlength="1000" placeholder="Сначала подключись и войди гостем…" disabled></textarea><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><button type="button" id="emotesButton">😊 Смайлы — оригинальные разделы</button><span class="muted" id="sendState">Отправка станет доступна только после подтверждения входа сервером.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. Для «Анимашек» требуются локальные .lottie-файлы в assets/volnorez-lottie/.</p><div class="gallery-grid" id="galleryGrid"></div></section></form>
+<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><textarea id="messageInput" rows="2" maxlength="1000" placeholder="Для отправки войди гостем…" disabled></textarea><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><button type="button" id="emotesButton">😊 Смайлы — оригинальные разделы</button><span class="muted" id="sendState">Отправка станет доступна только после подтверждения входа сервером.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. Для «Анимашек» требуются локальные .lottie-файлы в assets/volnorez-lottie/.</p><div class="gallery-grid" id="galleryGrid"></div></section></form>
 <p class="muted">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
 <div class="notice"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
@@ -1317,6 +1347,50 @@ const $=id=>document.getElementById(id);
 const E={connect:$('connect'),disconnect:$('disconnect'),login:$('guestLogin'),nick:$('nickname'),identity:$('myIdentity'),status:$('status'),log:$('log'),messages:$('messages'),users:$('users'),msgCount:$('msgCount'),userCount:$('userCount'),form:$('sendForm'),input:$('messageInput'),send:$('sendButton'),sendState:$('sendState'),emotes:$('emotesButton'),picker:$('smilesPicker')};
 let socket=null,authorized=false,currentUser=null,salt='',attempts=0,historySize=0,roster=new Map(),pending=false,initDone=false,initTimer=null;
 let stopped=true,retryTimer=null,retryCount=0,loginTimer=null,guestAllowed=null;
+// Настройка хранится только в браузере; никаких служебных данных на сервер не отправляется.
+const soundOption=$('personalSoundEnabled');
+const optionsBox=$('chatOptions');
+const optionsToggle=$('chatOptionsToggle');
+const soundTest=$('personalSoundTest');
+try{const previous=localStorage.getItem('pylfm_personal_sound');if(previous!==null)soundOption.checked=previous==='1';}catch{}
+optionsToggle.addEventListener('click',()=>{optionsBox.hidden=!optionsBox.hidden;optionsToggle.setAttribute('aria-expanded',String(!optionsBox.hidden));});
+soundOption.addEventListener('change',()=>{try{localStorage.setItem('pylfm_personal_sound',soundOption.checked?'1':'0');}catch{}});
+let audioContext=null;
+function playPersonalSound(force=false){
+ if(!force&&!soundOption.checked)return;
+ try{
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtx)return;
+  if(!audioContext)audioContext=new AudioCtx();
+  if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
+  const now=audioContext.currentTime;
+  for(const [i,hz] of [660,880].entries()){
+   const osc=audioContext.createOscillator();const gain=audioContext.createGain();
+   const start=now+i*.17;
+   osc.type='sine';osc.frequency.value=hz;
+   gain.gain.setValueAtTime(.0001,start);
+   gain.gain.exponentialRampToValueAtTime(.045,start+.012);
+   gain.gain.exponentialRampToValueAtTime(.0001,start+.13);
+   osc.connect(gain);gain.connect(audioContext.destination);osc.start(start);osc.stop(start+.14);
+  }
+ }catch(e){log('Звуковое уведомление недоступно: '+e.message);}
+}
+soundTest.addEventListener('click',()=>playPersonalSound(true));
+function notifyIfPrivate(payload,cmd){
+ // Уведомляем лишь о явно помеченном личном входящем сообщении.
+ const m=payload?.msg||payload?.message||payload;
+ if(!m||typeof m!=='object')return;
+ const explicitCmd=['private_message','add_private_msg','add_private_message','new_private_message','add_pm'].includes(cmd);
+ const explicitFlag=m.private===true||m.is_private===true||m.isPrivate===true||m.chat_type==='private'||m.scope==='private';
+ if(!explicitCmd&&!explicitFlag)return;
+ const myId=currentUser?.id??currentUser?.uid;
+ const senderId=m.uid??m.from_id??m.sender_id??m.user?.id;
+ if(myId!=null&&senderId!=null&&String(myId)===String(senderId))return;
+ const target=m.to_id??m.recipient_id??m.target_id;
+ if(target!=null&&myId!=null&&String(target)!==String(myId))return;
+ playPersonalSound();
+}
+
 const retryDelays=[2000,4000,8000,15000,30000];
 const videoObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
  for(const entry of entries){const v=entry.target;
@@ -1393,22 +1467,59 @@ function updateChatDJ(){
  button.dataset.chatNick=currentAirHost;
  /* Имя в эфире отображается отдельно. Оно не изменяет роли, иконки и жирность ника. */
 }
+/* В оригинале Волнореза сообщения одного участника за день идут группой.
+   Данные роли, ника и времени берём только из сервера — ничего не подставляем вручную. */
+let lastShownMessage=null;
+function messageDate(raw){
+ const value=Number(raw);
+ if(!Number.isFinite(value)||value<=0)return null;
+ const milliseconds=value<100000000000?value*1000:value;
+ const date=new Date(milliseconds);
+ return Number.isNaN(date.getTime())?null:date;
+}
+function localDayKey(date){
+ return date?`${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`:'';
+}
 function showMessage(m){
  if(!m||typeof m!=='object')return;
  const first=E.messages.querySelector('.muted');
  if(first&&E.messages.children.length===1)E.messages.replaceChildren();
- const d=document.createElement('div');d.className='msg';
- const n=document.createElement('button');n.type='button';n.className='nick nick-action';
- n.textContent=safe(m.nick||m.user?.nick||m.username||m.user_name,100)||'Слушатель';
- n.dataset.chatNick=n.textContent;
+ const nick=safe(m.nick||m.user?.nick||m.username||m.user_name,100)||'Слушатель';
+ const uid=String(m.uid??m.user?.id??m.user_id??nick);
+ const when=messageDate(m.time??m.timestamp??m.created_at);
+ const dateKey=localDayKey(when);
+ // При отсутствии времени не делаем вывод о дате или соседних сообщениях.
+ if(when&&(!lastShownMessage||lastShownMessage.day!==dateKey)){
+  const separator=document.createElement('div');separator.className='chat-day';
+  separator.textContent=new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',year:'numeric'}).format(when);
+  E.messages.append(separator);
+ }
+ const grouped=!!(lastShownMessage&&dateKey&&lastShownMessage.day===dateKey&&lastShownMessage.uid===uid);
+ const d=document.createElement('div');d.className='msg'+(grouped?'':' msg-first');
  let type=m.utype??m.user?.type??m.type;
- if(type==null){const member=[...roster.values()].find(u=>comparableNick(u.nick)===comparableNick(n.textContent));type=member?.type;}
- const role=roleFromType(type);styleRole(n,role);
- const icon=iconForRole(role);if(icon)d.append(icon);
- const b=document.createElement('span');b.className='textbody';b.append(document.createTextNode(': '));
- appendRich(b,m.text??m.message??m.msg??m.body??'');d.append(n,b);
- E.messages.append(d);historySize++;E.msgCount.textContent='('+historySize+')';
- while(E.messages.children.length>180)E.messages.firstChild.remove();
+ if(type==null){const member=[...roster.values()].find(u=>comparableNick(u.nick)===comparableNick(nick));type=member?.type;}
+ const role=roleFromType(type);
+ if(!grouped){
+  const head=document.createElement('div');head.className='msg-head';
+  const roleIcon=iconForRole(role);
+  if(roleIcon)head.append(roleIcon);
+  else {const spacer=document.createElement('span');spacer.className='msg-head-spacer';spacer.setAttribute('aria-hidden','true');head.append(spacer);}
+  const n=document.createElement('button');n.type='button';n.className='nick nick-action';
+  n.textContent=nick;n.dataset.chatNick=nick;styleRole(n,role);head.append(n);d.append(head);
+ }
+ const body=document.createElement('div');body.className='msg-body';
+ const content=document.createElement('span');content.className='textbody';
+ appendRich(content,m.text??m.message??m.msg??m.body??'');body.append(content);
+ if(when){
+  const t=document.createElement('time');t.className='msg-time';
+  t.dateTime=when.toISOString();t.textContent=new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit',hour12:false}).format(when);
+  body.append(t);
+ }
+ d.append(body);E.messages.append(d);
+ lastShownMessage={day:dateKey,uid};
+ historySize++;E.msgCount.textContent='('+historySize+')';
+ // Число сообщений ограничено, включая разделители дат.
+ while(E.messages.children.length>220)E.messages.firstChild.remove();
  E.messages.scrollTop=E.messages.scrollHeight;
 }
 function userKey(u){return String(u?.id??u?.uid??u?.nick??'');}
@@ -1442,8 +1553,9 @@ function failSend(t){pending=false;updateButtons();note(t,'send-error');log(t);}
 function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получено событие не в JSON.');return;}if(!obj||typeof obj!=='object')return;const cmd=String(obj.cmd||'неизвестно');
  switch(cmd){
  case 'initialize':salt=typeof obj.salt==='string'?obj.salt:'';initDone=true;retryCount=0;clearTimeout(initTimer);initTimer=null;info('✅ Чтение чата подключено. Можно войти гостем.','ok');updateButtons();break;
- case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;placeholder(E.messages,'История пуста.');arr.slice(-180).forEach(showMessage);log('История: '+arr.length+' сообщений');break;}
- case 'add_msg':showMessage(obj.msg);log('Новое сообщение');break;
+ case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;lastShownMessage=null;placeholder(E.messages,'История пуста.');arr.slice(-180).forEach(showMessage);log('История: '+arr.length+' сообщений');break;}
+ case 'add_msg':showMessage(obj.msg);notifyIfPrivate(obj,'add_msg');log('Новое сообщение');break;
+ case 'private_message':case 'add_private_msg':case 'add_private_message':case 'new_private_message':case 'add_pm':notifyIfPrivate(obj,cmd);log('Личное сообщение от сервера');break;
  case 'set_users_list':{const arr=Array.isArray(obj.users)?obj.users:[];roster.clear();arr.forEach(u=>{if(u&&typeof u==='object')roster.set(userKey(u),u);});renderUsers();log('Участники: '+roster.size);break;}
  case 'add_user':case 'update_user':{const u=obj.user;if(u&&typeof u==='object'){roster.set(userKey(u),u);renderUsers();}break;}
  case 'remove_user':{const u=obj.user;if(u&&typeof u==='object'){roster.delete(userKey(u));renderUsers();}break;}
@@ -1458,6 +1570,7 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  }
 }
 function resetAccess(){
+ lastShownMessage=null;
  authorized=false;currentUser=null;initDone=false;pending=false;clearTimeout(initTimer);initTimer=null;
  clearTimeout(loginTimer);loginTimer=null;E.identity.textContent='Не авторизован';updateButtons();
 }
@@ -1589,6 +1702,9 @@ async function refreshAir(){const status=$('airStatus');$('refreshAir').disabled
 $('refreshAir').addEventListener('click',refreshAir);
 refreshAir();setInterval(()=>{if(!document.hidden)refreshAir();},60000);
 
-updateButtons();log('Готово. Подключи чат, затем нажми «Войти гостем».');
+stopped=false;
+updateButtons();
+connect(true);
+log('Автоподключение к чату запущено. Для отправки нажми «Войти гостем».');
 })();
 </script></body></html>
