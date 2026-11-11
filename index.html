@@ -1195,7 +1195,7 @@ width: 99px;
 height:99px;
 }
 
-.gallery{margin-top:9px;background:#f1f1f1;border:1px solid #999;padding:8px}.gallery[hidden]{display:none}.gallery-tabs{display:flex;flex-wrap:wrap;gap:5px;border-bottom:1px solid #aaa;padding-bottom:7px}.gallery-tabs button{padding:7px 10px}.gallery-tabs button.selected{background:#bdbdbd;font-weight:bold;border-color:#666}.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(85px,1fr));gap:8px;max-height:335px;overflow-y:auto;padding:10px 3px}.gallery-tile{min-width:0;height:96px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;background:#fff;border:1px solid #aaa;padding:6px;overflow:hidden}.gallery-tile:hover{border-color:#444;background:#e6e6e6}.gallery-tile .smiley{max-width:none;max-height:none;transform:scale(.65);transform-origin:center}.gallery-tile .smiley-media{width:70px;height:65px;max-width:70px;max-height:65px;object-fit:contain}.gallery-tile .lottie-holder{width:65px;height:65px}.gallery-tile dotlottie-wc{width:65px;height:65px}.gallery-code{font:11px Consolas,monospace;color:#555}.gallery-tile:disabled{opacity:.85}.lottie-holder{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:64px;height:64px;min-width:50px;min-height:50px}.smiley-lottie{display:block;width:100%;height:100%}.textbody dotlottie-wc{width:55px;height:55px}.gallery .muted{margin:6px 2px}.gallery-fallback{font-size:11px}.gallery-notice{color:#6a4b0d}
+.gallery{margin-top:9px;background:#f1f1f1;border:1px solid #999;padding:8px}.gallery[hidden]{display:none}.gallery-tabs{display:flex;flex-wrap:wrap;gap:5px;border-bottom:1px solid #aaa;padding-bottom:7px}.gallery-tabs button{padding:7px 10px}.gallery-tabs button.selected{background:#bdbdbd;font-weight:bold;border-color:#666}.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(85px,1fr));gap:8px;max-height:335px;overflow-y:auto;padding:10px 3px}.gallery-tile{min-width:0;height:82px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;background:#fff;border:1px solid #aaa;padding:6px;overflow:hidden}.gallery-tile:hover{border-color:#444;background:#e6e6e6}.gallery-tile .smiley{max-width:none;max-height:none;transform:scale(.65);transform-origin:center}.gallery-tile .smiley-media{width:70px;height:65px;max-width:70px;max-height:65px;object-fit:contain}.gallery-tile .lottie-holder{width:65px;height:65px}.gallery-tile dotlottie-wc{width:65px;height:65px}.gallery-code,.gallery-tile .smile-code,.gallery-tile [data-smile-code]{display:none !important}.gallery-tile:disabled{opacity:.85}.lottie-holder{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:64px;height:64px;min-width:50px;min-height:50px}.smiley-lottie{display:block;width:100%;height:100%}.textbody dotlottie-wc{width:55px;height:55px}.gallery .muted{margin:6px 2px}.gallery-fallback{font-size:11px}.gallery-notice{color:#6a4b0d}
 
 /* Оригинальная прямоугольная компоновка, но в холодной серой гамме */
 :root{--panel:#d5d5d5;--line:#858585;--inset:#f6f6f6;background:#c9c9c9;color:#242424}
@@ -1308,18 +1308,18 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .chat-options .sound-help{display:block;margin-top:6px;color:#555;font-size:12px}
 .chat-options-toggle{font-size:13px}
 
-/* ПыЛь_ДоРоГ FM v2.1 — компактный чат для ПК.
+/* ПыЛь_ДоРоГ FM v2.6 — широкий компактный чат для ПК.
    Только размеры: JS, авторизация, сортировка, GIF и Lottie не изменены. */
 @media (min-width: 681px) {
   .chat-grid,
   #sendForm {
-    width: 900px;
+    width: 1100px;
     max-width: 100%;
     margin-left: auto;
     margin-right: auto;
   }
   .chat-grid {
-    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-columns: minmax(0, 1fr) 240px;
     height: 310px;
     min-height: 0;
     grid-template-rows: minmax(0, 1fr);
@@ -1351,6 +1351,26 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
   }
   #sendForm > .controls { padding-top: 3px; }
 }
+
+/* ПыЛь_ДоРоГ FM v2.4: убираем служебные панели из интерфейса слушателя.
+   Элементы остаются в DOM: их использует действующий JS гостевого входа,
+   подключения чата и получения сведений об эфире. */
+#loginStrip,
+#connect,
+#disconnect,
+.airfoot,
+#technicalExplanation,
+#outdatedWarning,
+#diagnosticsSection,
+#galleryHint,
+.footer { display:none !important; }
+/* Успешный вход/отправка не занимают место. Ошибки показываем. */
+#status, #sendState { display:none !important; }
+#status.bad { display:block !important; }
+#sendState.send-error { display:inline-block !important; }
+/* Не оставляем пустой ряд под строкой отправки. */
+#sendForm > .controls { padding:0; min-height:0; }
+
 </style>
 <style>
 /* v2.2 — поле → смайлы → Отправить, крайний элемент справа */
@@ -1369,7 +1389,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
   <div class="airitem" id="airListenersBox" hidden><span class="airlabel">🎧 Слушают</span><span id="airListeners" class="airvalue"></span></div>
 </div>
 <div class="airfoot"><span id="airStatus" role="status">Информация об эфире: проверяем источник…</span><button type="button" id="refreshAir" title="Обновить сведения об эфире">Обновить сведения</button><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener">Смотреть эфир на Волнорезе</a></div></section>
-<section class="bevel"><div class="head"><h2>💬 Чат Волнореза — серый стиль</h2><div class="controls"><button id="connect">Подключить снова</button><button id="disconnect" disabled>Отключить</button></div></div>
+<section class="bevel"><div class="controls"><button id="connect">Подключить снова</button><button id="disconnect" disabled>Отключить</button></div>
 <div class="controls"><button id="chatOptionsToggle" type="button" class="chat-options-toggle" aria-controls="chatOptions" aria-expanded="false">⚙ Настройки чата</button></div>
 <div id="chatOptions" class="chat-options" hidden>
   <label class="chat-checkbox-row"><input id="personalSoundEnabled" type="checkbox" checked><span>Звук личных сообщений</span></label>
@@ -1383,10 +1403,10 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 <div><div class="column-title">👥 Участники <span class="count" id="userCount" hidden></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
 <form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><textarea id="messageInput" rows="2" maxlength="1000" placeholder="Автоматический вход в чат…" disabled></textarea><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. Для «Анимашек» требуются локальные .lottie-файлы в assets/volnorez-lottie/.</p><div class="gallery-grid" id="galleryGrid"></div></section></form>
-<p class="muted">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
-<div class="notice"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
+<p class="muted" id="technicalExplanation">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
+<div class="notice" id="outdatedWarning"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
-<section class="bevel"><div class="head"><h2>🔎 Диагностика соединения</h2><button id="copy">Скопировать журнал</button></div><div class="log" id="log" aria-live="polite"></div></section>
+<section class="bevel" id="diagnosticsSection"><div class="head"><h2>🔎 Диагностика соединения</h2><button id="copy">Скопировать журнал</button></div><div class="log" id="log" aria-live="polite"></div></section>
 <div class="footer">ПыЛь_ДоРоГ FM · HTML5-чат с гостевым входом · Неофициальный клиент</div>
 </div>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@lottiefiles/dotlottie-wc@0/dist/dotlottie-wc.js"></script>
@@ -1462,7 +1482,7 @@ function safe(t,n=1500){return (typeof t==='string'||typeof t==='number')?String
 function placeholder(node,t){node.replaceChildren();const e=document.createElement('div');e.className='muted';e.textContent=t;node.append(e);}
 function socketSend(payload){if(!socket||socket.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(payload));return true;}
 function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!initDone;E.input.disabled=!online||!authorized;E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
-function smileNode(id){const s=SMILES[id];if(!s){const text=document.createElement('span');text.textContent='%'+id+'%';return text;}
+function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=document.createElement('span');text.textContent=inGallery?'Смайл недоступен':'%'+id+'%';return text;}
  if(s.kind==='lottie'){
   // .lottie is a compressed animation, not an image: it requires a registered player.
   const wrapper=document.createElement('span');wrapper.className='lottie-holder';
@@ -1471,7 +1491,7 @@ function smileNode(id){const s=SMILES[id];if(!s){const text=document.createEleme
   el.setAttribute('title','Анимашка '+id);el.setAttribute('aria-label','Анимашка '+id);
   el.addEventListener('loadError',()=>{
     wrapper.replaceChildren();const fallback=document.createElement('span');
-    fallback.className='gallery-fallback';fallback.textContent='Файл анимашки %'+id+'% недоступен';wrapper.append(fallback);
+    fallback.className='gallery-fallback';fallback.textContent=inGallery?'Анимашка недоступна':'Файл анимашки %'+id+'% недоступен';wrapper.append(fallback);
   });
   wrapper.append(el);return wrapper;
  }
@@ -1479,13 +1499,13 @@ function smileNode(id){const s=SMILES[id];if(!s){const text=document.createEleme
   const video=document.createElement('video');video.className='smiley-media';
   video.dataset.src=s.file;video.loop=true;video.preload='metadata';video.muted=true;
   video.playsInline=true;video.setAttribute('playsinline','');video.setAttribute('aria-label','Анимация '+id);
-  video.addEventListener('error',()=>{const fallback=document.createElement('span');fallback.className='gallery-fallback';fallback.textContent='Анимация %'+id+'% недоступна';video.replaceWith(fallback);});
+  video.addEventListener('error',()=>{const fallback=document.createElement('span');fallback.className='gallery-fallback';fallback.textContent=inGallery?'Анимация недоступна':'Анимация %'+id+'% недоступна';video.replaceWith(fallback);});
   if(videoObserver)videoObserver.observe(video);
   else {video.src=s.file;video.play().catch(()=>{});}
   return video;
  }
  if(s.cls){const el=document.createElement('span');el.className='smiley msg-smile '+s.cls;el.title='Смайл '+id;el.setAttribute('role','img');el.setAttribute('aria-label','Смайл '+id);return el;}
- const img=document.createElement('img');img.className='smiley-media';img.src=s.file;img.loading='lazy';img.alt='Смайл '+id;img.addEventListener('error',()=>{img.replaceWith(document.createTextNode('%'+id+'%'));});return img;
+ const img=document.createElement('img');img.className='smiley-media';img.src=s.file;img.loading='lazy';img.alt='Смайл '+id;img.addEventListener('error',()=>{img.replaceWith(document.createTextNode(inGallery?'Смайл недоступен':'%'+id+'%'));});return img;
 }
 function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));const b=document.createElement('button');b.type='button';b.className='chat-smile-action';b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';b.append(smileNode(m[1]));target.append(b);p=m.index+m[0].length;}if(p<str.length)target.append(document.createTextNode(str.slice(p)));}
 let currentAirHost='';
@@ -1712,17 +1732,23 @@ function showTab(category){
   setTimeout(()=>{if(activeCat==='animashki'&&!customElements.get('dotlottie-wc'))galleryHint.textContent='Проигрыватель анимашек не загрузился с CDN. Проверь интернет, блокировщики и консоль браузера.';},7000);
  }
 
- // Load gallery incrementally to avoid autoplay of hundreds of MP4 videos.
- const renderToken=++tabToken;let offset=0;
- const sentinel=document.createElement('button');sentinel.type='button';sentinel.className='gallery-tile';sentinel.textContent='Ещё смайлы…';
- function more(){if(tabToken!==renderToken)return;const chunk=ids.slice(offset,offset+24);offset+=chunk.length;
-  for(const id of chunk){const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile';tile.title='Смайл %'+id+'%';const preview=smileNode(id);tile.append(preview);const code=document.createElement('span');code.className='gallery-code';code.textContent='%'+id+'%';tile.append(code);
-   tile.addEventListener('click',()=>{if(!authorized){note('Смайл виден в гостевом режиме. Чтобы отправить его, сначала войди гостем.','send-note');return;}const t='%'+id+'%';E.input.setRangeText(t,E.input.selectionStart,E.input.selectionEnd,'end');E.input.focus();note('Смайл добавлен в сообщение.');});
-   gallery.append(tile);
-  }
-  if(offset<ids.length){sentinel.remove();gallery.append(sentinel);}else sentinel.remove();
+ // Все смайлы выбранной вкладки доступны сразу, без кнопки «Ещё смайлы».
+ // При этом видео загружаются и воспроизводятся только рядом с видимой областью
+ // благодаря videoObserver, а изображения используют loading="lazy".
+ ++tabToken;
+ const tiles=document.createDocumentFragment();
+ for(const id of ids){
+  const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile';tile.title='Выбрать смайл';
+  const preview=smileNode(id,true);tile.append(preview);
+  // Код смайла не показываем в каталоге; он используется при нажатии.
+  tile.addEventListener('click',()=>{
+   if(!authorized){note('Смайл виден в гостевом режиме. Чтобы отправить его, сначала войди гостем.','send-note');return;}
+   const t='%'+id+'%';E.input.setRangeText(t,E.input.selectionStart,E.input.selectionEnd,'end');E.input.focus();note('Смайл добавлен в сообщение.');
+  });
+  tiles.append(tile);
  }
- sentinel.addEventListener('click',more);more();
+ gallery.append(tiles);
+ gallery.scrollTop=0;
 }
 galleryTabs.addEventListener('click',e=>{const btn=e.target.closest('button[data-category]');if(btn)showTab(btn.dataset.category);});
 E.emotes.addEventListener('click',()=>{E.picker.hidden=!E.picker.hidden;if(!E.picker.hidden)showTab(activeCat);});
