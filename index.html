@@ -1244,7 +1244,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .chat-smile-action .lottie-holder,.chat-smile-action .smiley-media{pointer-events:none}
 .nick-popover{position:fixed;z-index:10000;max-width:min(310px,92vw);border:1px solid #777;box-shadow:2px 3px 8px #666;background:#f0f0f0;padding:8px;display:grid;gap:6px}
 .nick-popover[hidden]{display:none}.nick-popover strong{font-size:14px;overflow-wrap:anywhere}.nick-popover button{padding:8px;background:#ddd;border:1px solid #888;cursor:pointer}
-.airmeta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 8px}
+.airmeta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:12px 0 8px}
 .airmeta .airitem{background:#f1f1f1;border:1px solid #aaa;padding:10px;min-height:70px;overflow-wrap:anywhere}
 .airmeta .airlabel{display:block;color:#555;font-size:12px;margin-bottom:6px}
 .airmeta .airvalue{font-weight:bold;color:#252525;font-size:14px}
@@ -1366,6 +1366,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
   <div class="airitem" id="airHostBox" hidden><span class="airlabel">🎙️ Ведущий в эфире</span><span id="airHost" class="airvalue"></span></div>
   <div class="airitem" id="airTopicBox" hidden><span class="airlabel">📢 Тема эфира</span><span id="airTopic" class="airvalue"></span></div>
   <div class="airitem" id="airTrackBox" hidden><span class="airlabel">🎵 Сейчас играет</span><span id="airTrack" class="airvalue"></span></div>
+  <div class="airitem" id="airListenersBox" hidden><span class="airlabel">🎧 Слушают</span><span id="airListeners" class="airvalue"></span></div>
 </div>
 <div class="airfoot"><span id="airStatus" role="status">Информация об эфире: проверяем источник…</span><button type="button" id="refreshAir" title="Обновить сведения об эфире">Обновить сведения</button><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener">Смотреть эфир на Волнорезе</a></div></section>
 <section class="bevel"><div class="head"><h2>💬 Чат Волнореза — серый стиль</h2><div class="controls"><button id="connect">Подключить снова</button><button id="disconnect" disabled>Отключить</button></div></div>
@@ -1746,25 +1747,113 @@ document.addEventListener('click',event=>{
  if(!nickPopup.hidden&&!event.target.closest('#nickPopover'))closeNickPopup();
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeNickPopup();});
-/* Обновляемые публичные метаданные с GitHub Pages (никаких персональных токенов) */
-let lastAirUpdate='';const airFields=[['host','airHost','airHostBox'],['topic','airTopic','airTopicBox'],['track','airTrack','airTrackBox']];
-async function refreshAir(){const status=$('airStatus');$('refreshAir').disabled=true;
- try{const url='./data/onair.json?cache='+Date.now();const resp=await fetch(url,{cache:'no-store'});
- if(!resp.ok)throw new Error('HTTP '+resp.status);
- const data=await resp.json();if(!data||typeof data!=='object')throw new Error('Неверный ответ');
- const stamp=Date.parse(data.updated_at||'');const age=Date.now()-stamp;
- if(!Number.isFinite(stamp)||age< -300000||age>20*60*1000)throw new Error('данные устарели');
- for(const [key,id,box] of airFields){const value=safe(data[key],200).trim();$(id).textContent=value;$(box).hidden=!value;}
- const any=airFields.some(([key])=>safe(data[key],200).trim());
- currentAirHost=safe(data.host,100).trim();updateChatDJ();
- lastAirUpdate=data.updated_at;
- status.textContent=any?'Данные эфира обновлены: '+new Date(stamp).toLocaleTimeString('ru-RU'):'Сейчас ведущий, тема и трек не указаны на Волнорезе.';
- }catch(e){for(const [,id,box] of airFields){$(id).textContent='';$(box).hidden=true;}
- currentAirHost='';updateChatDJ();
- status.textContent='Сведения об эфире недоступны ('+String(e.message).slice(0,55)+'). Нужна настройка GitHub Actions.';
- }finally{$('refreshAir').disabled=false;}}
-$('refreshAir').addEventListener('click',refreshAir);
-refreshAir();setInterval(()=>{if(!document.hidden)refreshAir();},60000);
+/* v2.3: публичные данные эфира через WebSocket; GitHub JSON — резерв.
+   Отдельный аудиопоток никогда не включаем. HAR подтверждает add_player
+   с paused:false, но получение set_desc при paused:true нужно проверить живьём. */
+const LIVE_META_URL='wss://s05.volnorez.com/live-app/869683';
+const airFields=[['host','airHost','airHostBox'],['topic','airTopic','airTopicBox'],['track','airTrack','airTrackBox']];
+let liveMetaSocket=null, liveMetaRetry=null, liveMetaAttempt=0;
+let liveMetaUpdated=0, liveMetaConnected=false, lastAirUpdate='';
+let liveMetaStopped=false;
+function setAirField(key,value){
+ const found=airFields.find(x=>x[0]===key);if(!found)return;
+ const [,id,box]=found;const text=safe(value,250).trim();
+ $(id).textContent=text;$(box).hidden=!text;
+}
+function showAirData(data,origin){
+ for(const [key] of airFields)setAirField(key,data[key]);
+ currentAirHost=safe(data.host||'',100).trim();updateChatDJ();
+ $('airStatus').textContent=origin==='live'
+  ? 'Сведения об эфире: прямое подключение к Волнорезу'
+  : 'Сведения об эфире: резервные данные GitHub';
+}
+function parseAirDesc(desc){
+ if(!desc||typeof desc!=='object')return null;
+ const online=String(desc.status||'').toLowerCase();
+ // Не показываем старые ники и названия песен после явного офлайна.
+ if(online==='offline'||online==='limited')return {host:'',topic:'',track:''};
+ const hosts=Array.isArray(desc.rjs)?desc.rjs:[];
+ const host=hosts.map(h=>typeof h==='string'?h:(h?.nick||h?.name||'')).filter(Boolean).join(', ');
+ const songs=Array.isArray(desc.music)?desc.music:[];
+ const track=songs.map(m=>typeof m==='string'?m:(m?.title||m?.name||'')).filter(Boolean).join(' · ');
+ return {host,topic:desc.air_desc||'',track};
+}
+function parseLiveFrame(frame){
+ let obj;try{obj=JSON.parse(frame);}catch{return;}
+ if(!obj||typeof obj!=='object')return;
+ if(obj.cmd==='set_desc'){
+  const info=parseAirDesc(obj.desc);
+  if(!info)return;
+  liveMetaUpdated=Date.now();showAirData(info,'live');
+ }else if(obj.cmd==='counter'&&obj.val!==undefined){
+  const n=Number(obj.val);
+  if(Number.isFinite(n)&&n>=0){
+   $('airListeners').textContent=String(Math.floor(n));
+   $('airListenersBox').hidden=false;
+  }
+ }
+}
+let airBackupBusy=false;
+async function refreshAir(){
+ if(airBackupBusy)return;
+ // Прямой источник имеет приоритет — JSON не должен затирать свежие события.
+ if(liveMetaUpdated&&Date.now()-liveMetaUpdated<120000)return;
+ airBackupBusy=true;
+ try{
+  const resp=await fetch('./data/onair.json?cache='+Date.now(),{cache:'no-store'});
+  if(!resp.ok)throw new Error('HTTP '+resp.status);
+  const data=await resp.json();if(!data||typeof data!=='object')throw new Error('Неверный ответ');
+  const stamp=Date.parse(data.updated_at||'');
+  if(!Number.isFinite(stamp)||Date.now()-stamp>20*60*1000||Date.now()-stamp< -300000)
+   throw new Error('данные устарели');
+  if(!liveMetaUpdated||Date.now()-liveMetaUpdated>=120000){
+   showAirData(data,'backup');lastAirUpdate=data.updated_at;
+  }
+ }catch(e){
+  // Ошибка резервного файла не скрывает сведения, уже полученные из WebSocket.
+  if(!liveMetaUpdated) $('airStatus').textContent='Ожидаем данные Волнореза (резервный файл: '+String(e.message).slice(0,40)+')';
+ }finally{airBackupBusy=false;}
+}
+function scheduleLiveMetaRetry(){
+ if(liveMetaStopped)return;
+ clearTimeout(liveMetaRetry);
+ const delay=Math.min(30000,2500*Math.pow(1.7,Math.min(liveMetaAttempt++,5)));
+ liveMetaRetry=setTimeout(connectLiveMeta,delay);
+}
+function connectLiveMeta(){
+ if(liveMetaStopped||liveMetaSocket&&[WebSocket.OPEN,WebSocket.CONNECTING].includes(liveMetaSocket.readyState))return;
+ try{
+  const ws=new WebSocket(LIVE_META_URL);liveMetaSocket=ws;
+  $('airStatus').textContent='Подключаем сведения об эфире…';
+  ws.onopen=()=>{
+   if(liveMetaSocket!==ws)return;
+   liveMetaConnected=true;liveMetaAttempt=0;
+   // Спрашиваем сведения, не запуская второй аудиоплеер.
+   ws.send(JSON.stringify({cmd:'add_player',paused:true,type:'link'}));
+   // Не отправляем paused:false: он предназначен для работающего плеера.
+   setTimeout(()=>{if(liveMetaSocket===ws&&!liveMetaUpdated)refreshAir();},4500);
+  };
+  ws.onmessage=e=>{if(liveMetaSocket===ws&&typeof e.data==='string')parseLiveFrame(e.data);};
+  ws.onerror=()=>{ /* onclose отвечает за повторное соединение */ };
+  ws.onclose=()=>{
+   if(liveMetaSocket!==ws)return;
+   liveMetaSocket=null;liveMetaConnected=false;
+   $('airStatus').textContent='Соединение со сведениями эфира прервано; переподключаемся…';
+   refreshAir();scheduleLiveMetaRetry();
+  };
+ }catch(e){refreshAir();scheduleLiveMetaRetry();}
+}
+$('refreshAir').addEventListener('click',()=>{
+ liveMetaUpdated=0;
+ if(liveMetaSocket){const ws=liveMetaSocket;liveMetaSocket=null;ws.close();}
+ clearTimeout(liveMetaRetry);connectLiveMeta();refreshAir();
+});
+window.addEventListener('pagehide',()=>{
+ liveMetaStopped=true;clearTimeout(liveMetaRetry);
+ if(liveMetaSocket)liveMetaSocket.close(1000);
+});
+connectLiveMeta();
+setInterval(()=>{if(!document.hidden)refreshAir();},60000);
 
 stopped=false;
 updateButtons();
