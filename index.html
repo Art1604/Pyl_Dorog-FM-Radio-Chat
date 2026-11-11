@@ -1,139 +1,474 @@
+
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#d1d1d1">
-<title>ПыЛь_ДоРоГ FM — радио и серый чат</title>
-<style>
-:root{color-scheme:light;--bg:#cacaca;--panel:#d7d7d7;--line:#888;--ink:#292929}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px Arial,sans-serif}button,input{font:inherit}button{cursor:pointer}a{color:#314f65}.app{min-height:100vh;padding:8px;display:flex;flex-direction:column;gap:8px}.bevel{border:1px solid #888;border-top-color:white;border-left-color:white;background:#d7d7d7;box-shadow:inset 1px 1px #ffffff70}.header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px;background:linear-gradient(#eee,#cecece)}.brand{font-weight:bold;padding:10px 14px;border:1px solid #aaa;border-top-color:#fff;border-left-color:#fff;background:linear-gradient(#fafafa,#d4d4d4)}nav{display:flex;gap:8px;flex-wrap:wrap}nav details{position:relative}nav summary{list-style:none;cursor:pointer;min-width:165px;padding:9px 12px;border:1px solid #aaa;background:linear-gradient(#f6f6f6,#d4d4d4)}nav summary::-webkit-details-marker{display:none}nav summary:after{content:' ▾'}.menu{position:absolute;top:100%;left:0;z-index:10;width:230px;padding:6px;border:1px solid #888;background:#e3e3e3;box-shadow:2px 4px 8px #0003}.menu a{display:block;padding:9px;text-decoration:none;color:#222}.menu a:hover{background:#f5f5f5}main{flex:1;display:flex;flex-direction:column;gap:8px}.player,.chat-section{padding:10px}h1,h2{font-size:15px;margin:0 0 10px}.inset{padding:12px;background:#e7e7e7;border:1px solid #999;border-top-color:#fff;border-left-color:#fff}audio{width:100%;height:42px}.muted{font-size:12px;color:#555}.chat-section{flex:1;background:linear-gradient(#dedede,#c7c7c7)}.chat-widget{height:560px;min-height:420px;display:flex;flex-direction:column;border:1px solid #777;border-radius:10px;overflow:hidden;background:#d9d9d9;box-shadow:inset 0 1px #fff}.chat-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 10px;border-bottom:1px solid #999;background:linear-gradient(#dedede,#bdbdbd);font-weight:bold}.status{font-size:11px;font-weight:normal;color:#454545}.chat-main{display:grid;grid-template-columns:minmax(0,1fr) 205px;gap:6px;padding:7px;flex:1;min-height:0}.messages,.users{background:#f8f8f8;border:1px solid #aaa;overflow:auto}.messages{padding:10px;display:flex;flex-direction:column;gap:11px}.message{overflow-wrap:anywhere;line-height:1.4}.message-head{display:flex;align-items:center;gap:7px;margin-bottom:4px}.nick{font-weight:bold;color:#444}.time{margin-left:auto;font-size:11px;color:#777}.message-text{white-space:pre-wrap}.notice{font-size:12px;color:#777;text-align:center;padding:6px;border-bottom:1px solid #ddd}.users{padding:8px}.users-title{font-weight:bold;padding-bottom:8px;border-bottom:1px solid #ddd;margin-bottom:6px}.users-list{display:flex;flex-direction:column;gap:7px}.user{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-bottom{display:flex;align-items:center;gap:6px;padding:7px;border-top:1px solid #999;background:linear-gradient(#d5d5d5,#bcbcbc)}.nick-input{width:125px;flex:0 0 125px}.msg-input{min-width:0;flex:1}.chat-bottom input{height:33px;padding:6px 9px;background:#fff;border:1px solid #aaa;border-radius:5px}.chat-bottom button,.toolbar-btn{height:33px;padding:0 11px;background:linear-gradient(#f8f8f8,#ccc);border:1px solid #999;border-radius:5px;color:#292929}.chat-bottom button:hover,.toolbar-btn:hover{background:#eee}.emoji-button{font-size:20px;padding:0 7px!important}.emoji-picker{display:flex;flex-wrap:wrap;gap:4px;padding:8px;background:#eee;border-top:1px solid #999}.emoji-picker button{font-size:21px;background:white;border:1px solid #bbb;border-radius:4px;padding:4px 6px}.emoji-picker[hidden]{display:none}.send:disabled{opacity:.5;cursor:not-allowed}.chat-explain{font-size:12px;color:#555;margin:8px 0 0;line-height:1.4}footer{text-align:center;padding:4px;font-size:12px;color:#555}button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid #444;outline-offset:2px}[hidden]{display:none!important}
-@media(max-width:650px){.app{padding:4px;gap:5px}.brand{width:100%;text-align:center}.header{gap:6px}nav,nav details{flex:1}nav summary{min-width:0}.player,.chat-section{padding:6px}.chat-widget{height:70vh;min-height:480px}.chat-main{grid-template-columns:minmax(0,1fr) 110px;gap:4px;padding:4px}.users{font-size:11px;padding:4px}.messages{padding:6px}.chat-bottom{flex-wrap:wrap}.nick-input{flex:0 0 94px;width:94px}.msg-input{flex:1 1 calc(100% - 100px)}.send{flex:1}.emoji-button{flex:0 0 46px}}
-</style>
-</head>
-<body>
-<div class="app">
-<header class="header bevel">
- <div class="brand">🎙️ ПыЛь_ДоРоГ FM — Радио и чат</div>
- <nav aria-label="Ссылки">
-  <details><summary>Перейти на Волнорез</summary><div class="menu"><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальная радиостанция</a></div></details>
-  <details><summary>Разное</summary><div class="menu"><a href="https://vk.com/dust_dorogfm" target="_blank" rel="noopener noreferrer">Группа ВК</a><a href="https://vk.com/topic-227352123_52478122" target="_blank" rel="noopener noreferrer">Книга жалоб и предложений</a><a href="https://vk.com/topic-227352123_52496434" target="_blank" rel="noopener noreferrer">Стол заказов</a></div></details>
- </nav>
-</header>
-<main>
-<section class="player bevel"><h1>Онлайн-эфир станции</h1><div class="inset"><audio controls preload="none" aria-label="Слушать ПыЛь_ДоРоГ FM"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Ваш браузер не поддерживает аудио.</audio><p class="muted">Основной прямой поток Волнореза. Нажмите ▶ для прослушивания.</p></div></section>
-<section class="chat-section bevel"><h2>💬 Чат ПыЛь_ДоРоГ FM</h2>
-<div class="chat-widget" aria-label="Наш собственный чат">
- <div class="chat-top"><span>⚙ Серый чат радиостанции</span><span class="status" id="status">Подключение к Firebase…</span></div>
- <div class="chat-main"><div class="messages" id="messages" role="log" aria-live="polite"><div class="notice" id="welcome">Добро пожаловать в новый чат ПыЛь_ДоРоГ FM!</div></div>
- <aside class="users"><div class="users-title">👥 Слушатели <span id="user-count">(1)</span></div><div class="users-list" id="users-list"></div></aside></div>
- <div class="emoji-picker" id="emoji-picker" hidden aria-label="Выбор смайлов"></div>
- <form class="chat-bottom" id="chat-form"><input class="nick-input" id="nickname" aria-label="Ваш ник" placeholder="Ваш ник" maxlength="24" required><input class="msg-input" id="message" aria-label="Текст сообщения" placeholder="Напишите сообщение..." maxlength="500" required autocomplete="off"><button class="emoji-button" type="button" id="emoji-toggle" aria-label="Открыть смайлы">☺</button><button class="send" id="send" type="submit" disabled>Отправить</button></form>
-</div>
-<p class="chat-explain" id="chat-explain">Это отдельный общий чат ПыЛь_ДоРоГ FM, не связанный с чатом Волнореза. Сообщения видны всем участникам чата. Здесь используются обычные эмодзи.</p>
-</section>
-</main><footer>ПыЛь_ДоРоГ FM · Прямой эфир: Волнорез · Собственный серый чат</footer>
-</div>
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
-import { getDatabase, ref, push, set, onValue, onChildAdded, query, orderByChild, limitToLast, serverTimestamp, onDisconnect } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js';
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#d1d1d1">
+  <meta name="description" content="ПыЛь_ДоРоГ FM — радио и чат">
+  <title>ПыЛь_ДоРоГ FM — радио и чат</title>
 
-// Firebase browser configuration is public. NEVER put service-account secrets in this file.
-const firebaseConfig = {
-  apiKey: 'AIzaSyCZqjbhta3NmIRW1u0mrhMzvIy3T0_HWpI',
-  authDomain: 'pyl-dorog-fm-chat.firebaseapp.com',
-  databaseURL: 'https://pyl-dorog-fm-chat-default-rtdb.europe-west1.firebasedatabase.app',
-  projectId: 'pyl-dorog-fm-chat',
-  storageBucket: 'pyl-dorog-fm-chat.firebasestorage.app',
-  messagingSenderId: '579548325525',
-  appId: '1:579548325525:web:e1f25f24c2d10d62331d9c',
-  measurementId: 'G-BYTM7PS38E'
-};
-const $ = id => document.getElementById(id);
-const messages = $('messages'), nick = $('nickname'), input = $('message');
-const form = $('chat-form'), send = $('send'), status = $('status');
-const userList = $('users-list'), count = $('user-count'), picker = $('emoji-picker');
-const emoji = ['😀','😂','🤣','😊','😍','😘','😎','🥰','❤️','👍','🔥','🎵','🎙️','🤘','🍻','💋','👋','🎉','😢','👏','💃','🫶','😜','🤗'];
-emoji.forEach(e=>{const b=document.createElement('button');b.type='button';b.textContent=e;b.addEventListener('click',()=>{input.value+=e;input.focus()});picker.append(b)});
-$('emoji-toggle').addEventListener('click',()=>{picker.hidden=!picker.hidden});
-nick.value = localStorage.getItem('pyl_fm_nick') || '';
-const myName = () => nick.value.trim().replace(/\s+/g,' ').slice(0,24);
-function setStatus(text){status.textContent=text}
-function showUsers(list){
-  userList.replaceChildren();const names=[...new Set(list)].sort((a,b)=>a.localeCompare(b,'ru'));
-  count.textContent=`(${names.length})`;
-  names.forEach(name=>{const r=document.createElement('div');r.className='user';r.textContent='♬ '+name;userList.append(r)});
-}
-function addMessage(data){
-  const item=document.createElement('div');item.className='message';
-  const head=document.createElement('div');head.className='message-head';
-  const name=document.createElement('span');name.className='nick';name.textContent=data.nick;
-  const time=document.createElement('span');time.className='time';
-  time.textContent=new Date(data.timestamp || Date.now()).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-  const body=document.createElement('div');body.className='message-text';body.textContent=data.text;
-  head.append(name,time);item.append(head,body);messages.append(item);
-  while(messages.querySelectorAll('.message').length>120)messages.querySelector('.message').remove();
-  messages.scrollTop=messages.scrollHeight;
-}
-let user=null,db=null,presenceRef=null,ready=false;
-let started=false;
-function errorText(err){
-  console.error('Firebase chat:',err);
-  if(String(err?.code||'').includes('permission-denied'))return 'Нет доступа к базе: проверь правила Rules → Publish';
-  return 'Чат не подключён. Проверь интернет и настройки Firebase';
-}
-async function startChat(){
-  try{
-    const app=initializeApp(firebaseConfig);
-    const auth=getAuth(app);
-    db=getDatabase(app);
-    await signInAnonymously(auth);
-    user=auth.currentUser;
-    if(!user)throw new Error('Анонимный вход не завершён');
-    presenceRef=ref(db,'chat/presence/'+user.uid);
-    // The database rules below use /chat/messages/{id} and `timestamp`.
-    onChildAdded(query(ref(db,'chat/messages'),orderByChild('timestamp'),limitToLast(100)),snap=>{
-      const m=snap.val();if(m && typeof m.nick==='string' && typeof m.text==='string')addMessage(m);
-    },err=>{setStatus(errorText(err));ready=false;send.disabled=true});
-    onValue(ref(db,'chat/presence'),snap=>{
-      const names=Object.values(snap.val()||{}).map(v=>v?.nick).filter(v=>typeof v==='string');
-      showUsers(names);
-    },err=>setStatus(errorText(err)));
-    onValue(ref(db,'.info/connected'),async snap=>{
-      if(snap.val()!==true){setStatus('Соединение потеряно — переподключаемся…');ready=false;send.disabled=true;return}
-      try{
-        // Re-register on every reconnect, and remove presence automatically after disconnect.
-        await onDisconnect(presenceRef).remove();
-        await set(presenceRef,{nick:myName()||'Гость',since:serverTimestamp()});
-        ready=true;send.disabled=false;setStatus('● Общий чат подключён');
-      }catch(err){setStatus(errorText(err));ready=false;send.disabled=true}
+  <style>
+    :root {
+      color-scheme: light;
+      --edge: #888;
+      --light: #fff;
+      --text: #292929;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: #cacaca;
+      font: 14px Arial, sans-serif;
+    }
+
+    a {
+      color: #314f65;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px;
+    }
+
+    .bevel {
+      border: 1px solid var(--edge);
+      border-top-color: var(--light);
+      border-left-color: var(--light);
+      background: #d7d7d7;
+      box-shadow: inset 1px 1px #ffffff70;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px;
+      background: linear-gradient(#eee, #cecece);
+    }
+
+    .brand {
+      font-weight: bold;
+      padding: 10px 14px;
+      background: linear-gradient(#fafafa, #d4d4d4);
+      border: 1px solid #999;
+      border-top-color: white;
+      border-left-color: white;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    nav details {
+      position: relative;
+    }
+
+    nav summary {
+      cursor: pointer;
+      padding: 9px 13px;
+      min-width: 160px;
+      background: linear-gradient(#f5f5f5, #d4d4d4);
+      border: 1px solid #aaa;
+      list-style: none;
+    }
+
+    nav summary::-webkit-details-marker {
+      display: none;
+    }
+
+    nav summary::after {
+      content: ' ▾';
+    }
+
+    .menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 205px;
+      z-index: 10;
+      background: #e6e6e6;
+      padding: 6px;
+      border: 1px solid #888;
+      box-shadow: 2px 4px 9px #0003;
+    }
+
+    .menu a {
+      display: block;
+      padding: 9px;
+      color: #222;
+      text-decoration: none;
+    }
+
+    .menu a:hover {
+      background: #f5f5f5;
+    }
+
+    main {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .player,
+    .chat {
+      padding: 10px;
+    }
+
+    h1, h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .inset {
+      background: #e7e7e7;
+      border: 1px solid #999;
+      border-top-color: white;
+      border-left-color: white;
+      padding: 12px;
+    }
+
+    /* Радиоплеер */
+    .stream {
+      width: 100%;
+      height: 45px;
+    }
+
+    .muted {
+      color: #555;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* Серый чат */
+    .chat {
+      flex: 1;
+      background: linear-gradient(#dedede, #c7c7c7);
+    }
+
+    .chat-embed {
+      min-height: 490px;
+      position: relative;
+      background: #d8d8d8;
+      border: 1px solid #888;
+      border-top-color: #fff;
+      border-left-color: #fff;
+      padding: 7px;
+    }
+
+    #volnorez_chat {
+      min-height: 450px;
+      width: 100%;
+    }
+
+    .chat-status {
+      color: #555;
+      padding: 8px 4px;
+      font-size: 12px;
+    }
+
+    .chat-fallback {
+      margin: 12px auto;
+      max-width: 480px;
+      text-align: center;
+      background: #ededed;
+      border: 1px solid #999;
+      padding: 18px;
+      line-height: 1.5;
+    }
+
+    .chat-fallback p {
+      margin: 8px 0 15px;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 11px 15px;
+      border: 1px solid #888;
+      border-top-color: white;
+      border-left-color: white;
+      background: linear-gradient(#fafafa, #d0d0d0);
+      color: #292929;
+      text-decoration: none;
+    }
+
+    /* Не перекрашиваем родные смайлы */
+    #volnorez_chat img,
+    #volnorez_chat canvas,
+    #volnorez_chat chat-lottie {
+      filter: none !important;
+    }
+
+    footer {
+      color: #555;
+      text-align: center;
+      font-size: 12px;
+      padding: 4px;
+    }
+
+    /* Мобильная версия */
+    @media (max-width: 620px) {
+      .app {
+        padding: 4px;
+        gap: 5px;
+      }
+
+      .header {
+        gap: 6px;
+      }
+
+      .brand {
+        width: 100%;
+        text-align: center;
+      }
+
+      nav {
+        width: 100%;
+      }
+
+      nav details {
+        flex: 1;
+      }
+
+      nav summary {
+        min-width: 0;
+      }
+
+      .player,
+      .chat {
+        padding: 6px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- ВЕРХНЕЕ МЕНЮ -->
+  <header class="header bevel">
+
+    <div class="brand">
+      🎙️ ПыЛь_ДоРоГ FM — Радио и чат
+    </div>
+
+    <nav aria-label="Навигация">
+
+      <details>
+        <summary>Перейти на Волнорез</summary>
+
+        <div class="menu">
+          <a
+            href="https://volnorez.com/pyl_dorog-fm/"
+            target="_blank"
+            rel="noopener noreferrer">
+            Открыть радиостанцию
+          </a>
+
+          <a
+            href="https://volnorez.com/share/001e157d"
+            target="_blank"
+            rel="noopener noreferrer">
+            Настройки плеера
+          </a>
+        </div>
+      </details>
+
+      <details>
+        <summary>Разное</summary>
+
+        <div class="menu">
+          <a href="https://vk.com/dust_dorogfm"
+             target="_blank"
+             rel="noopener noreferrer">
+            Группа ВК
+          </a>
+
+          <a
+            href="https://vk.com/topic-227352123_52478122"
+            target="_blank"
+            rel="noopener noreferrer">
+            Книга жалоб и предложений
+          </a>
+
+          <a
+            href="https://vk.com/topic-227352123_52496434"
+            target="_blank"
+            rel="noopener noreferrer">
+            Стол заказов
+          </a>
+        </div>
+      </details>
+
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- РАБОТАЮЩИЙ РАДИОПЛЕЕР -->
+    <section class="player bevel">
+
+      <h1>Онлайн-эфир станции</h1>
+
+      <div class="inset">
+
+        <audio
+          class="stream"
+          controls
+          preload="none"
+          aria-label="Слушать ПыЛь_ДоРоГ FM">
+
+          <source
+            src="https://stream.volnorez.com/live-app/869683"
+            type="audio/mpeg">
+
+          Ваш браузер не поддерживает HTML5-аудио.
+        </audio>
+
+        <p class="muted">
+          Нажмите ▶, чтобы слушать прямой эфир.
+          Воспроизведение зависит от доступности
+          потока Волнореза.
+        </p>
+
+      </div>
+    </section>
+
+    <!-- ОРИГИНАЛЬНЫЙ ЧАТ ВОЛНОРЕЗА -->
+    <section class="chat bevel">
+
+      <h2>💬 Чат ПыЛь_ДоРоГ FM</h2>
+
+      <div class="chat-embed">
+
+        <div
+          id="volnorez_chat"
+          data-code="001e157d"
+          data-skin="skin_4"
+          data-skin-params="'bg_clr':'224,224,224','panel_clr':'214,214,214','ib_clr':'247,247,247','msgbg_clr':'239,239,239','omsgbg_clr':'231,231,231','txt_clr':'32,32,32','b_clr':'186,186,186','icon_clr':'108,108,108','label_clr':'78,78,78','dj_clr':'52,52,52'">
+        </div>
+
+        <div
+          id="chat-status"
+          class="chat-status"
+          role="status">
+          Подключаем оригинальный чат Волнореза…
+        </div>
+
+        <div
+          id="chat-fallback"
+          class="chat-fallback"
+          hidden>
+
+          <strong>
+            Чат Волнореза не загрузился.
+          </strong>
+
+          <p>
+            Возможно, старый адрес chat_js
+            больше не поддерживается.
+            Это не ошибка радиоплеера.
+          </p>
+
+          <a
+            class="button"
+            href="https://volnorez.com/pyl_dorog-fm/"
+            target="_blank"
+            rel="noopener noreferrer">
+            Открыть оригинальный чат со смайлами ↗
+          </a>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    ПыЛь_ДоРоГ FM · Радиопоток и оригинальный чат:
+    Волнорез
+  </footer>
+
+</div>
+
+<!-- Работа выпадающих меню -->
+<script>
+  document.querySelectorAll('nav details').forEach(item => {
+    item.addEventListener('toggle', () => {
+      if (item.open) {
+        document.querySelectorAll('nav details').forEach(other => {
+          if (other !== item) other.open = false;
+        });
+      }
     });
-  }catch(err){setStatus(errorText(err));send.disabled=true}
-}
-let renameTimer;
-nick.addEventListener('input',()=>{
-  clearTimeout(renameTimer);
-  renameTimer=setTimeout(async()=>{
-    localStorage.setItem('pyl_fm_nick',myName());
-    if(ready && presenceRef)try{await set(presenceRef,{nick:myName()||'Гость',since:serverTimestamp()})}catch(err){setStatus(errorText(err))}
-  },450);
-});
-let lastSend=0;
-form.addEventListener('submit',async e=>{
-  e.preventDefault();if(!ready || !user || !db)return;
-  const name=myName(),text=input.value.trim();
-  if(!name || !text || text.length>500)return;
-  if(Date.now()-lastSend<1500){setStatus('Пожалуйста, не отправляй сообщения слишком часто');return}
-  send.disabled=true;
-  try{
-    await set(push(ref(db,'chat/messages')),{uid:user.uid,nick:name,text,timestamp:serverTimestamp()});
-    lastSend=Date.now();nick.value=name;localStorage.setItem('pyl_fm_nick',name);
-    input.value='';picker.hidden=true;setStatus('● Общий чат подключён');
-  }catch(err){setStatus(errorText(err))}
-  finally{send.disabled=!ready;input.focus()}
-});
-for(const d of document.querySelectorAll('nav details'))d.addEventListener('toggle',()=>{if(d.open)for(const o of document.querySelectorAll('nav details'))if(o!==d)o.open=false});
-startChat();
+  });
 </script>
-</body></html>
+
+<!-- Оригинальный chat_js Волнореза -->
+<script
+  src="https://volnorez.com/plugins/jscode/chat_js"
+  defer
+  id="volnorez-chat-script">
+</script>
+
+<!-- Проверка загрузки чата -->
+<script>
+(function () {
+  var root = document.getElementById('volnorez_chat');
+  var status = document.getElementById('chat-status');
+  var fallback = document.getElementById('chat-fallback');
+  var script = document.getElementById('volnorez-chat-script');
+
+  function ready() {
+    return root && root.children.length > 0;
+  }
+
+  function check() {
+    if (ready()) {
+      status.hidden = true;
+      fallback.hidden = true;
+    } else {
+      status.hidden = true;
+      fallback.hidden = false;
+    }
+  }
+
+  script.addEventListener('error', check);
+
+  var observer = new MutationObserver(function () {
+    if (ready()) {
+      status.hidden = true;
+      fallback.hidden = true;
+      observer.disconnect();
+    }
+  });
+
+  observer.observe(root, {
+    childList: true,
+    subtree: true
+  });
+
+  setTimeout(function () {
+    check();
+    observer.disconnect();
+  }, 12000);
+})();
+</script>
+
+</body>
+</html>
