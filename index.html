@@ -1421,6 +1421,11 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 @media(max-width:680px){#nickChangeRow.nick-inline{flex-basis:100px;min-width:75px}#nickChangeRow.nick-inline input{font-size:12px;padding:4px}}
 </style>
 <style>
+
+/* v4.3: selected hidden codes must not paint above the emoji overlay. */
+#sendForm .composer-input-wrap.has-smile-preview textarea::selection{background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent!important}
+#sendForm .composer-input-wrap.has-smile-preview textarea::-moz-selection{background:transparent!important;color:transparent!important}
+#sendForm .composer-input-wrap.has-smile-preview .composer-smile-preview{z-index:2;user-select:none}
 /* v4.2: отображение официальных смайлов прямо поверх вводимого кода.
    Реальное textarea продолжает хранить %id% — это важно для Волнореза. */
 #sendForm .composer-input-wrap{position:relative;display:block;flex:1 1 auto;min-width:0;height:38px;min-height:38px;max-height:38px}
@@ -1903,7 +1908,32 @@ E.input.addEventListener('input',()=>{
   E.input.setSelectionRange(before,before);
  }
 });
-E.form.addEventListener('submit',event=>{event.preventDefault();if(!authorized||pending||!socket)return;const text=E.input.value.replace(/[\r\n]+/g,' ').trim();if(!text)return;if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}pending=true;updateButtons();const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');socketSend({cmd:'send_message',text,local_id:localId});note('Ожидаем подтверждение Волнореза…');log('SEND send_message ('+text.length+' символов)');setTimeout(()=>{if(pending){pending=false;updateButtons();note('Нет подтверждения отправки. Не повторяй сразу: сообщение могло дойти.','send-note');}},9000);});
+// v4.3: use the original send_message protocol for ALL official smilies and text.
+// A presentation overlay never becomes the source of the outgoing message.
+E.form.addEventListener('submit',event=>{
+ event.preventDefault();
+ if(!authorized||!socket||socket.readyState!==WebSocket.OPEN){note('Нет подтверждённого входа в чат Волнореза. Сообщение не отправлено.','send-error');return;}
+ if(pending){note('Предыдущее сообщение ещё ожидает ответ Волнореза.','send-note');return;}
+ let text=E.input.value.replace(/[\r\n]+/g,' ').trim();
+ if(!text){note('Поле сообщения пустое.','send-note');return;}
+ // When the text is solely official smile codes, strip accidentally appended lone % signs.
+ if(/^(?:%\d{1,4}%)+%+$/.test(text)){
+  text=text.replace(/%+$/,'');
+  // Restore the percent that closes the final valid token.
+  text += '%';
+  E.input.value=text;
+  refreshComposerSmilePreview();
+ }
+ if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}
+ const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');
+ let sent=false;
+ try{sent=socketSend({cmd:'send_message',text,local_id:localId});}
+ catch(err){log('Ошибка WebSocket: '+String(err));}
+ if(!sent){note('Не удалось передать сообщение на сервер. Проверь подключение.','send-error');return;}
+ pending=true;updateButtons();note('Сообщение отправлено на сервер. Ожидаем подтверждение…','send-note');
+ log('SEND send_message ('+text.length+' символов)');
+ setTimeout(()=>{if(pending){pending=false;updateButtons();note('Нет подтверждения Волнореза. Сообщение могло дойти: проверь оригинальный чат.','send-error');}},9000);
+});
 const cats={classic:[],retro:[],emoji:[],stickers:[],gif:[],animashki:[],ours:[]};
 const groupToCategory={1:'classic',2:'retro',6:'emoji',8:'stickers',9:'gif',10:'animashki'};
 for(const [id,s] of Object.entries(SMILES)){
@@ -1999,7 +2029,13 @@ function showTab(category){
   // Код смайла не показываем в каталоге; он используется при нажатии.
   tile.addEventListener('click',()=>{
    if(!authorized){note('Смайл виден в гостевом режиме. Чтобы отправить его, сначала войди гостем.','send-note');return;}
-   const t='%'+id+'%';E.input.setRangeText(t,E.input.selectionStart,E.input.selectionEnd,'end');refreshComposerSmilePreview();E.input.focus();note('Смайл добавлен в сообщение.');
+   const t='%'+id+'%';
+   const before=E.input.value;
+   let start=E.input.selectionStart,end=E.input.selectionEnd;
+   // Clicking a sticker after selecting a preview may leave the cursor inside %123%.
+   // In that case append instead of corrupting an existing official code.
+   if(start===end){for(const m of before.matchAll(/%\d{1,4}%/g)){const a=m.index,b=a+m[0].length;if(start>a&&start<b){start=end=before.length;break;}}}
+   E.input.setRangeText(t,start,end,'end');refreshComposerSmilePreview();E.input.focus();note('Смайл добавлен в сообщение.');
   });
   tiles.append(tile);
  }
