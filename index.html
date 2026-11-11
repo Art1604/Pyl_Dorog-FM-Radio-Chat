@@ -1401,6 +1401,13 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 @media(max-width:680px){.nick-change-row input{width:155px;flex:1;min-width:110px}}
 </style>
 <style>
+/* v3.7: собственные GIF, серый прямоугольный каталог */
+.gallery-tile.our-gif-tile{height:96px;min-height:96px;padding:4px}
+.gallery-tile.our-gif-tile img{display:block;max-width:100%;max-height:86px;width:auto;height:auto;object-fit:contain}
+.chatsurface .our-gif-message{display:block;max-width:170px;max-height:160px;width:auto;height:auto;margin:5px 0 2px;border:1px solid #aaa;background:#eee;object-fit:contain}
+.chatsurface .our-gif-link{display:inline-block;overflow-wrap:anywhere}
+</style>
+<style>
 /* v3.6: ник внутри строки отправки, как в оригинале; без панели и кнопки сохранения. */
 #nickChangeRow.nick-inline{display:flex;align-items:stretch;flex:0 1 155px;min-width:94px;max-width:210px;min-height:38px;margin:0;padding:0;border:1px solid #999;background:#d4d4d4;box-sizing:border-box}
 #nickChangeRow.nick-inline input{width:100%;max-width:none;min-width:0;height:auto;min-height:36px;padding:5px 7px;border:0;border-radius:0;background:transparent;color:#333;font:13px Arial,sans-serif;box-sizing:border-box;text-overflow:ellipsis}
@@ -1436,7 +1443,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 <div><div class="column-title">Сообщения <span class="count" id="msgCount" hidden></span></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">Загружаем сообщения из чата Волнореза…</div></div></div>
 <div><div class="column-title">👥 Участники <span class="count" id="userCount" hidden></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
-<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><textarea id="messageInput" rows="1" maxlength="1000" placeholder="Автоматический вход в чат…" aria-label="Сообщение" disabled></textarea><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. Для «Анимашек» требуются локальные .lottie-файлы в assets/volnorez-lottie/.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
+<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><textarea id="messageInput" rows="1" maxlength="1000" placeholder="Автоматический вход в чат…" aria-label="Сообщение" disabled></textarea><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button><button type="button" data-category="ours">Наши</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. Для «Анимашек» требуются локальные .lottie-файлы в assets/volnorez-lottie/.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
 <p class="muted" id="technicalExplanation">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
 <div class="notice" id="outdatedWarning"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
@@ -1540,7 +1547,26 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
  if(s.cls){const el=document.createElement('span');el.className='smiley msg-smile '+s.cls;el.title='Смайл '+id;el.setAttribute('role','img');el.setAttribute('aria-label','Смайл '+id);return el;}
  const img=document.createElement('img');img.className='smiley-media';img.src=s.file;img.loading='lazy';img.alt='Смайл '+id;img.addEventListener('error',()=>{img.replaceWith(document.createTextNode(inGallery?'Смайл недоступен':'%'+id+'%'));});return img;
 }
-function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));const b=document.createElement('button');b.type='button';b.className='chat-smile-action';b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';b.append(smileNode(m[1]));target.append(b);p=m.index+m[0].length;}if(p<str.length)target.append(document.createTextNode(str.slice(p)));}
+/* Только свои GIF из папки этого сайта. Ссылки извне остаются обычным текстом. */
+function appendChatText(target,text){
+ const regex=/https?:\/\/[^\s<>"']+/g;let pos=0,match;
+ while((match=regex.exec(text))){
+  if(match.index>pos)target.append(document.createTextNode(text.slice(pos,match.index)));
+  const raw=match[0];let url=null;
+  try{
+   const candidate=new URL(raw);
+   if(candidate.origin===location.origin&&candidate.pathname.startsWith(new URL('./assets/our-gifs/',document.baseURI).pathname)&&/\.gif$/i.test(candidate.pathname))url=candidate;
+  }catch(_){/* некорректная ссылка остаётся текстом */}
+  if(url){
+   const link=document.createElement('a');link.className='our-gif-link';link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.title='Наш GIF — открыть отдельно';
+   const img=document.createElement('img');img.className='our-gif-message';img.src=url.href;img.alt='GIF из коллекции «Наши»';img.loading='lazy';
+   img.addEventListener('error',()=>{link.textContent=url.href;});link.append(img);target.append(link);
+  } else target.append(document.createTextNode(raw));
+  pos=match.index+raw.length;
+ }
+ if(pos<text.length)target.append(document.createTextNode(text.slice(pos)));
+}
+function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)appendChatText(target,str.slice(p,m.index));const b=document.createElement('button');b.type='button';b.className='chat-smile-action';b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';b.append(smileNode(m[1]));target.append(b);p=m.index+m[0].length;}if(p<str.length)appendChatText(target,str.slice(p));}
 let currentAirHost='';
 function comparableNick(v){return String(v||'').normalize('NFKC').trim().replace(/^@/,'').replace(/\s+/g,' ').toLocaleLowerCase('ru-RU');}
 function isCurrentDJ(nick){return !!currentAirHost&&comparableNick(nick)===comparableNick(currentAirHost);}
@@ -1858,7 +1884,7 @@ E.input.addEventListener('input',()=>{
  }
 });
 E.form.addEventListener('submit',event=>{event.preventDefault();if(!authorized||pending||!socket)return;const text=E.input.value.replace(/[\r\n]+/g,' ').trim();if(!text)return;if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}pending=true;updateButtons();const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');socketSend({cmd:'send_message',text,local_id:localId});note('Ожидаем подтверждение Волнореза…');log('SEND send_message ('+text.length+' символов)');setTimeout(()=>{if(pending){pending=false;updateButtons();note('Нет подтверждения отправки. Не повторяй сразу: сообщение могло дойти.','send-note');}},9000);});
-const cats={classic:[],retro:[],emoji:[],stickers:[],gif:[],animashki:[]};
+const cats={classic:[],retro:[],emoji:[],stickers:[],gif:[],animashki:[],ours:[]};
 const groupToCategory={1:'classic',2:'retro',6:'emoji',8:'stickers',9:'gif',10:'animashki'};
 for(const [id,s] of Object.entries(SMILES)){
  const cat=groupToCategory[s.group];
@@ -1866,9 +1892,62 @@ for(const [id,s] of Object.entries(SMILES)){
 }
 let activeCat='classic';let tabToken=0;
 const gallery=$('galleryGrid'),galleryTabs=$('galleryTabs'),galleryHint=$('galleryHint');
+/* Пользовательские GIF: загрузи .gif в assets/our-gifs/ на GitHub.
+   GitHub API возвращает список файлов, список JSON — резервный путь. */
+const OUR_GIFS_DIR='./assets/our-gifs/';
+const OUR_GIFS_API='https://api.github.com/repos/Art1604/Pyl_Dorog-FM-Radio-Chat/contents/assets/our-gifs?ref=main';
+let ourGifsCache=null,ourGifsLoading=null;
+function validOurGifName(name){
+ return typeof name==='string'&&name.length<180&&/^[^/\\?#<>]+\.gif$/i.test(name)&&name!=='.'&&name!=='..';
+}
+function ourGifUrl(name){return new URL(OUR_GIFS_DIR+encodeURIComponent(name),document.baseURI).href;}
+async function loadOurGifs(){
+ if(ourGifsLoading)return ourGifsLoading;
+ ourGifsLoading=(async()=>{
+  let names=[];
+  try{
+   const response=await fetch(OUR_GIFS_API,{headers:{'Accept':'application/vnd.github+json'}});
+   if(!response.ok)throw Error('GitHub API: '+response.status);
+   const data=await response.json();
+   if(!Array.isArray(data))throw Error('Неверный список файлов');
+   names=data.filter(x=>x&&x.type==='file'&&validOurGifName(x.name)).map(x=>x.name);
+  }catch(_){
+   try{
+    const response=await fetch(new URL(OUR_GIFS_DIR+'list.json',document.baseURI),{cache:'no-store'});
+    if(!response.ok)throw Error('Нет списка');
+    const data=await response.json();
+    names=(Array.isArray(data)?data:(data.files||[])).filter(validOurGifName);
+   }catch(__){names=[];}
+  }
+  ourGifsCache=[...new Set(names)].sort((a,b)=>a.localeCompare(b,['ru','en'],{numeric:true}));
+  return ourGifsCache;
+ })();
+ try{return await ourGifsLoading;}finally{ourGifsLoading=null;}
+}
+async function showOurGifs(){
+ gallery.replaceChildren();galleryHint.textContent='Загружаем ваши GIF из GitHub…';
+ const token=++tabToken;
+ const filenames=await loadOurGifs();
+ if(activeCat!=='ours'||token!==tabToken)return;
+ if(!filenames.length){galleryHint.textContent='Пока нет GIF. Добавь файлы в assets/our-gifs/ на GitHub. Если они уже загружены, обнови страницу или файл list.json.';return;}
+ galleryHint.textContent='Наши GIF — '+filenames.length+'. На нашем сайте отображаются как анимация; Волнорез может показывать только ссылку.';
+ const frag=document.createDocumentFragment();
+ for(const name of filenames){
+  const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title='Вставить '+name;
+  const img=document.createElement('img');img.alt=name;img.src=ourGifUrl(name);img.loading='lazy';
+  img.addEventListener('error',()=>{tile.disabled=true;tile.textContent='GIF недоступен';});tile.append(img);
+  tile.addEventListener('click',()=>{
+   if(!authorized||E.input.disabled){note('Сначала дождись автоматического гостевого входа.','send-note');return;}
+   const url=ourGifUrl(name);E.input.setRangeText(url,E.input.selectionStart,E.input.selectionEnd,'end');E.input.focus();
+   note('Ссылка на GIF вставлена. В нашем чате она отображается анимацией, на Волнорезе может быть ссылкой.');
+  });frag.append(tile);
+ }
+ gallery.append(frag);gallery.scrollTop=0;
+}
 function showTab(category){
- if(!cats[category])return;activeCat=category;
+ if(!Object.prototype.hasOwnProperty.call(cats,category))return;activeCat=category;
  for(const button of galleryTabs.querySelectorAll('button')){const active=button.dataset.category===category;button.classList.toggle('selected',active);button.setAttribute('aria-selected',String(active));}
+ if(category==='ours'){showOurGifs();return;}
  gallery.replaceChildren();const ids=cats[category];galleryHint.textContent=ids.length+' элементов · Просмотр доступен всем. Для отправки нужен гостевой вход и разрешение сервера.';
  if(category==='animashki'){
   customElements.whenDefined('dotlottie-wc').then(()=>{if(activeCat==='animashki')galleryHint.textContent=ids.length+' анимашек · Для работы файлы .lottie должны быть в assets/volnorez-lottie/ на GitHub Pages.';});
