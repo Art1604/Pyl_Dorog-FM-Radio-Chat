@@ -1273,8 +1273,8 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .msg.dj-message,.person.dj-person{background:inherit;border-left:0;padding-left:inherit}
 .msg.dj-message .nick-action::after,.person.dj-person .person-action::after{content:none}
 .nick-action,.people .person-action{font-weight:400!important;color:#3d3d3d!important}
-.msg .nick-action.role-dj,.msg .nick-action.role-owner,
-.people .person-action.role-dj,.people .person-action.role-owner{font-weight:700!important;color:#303030!important}
+.msg .nick-action.role-dj,.msg .nick-action.role-owner,.msg .nick-action.role-moderator,
+.people .person-action.role-dj,.people .person-action.role-owner,.people .person-action.role-moderator{font-weight:700!important;color:#303030!important}
 .chat-role-icon{display:inline-block;width:19px;margin-right:4px;vertical-align:baseline;text-align:center;color:#686868;filter:grayscale(1);font-size:14px;line-height:1}
 .chat-role-icon.role-owner{font-size:17px}
 .people .person{background:transparent!important;border-left:0!important;padding-left:7px!important}
@@ -1363,8 +1363,11 @@ function comparableNick(v){return String(v||'').normalize('NFKC').trim().replace
 function isCurrentDJ(nick){return !!currentAirHost&&comparableNick(nick)===comparableNick(currentAirHost);}
 /* Типы, подтверждённые HAR: rj = DJ, user = авторизованный, simple = гость.
    Статус руководителя отображаем только если сервер передаст явный тип owner/admin. */
+/* Статусы участников берём только из поля type/utype, не по нику.
+   Состояние микрофона НЕ меняет значки роли и цвет. */
 function roleFromType(value){
  const t=String(value??'').trim().toLowerCase();
+ if(['moderator','mod'].includes(t))return 'moderator';
  if(['owner','station_owner','radio_owner','root','admin','administrator'].includes(t))return 'owner';
  if(['rj','dj','radio_jockey'].includes(t))return 'dj';
  if(['user','registered'].includes(t))return 'auth';
@@ -1375,13 +1378,13 @@ function iconForRole(role){
  const span=document.createElement('span');
  span.className='chat-role-icon role-'+role;
  span.setAttribute('aria-hidden','true');
- span.textContent=role==='owner'?'♛':role==='dj'?'🎙':'🎧';
+ span.textContent=role==='moderator'?'⛨':role==='owner'?'♛':role==='dj'?'🎙':'🎧';
  return span;
 }
 function styleRole(el,role){
- el.classList.remove('role-owner','role-dj','role-auth','role-guest');
+ el.classList.remove('role-moderator','role-owner','role-dj','role-auth','role-guest');
  el.classList.add('role-'+role);
- el.title=(role==='owner'?'Руководитель станции':role==='dj'?'Радиоведущий (роль, не состояние микрофона)':role==='auth'?'Авторизованный пользователь':'Гость')+'. Нажми, чтобы обратиться';
+ el.title=(role==='moderator'?'Модератор':role==='owner'?'Руководитель станции':role==='dj'?'Радиоведущий (роль, не состояние микрофона)':role==='auth'?'Авторизованный пользователь':'Гость')+'. Нажми, чтобы обратиться';
 }
 function updateChatDJ(){
  const strip=$('chatDjStrip'),button=$('chatDjName');
@@ -1409,22 +1412,25 @@ function showMessage(m){
  E.messages.scrollTop=E.messages.scrollHeight;
 }
 function userKey(u){return String(u?.id??u?.uid??u?.nick??'');}
-/* Сортировка перенесена из оригинального chat_client Волнореза (чат 3.htm):
-   generate_sorting_key + compare_users. Порядок не зависит от вручную выбранных ников. */
-function volnorezSortKey(u){
- const type=String(u?.type??u?.utype??'');
- const group=type==='moderator'?'0':type==='owner'?'1':type==='rj'?'2':type==='guest'?'3':type==='user'?'4':'5';
- return group+String(u?.nick??'').toLowerCase();
-}
-function compareVolnorezUsers(left,right){
- const result=volnorezSortKey(left).localeCompare(volnorezSortKey(right));
- if(result===0)return String(right?.nick??'').localeCompare(String(left?.nick??''));
- return result;
+/* Сортировка: moderator → owner → rj → user → guest/simple.
+   Внутри группы — локализованное сравнение ПОЛНОГО ника (любые языки,
+   цифры, пробелы, подчёркивания и другие спецсимволы сохранены).
+   При равенстве Collator сохраняем исходный порядок сервера. */
+const userNickCollator=new Intl.Collator(['ru','en'],{
+ usage:'sort',sensitivity:'base',numeric:true,ignorePunctuation:false
+});
+const rolePriority={moderator:0,owner:1,dj:2,auth:3,guest:4};
+function compareChatUsers(a,b){
+ const aRole=roleFromType(a?.type??a?.utype);
+ const bRole=roleFromType(b?.type??b?.utype);
+ const difference=rolePriority[aRole]-rolePriority[bRole];
+ if(difference)return difference;
+ return userNickCollator.compare(String(a?.nick??a?.name??''),String(b?.nick??b?.name??''));
 }
 function renderUsers(){
  E.users.replaceChildren();E.userCount.textContent='('+roster.size+')';
  if(!roster.size){placeholder(E.users,'Список пока пуст.');return;}
- for(const u of [...roster.values()].sort(compareVolnorezUsers).slice(0,250)){
+ for(const u of [...roster.values()].sort(compareChatUsers).slice(0,250)){
   const e=document.createElement('div');e.className='person';
   const btn=document.createElement('button');btn.type='button';btn.className='person-action';
   btn.textContent=safe(u.nick||u.name,100)||'Гость';btn.dataset.chatNick=btn.textContent;
