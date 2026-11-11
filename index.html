@@ -1482,17 +1482,36 @@ const nickSave=$('saveNickname'),nickChangeStatus=$('nickChangeStatus');
 const E={connect:$('connect'),disconnect:$('disconnect'),login:$('guestLogin'),nick:$('nickname'),identity:$('myIdentity'),status:$('status'),log:$('log'),messages:$('messages'),users:$('users'),msgCount:$('msgCount'),userCount:$('userCount'),form:$('sendForm'),input:$('messageInput'),send:$('sendButton'),sendState:$('sendState'),emotes:$('emotesButton'),picker:$('smilesPicker')};
 let socket=null,authorized=false,currentUser=null,salt='',attempts=0,historySize=0,roster=new Map(),pending=false,initDone=false,initTimer=null;
 let pendingMessage=null;
+// Original Volnorez HAR: local_id consists of 4 hexadecimal groups.
+// The identifier is an opaque correlation token, not an authorization token.
+const messageClientTag=(()=>{
+ const part=new Uint8Array(8);
+ if(window.crypto?.getRandomValues)window.crypto.getRandomValues(part);
+ else for(let i=0;i<part.length;i++)part[i]=Math.floor(Math.random()*256);
+ return Array.from(part,b=>b.toString(16).padStart(2,'0')).join('');
+})();
+let messageLocalCounter=0;
+function nextMessageLocalId(){
+ const counter=(++messageLocalCounter).toString(16);
+ const clock=(Date.now()>>>0).toString(16).padStart(8,'0');
+ const randPart=(Math.floor(Math.random()*0x10000)).toString(16).padStart(4,'0');
+ return counter+'-'+clock+'-'+randPart+'-'+messageClientTag;
+}
 function finishPendingMessage(ack){
  if(!pendingMessage)return;
  const sentText=pendingMessage.text;
+ clearTimeout(pendingMessage.timeout);
  pendingMessage=null;pending=false;updateButtons();
- // Do not erase another message the user typed while waiting for the server.
+ // Do not erase new edits typed while awaiting a reply.
  if(E.input.value===sentText){E.input.value='';refreshComposerSmilePreview();}
  note(ack==='add_msg'?'✅ Сообщение появилось в общем чате.':'✅ Сообщение принято Волнорезом.','send-good');
 }
 function ownMessageArrived(message){
  if(!pendingMessage||!message||typeof message!=='object')return false;
- if(String(message.local_id||'')===pendingMessage.id)return true;
+ const receivedId=message.local_id;
+ // If the server supplies an ID, a different ID cannot confirm this send.
+ if(receivedId!=null&&String(receivedId)!=='')return String(receivedId)===pendingMessage.id;
+ // Fallback for servers that omit local_id in add_msg: verify author AND text.
  const uid=currentUser?.id??currentUser?.uid;
  return uid!=null&&String(message.uid??message.user?.id??'')===String(uid)&&
  String(message.text??message.message??'')===pendingMessage.text;
@@ -1804,11 +1823,22 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  case 'set_users_list':{const arr=Array.isArray(obj.users)?obj.users:[];roster.clear();arr.forEach(u=>{if(u&&typeof u==='object')roster.set(userKey(u),u);});renderUsers();log('Участники: '+roster.size);break;}
  case 'add_user':case 'update_user':{const u=obj.user;if(u&&typeof u==='object'){roster.set(userKey(u),u);renderUsers();}break;}
  case 'remove_user':{const u=obj.user;if(u&&typeof u==='object'){roster.delete(userKey(u));renderUsers();}break;}
- case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
- case 'logout':clearTimeout(loginTimer);loginTimer=null;authorized=false;currentUser=null;pending=false;refreshDeleteControls();E.identity.textContent='Не авторизован';note('Сервер завершил гостевой вход.','send-error');updateButtons();break;
+ case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
+ case 'logout':clearTimeout(loginTimer);loginTimer=null;if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;authorized=false;currentUser=null;pending=false;refreshDeleteControls();E.identity.textContent='Не авторизован';note('Сервер завершил гостевой вход.','send-error');updateButtons();break;
  case 'set_nick':nickRequestInFlight=false;E.nick.value=safe(obj.nick,30);E.identity.textContent='В чате: '+safe(obj.nick,50);if(currentUser)currentUser.nick=safe(obj.nick,30);desiredGuestNick=safe(obj.nick,30);try{localStorage.setItem('pylfm_guest_nick',desiredGuestNick);}catch{}nickChangeStatus.className='';nickChangeStatus.textContent='Ник сохранён';log('Ник подтверждён сервером');break;
- case 'accept_msg':{if(pendingMessage&&(!obj.local_id||String(obj.local_id)===pendingMessage.id))finishPendingMessage('accept_msg');log('Сервер прислал accept_msg');break;}
- case 'reject_msg':pendingMessage=null;failSend('❌ Сервер отклонил сообщение. Проверь права гостя и правила чата.');break;
+ case 'accept_msg':{
+  if(pendingMessage&&obj.local_id!=null&&String(obj.local_id)===pendingMessage.id)finishPendingMessage('accept_msg');
+  else if(pendingMessage)log('accept_msg не совпал с ожидаемым local_id');
+  else log('Пришёл accept_msg без ожидающего сообщения');
+  break;
+ }
+ case 'reject_msg':{
+  if(pendingMessage&&(obj.local_id==null||String(obj.local_id)===pendingMessage.id)){
+   clearTimeout(pendingMessage.timeout);pendingMessage=null;
+   failSend('❌ Волнорез отклонил сообщение'+(obj.reason?' ('+safe(obj.reason,100)+')':'')+'.');
+  }else log('reject_msg для другого сообщения');
+  break;
+ }
  case 'set_unauth_login':guestAllowed=obj.value!==false;log('Гостевой вход по настройкам станции: '+(guestAllowed?'разрешён':'запрещён'));if(!guestAllowed&&!authorized){clearTimeout(loginTimer);loginTimer=null;note('Станция запретила гостевой вход. Читать сообщения и смотреть смайлы можно.','send-error');}else if(guestAllowed&&initDone&&!authorized)requestGuestLogin();updateButtons();break;
  case 'error':{const err=safe(obj.name||obj.code||obj.message,100)||'неизвестная';log('Ошибка от сервера: '+err);clearTimeout(loginTimer);loginTimer=null;note('Волнорез вернул ошибку: '+err+'. Гостевой вход или отправка могли быть отклонены.','send-error');updateButtons();break;}
  default:log('Служебное событие: '+cmd);
@@ -1816,7 +1846,7 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
 }
 function resetAccess(){
  lastShownMessage=null;
- authorized=false;currentUser=null;initDone=false;pending=false;pendingMessage=null;nickChangeStatus.textContent='';guestLoginAttempted=false;pendingDeletionId=null;refreshDeleteControls();clearTimeout(initTimer);initTimer=null;
+ authorized=false;currentUser=null;initDone=false;pending=false;if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;nickChangeStatus.textContent='';guestLoginAttempted=false;pendingDeletionId=null;refreshDeleteControls();clearTimeout(initTimer);initTimer=null;
  clearTimeout(loginTimer);loginTimer=null;E.identity.textContent='Не авторизован';updateButtons();
 }
 function scheduleReconnect(code){
@@ -1934,14 +1964,23 @@ E.form.addEventListener('submit',event=>{
  let text=E.input.value.replace(/[\r\n]+/g,' ').trim();
  if(!text){note('Поле сообщения пустое.','send-note');return;}
  if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}
- const localId=(++attempts).toString(16)+'-'+(window.crypto&&crypto.randomUUID?crypto.randomUUID():[1e7,1e3,4e3,8e3,1e11].join('-')+'-'+Date.now().toString(16));
+ // Use the same four-part local_id shape observed in genuine Volnorez HAR traffic.
+ const localId=nextMessageLocalId();
  let sent=false;
  try{sent=socketSend({cmd:'send_message',text,local_id:localId});}
- catch(err){log('Ошибка WebSocket: '+String(err));}
+ catch(err){log('Ошибка WebSocket при отправке: '+String(err));}
  if(!sent){note('Не удалось передать сообщение на сервер. Проверь подключение.','send-error');return;}
- pending=true;pendingMessage={id:localId,text};updateButtons();note('Сообщение передано по WebSocket. Ждём ответ сервера…','send-note');
+ pending=true;
+ pendingMessage={id:localId,text,timeout:null};
+ updateButtons();note('Сообщение передано по WebSocket. Ждём подтверждение сервера…','send-note');
  log('SEND send_message ('+text.length+' символов)');
- setTimeout(()=>{if(pendingMessage&&pendingMessage.id===localId){pendingMessage=null;pending=false;updateButtons();note('Волнорез не прислал подтверждение за 12 секунд. Сверь с оригинальным чатом: повторная отправка может создать дубль.','send-error');}},12000);
+ pendingMessage.timeout=setTimeout(()=>{
+  if(pendingMessage&&pendingMessage.id===localId){
+   pendingMessage=null;pending=false;updateButtons();
+   note('Нет подтверждения за 12 секунд. Проверь оригинальный Волнорез перед повторной отправкой: сообщение могло дойти.','send-error');
+   log('Нет accept_msg / add_msg для отправленного local_id; повтор автоматически не выполняется');
+  }
+ },12000);
 });
 const cats={classic:[],retro:[],emoji:[],stickers:[],gif:[],animashki:[],ours:[]};
 const groupToCategory={1:'classic',2:'retro',6:'emoji',8:'stickers',9:'gif',10:'animashki'};
