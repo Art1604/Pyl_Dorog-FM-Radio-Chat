@@ -3,137 +3,699 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <base href="https://volnorez.com/">
-  <title>ПыЛь_ДоРоГ FM</title>
+  <title>ПыЛь_ДоРоГ FM — Радио и чат</title>
+  <meta name="theme-color" content="#c9c9c9" />
+  <link rel="preconnect" href="https://volnorez.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #dcdcdc;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
+    :root{
+      --bg:#cfcfcf;
+      --panel:#d4d4d4;
+      --edge-dark:#8a8a8a;
+      --edge-light:#ffffff;
+      --text:#222;
     }
 
-    .app {
-      max-width: 980px;
-      margin: 8px auto;
-      background: #e5e5e5;
-      border: 1px solid #9a9a9a;
-      border-radius: 8px;
-      box-shadow: inset 0 1px 0 #ffffff;
-      overflow: hidden;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(145deg,#e4e4e4,#bdbdbd);
+      color:var(--text);
+      font-family:Arial,Helvetica,sans-serif;
+      overflow:hidden;
     }
 
-    .body-wrap {
-      padding: 6px;
-      background: #e5e5e5;
+    .app{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      padding:8px;
+      gap:8px;
     }
 
-    .player-box {
-      background: #e5e5e5;
-      margin-bottom: 4px;
+    .bevel{
+      background:var(--panel);
+      border-top:1px solid var(--edge-light);
+      border-left:1px solid var(--edge-light);
+      border-right:1px solid var(--edge-dark);
+      border-bottom:1px solid var(--edge-dark);
+      box-shadow:inset 1px 1px 0 rgba(255,255,255,.5), inset -1px -1px 0 rgba(0,0,0,.08);
     }
 
-    .chat-frame {
-      height: 560px;
-      background: #dcdcdc;
-      border: 1px solid #9f9f9f;
-      border-radius: 6px;
-      overflow: hidden;
-      box-shadow: inset 0 1px 0 #f8f8f8;
-      position: relative;
+    .top-menu{
+      display:flex;
+      gap:10px;
+      padding:8px;
+      align-items:center;
+      min-height:46px;
+      flex-wrap:wrap;
+      background:linear-gradient(#f0f0f0,#cfcfcf);
     }
 
-    #volnorez_chat {
-      width: 100%;
-      height: 100%;
-      display: block;
+    .brand{
+      font-weight:700;
+      padding:7px 12px;
+      letter-spacing:.2px;
+      background:linear-gradient(#f5f5f5,#d7d7d7);
+      border-top:1px solid #fff;
+      border-left:1px solid #fff;
+      border-right:1px solid #8d8d8d;
+      border-bottom:1px solid #8d8d8d;
+      white-space:nowrap;
     }
 
-    .fail {
-      display: none;
-      padding: 10px;
-      font-size: 12px;
-      color: #333;
-      background: #fff5d8;
-      border-top: 1px solid #d9c98d;
+    .menu-group{position:relative}
+    .menu-button{
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      padding:8px 34px 8px 12px;
+      min-width:166px;
+      text-align:left;
+      font-size:14px;
+      color:#222;
+      border-top:1px solid #fff;
+      border-left:1px solid #fff;
+      border-right:1px solid #8d8d8d;
+      border-bottom:1px solid #8d8d8d;
+      background:linear-gradient(#efefef,#d2d2d2);
+      position:relative;
+    }
+    .menu-button::after{
+      content:'▼';
+      position:absolute;
+      right:10px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:11px;
+      color:#444;
+    }
+    .menu-button:hover{background:linear-gradient(#f6f6f6,#dbdbdb)}
+
+    .dropdown{
+      display:none;
+      position:absolute;
+      top:calc(100% + 4px);
+      left:0;
+      min-width:240px;
+      z-index:20;
+      padding:6px;
+      background:#dbdbdb;
+      border-top:1px solid #fff;
+      border-left:1px solid #fff;
+      border-right:1px solid #8d8d8d;
+      border-bottom:1px solid #8d8d8d;
+      box-shadow:3px 3px 10px rgba(0,0,0,.18);
+    }
+    .menu-group:hover .dropdown,
+    .menu-group:focus-within .dropdown{display:block}
+
+    .menu-item{
+      display:block;
+      width:100%;
+      border:0;
+      background:transparent;
+      cursor:pointer;
+      text-align:left;
+      padding:8px 10px;
+      border-radius:4px;
+      color:#222;
+      font-size:14px;
+      text-decoration:none;
+    }
+    .menu-item:hover{background:linear-gradient(145deg,#e0e0e0,#f0f0f0)}
+
+    .layout{
+      min-height:0;
+      flex:1;
+      display:grid;
+      grid-template-rows:auto 1fr;
+      gap:8px;
     }
 
-    @media (max-width: 700px) {
-      .app {
-        margin: 0;
-        border-radius: 0;
-        max-width: 100%;
-      }
-
-      .chat-frame {
-        height: calc(100vh - 95px);
-      }
+    .player-panel{
+      padding:10px;
+      background:linear-gradient(#efefef,#d6d6d6);
     }
+
+    .player-title{
+      font-size:13px;
+      font-weight:700;
+      margin-bottom:8px;
+      color:#3b3b3b;
+    }
+
+    .player-box{
+      padding:8px;
+      background:#e5e5e5;
+      border-top:1px solid #fff;
+      border-left:1px solid #fff;
+      border-right:1px solid #8f8f8f;
+      border-bottom:1px solid #8f8f8f;
+    }
+
+    .chat-shell{
+      min-height:0;
+      padding:8px;
+      background:linear-gradient(#dadada,#c7c7c7);
+    }
+
+    .chat-frame{
+      height:100%;
+      min-height:420px;
+      position:relative;
+      padding:8px;
+      background:#d6d6d6;
+      border-top:1px solid #fff;
+      border-left:1px solid #fff;
+      border-right:1px solid #8a8a8a;
+      border-bottom:1px solid #8a8a8a;
+      overflow:hidden;
+    }
+
+    #volnorez_chat{
+      width:100%;
+      height:100%;
+      min-height:404px;
+      display:block;
+    }
+
+    /* База оформления чата */
+    .vchat_cont, #volnorez_chat{height:100%}
+    .chat_cont{
+      font-family:Arial,Helvetica,sans-serif !important;
+      border:1px solid rgb(247,242,247) !important;
+      background-color:rgb(224,224,224) !important;
+      box-shadow:inset 1px -2px 5px 1px rgba(0,0,0,0.45) !important;
+      border-radius:10px !important;
+      overflow:hidden !important;
+    }
+    .chat_users_container{
+      background:rgb(217,217,217) !important;
+      border:1px solid rgb(247,242,247) !important;
+      box-shadow:0 -1px 4px 0 rgba(0,0,0,.2) !important;
+    }
+    .chat_history_container,
+    .chat_settings,
+    .chat_smileys,
+    .chat_private_tabs>div,
+    .chat_tabs>div,
+    .chat_bottom{
+      font-family:Arial,Helvetica,sans-serif !important;
+    }
+    .chat_msg:hover{background-color:rgb(225,225,225) !important}
+    .chat_usr.chat_ut_owner,
+    .chat_usr.chat_ut_rj,
+    .chat_mynick,
+    .chat_msg_date span{
+      color:rgb(88,88,88) !important;
+    }
+
+    /* Оригинальное позиционирование смайлов Volnorez */
+    .chat_msg .chat_msg_text img{
+      vertical-align:bottom !important;
+      transform:scale(0.9) !important;
+      margin-left:-2px !important;
+      margin-right:-2px !important;
+      cursor:pointer;
+      display:inline !important;
+      float:none !important;
+      position:static !important;
+    }
+
+    .chat_history > div > div > img{
+      vertical-align:bottom !important;
+      display:inline !important;
+      float:none !important;
+      position:static !important;
+    }
+
+    /* Не даём общим стилям сломать строчный рендер */
+    #volnorez_chat .chat_msg_text,
+    #volnorez_chat .chat_msg .chat_msg_text{
+      white-space:normal !important;
+      line-height:1.35 !important;
+    }
+
+    #volnorez_chat [class*="smile_"],
+    #volnorez_chat [class*="smile-"]{
+      display:inline-block !important;
+      float:none !important;
+      clear:none !important;
+      vertical-align:bottom !important;
+    }
+
+    .fallback{
+      position:absolute;
+      inset:8px;
+      display:none;
+      place-items:center;
+      text-align:center;
+      padding:24px;
+      background:linear-gradient(#d8d8d8,#c6c6c6);
+      border-top:1px solid #fff;
+      border-left:1px solid #fff;
+      border-right:1px solid #8a8a8a;
+      border-bottom:1px solid #8a8a8a;
+    }
+    .fallback.show{display:grid}
+    .fallback-inner{
+      max-width:520px;
+      padding:18px;
+      background:#efefef;
+      border-top:1px solid #fff;
+      border-left:1px solid #fff;
+      border-right:1px solid #8f8f8f;
+      border-bottom:1px solid #8f8f8f;
+    }
+    .fallback a{color:#234d72}
+
+    @media (max-width: 720px){
+      body{overflow:auto}
+      .app{height:auto;min-height:100%}
+      .layout{grid-template-rows:auto minmax(560px,1fr)}
+      .menu-button{min-width:unset;width:100%}
+      .menu-group{width:100%}
+      .brand{width:100%;text-align:center}
+    }
+  
+    /* grayscale tuning for chat controls and accents */
+    .chat_cont .chat_msg_date span,
+    .chat_cont .chat_usr,
+    .chat_cont .chat_mynick{
+      color:#5b5b5b !important;
+    }
+    .chat_cont .chat_smileys,
+    .chat_cont .chat_settings,
+    .chat_cont .chat_bottom,
+    .chat_cont .chat_tabs > div,
+    .chat_cont .chat_private_tabs > div{
+      background-color:#d9d9d9 !important;
+      color:#333 !important;
+      border-color:#b6b6b6 !important;
+    }
+    .chat_cont .chat_message_input,
+    .chat_cont .chat_nick_input{
+      background:#f3f3f3 !important;
+      color:#222 !important;
+      border-color:#b8b8b8 !important;
+    }
+    .chat_cont .chat_common_tab.selected,
+    .chat_cont .chat_private_tabs > div.selected{
+      background:#e7e7e7 !important;
+      color:#2f2f2f !important;
+    }
+    .chat_cont [style*="color: rgb(75, 134, 180)"],
+    .chat_cont [style*="color:rgb(75,134,180)"],
+    .chat_cont [style*="color: rgb(41, 69, 117)"],
+    .chat_cont [style*="color:rgb(41,69,117)"]{
+      color:#666 !important;
+    }
+
+  
+    /* fix clipped smiles in bottom input row */
+    .chat_bottom,
+    .chat_bottom *{
+      overflow: visible !important;
+    }
+
+    .chat_message_input,
+    .chat_nick_input{
+      min-height: 30px !important;
+      height: 30px !important;
+      line-height: 28px !important;
+      padding-top: 2px !important;
+      padding-bottom: 2px !important;
+      box-sizing: border-box !important;
+    }
+
+    .chat_bottom img,
+    .chat_message_input img,
+    .chat_nick_input img{
+      vertical-align: middle !important;
+      transform: scale(0.8) !important;
+      transform-origin: center center !important;
+      margin-left: -1px !important;
+      margin-right: -1px !important;
+    }
+
+  
+    /* strict grayscale: remove remaining blue from controls, sliders and minor UI */
+    .chat_cont,
+    .chat_cont *{
+      scrollbar-color: #8c8c8c #d8d8d8 !important;
+    }
+
+    .chat_cont ::-webkit-scrollbar{
+      width: 12px !important;
+      height: 12px !important;
+      background: #d8d8d8 !important;
+    }
+    .chat_cont ::-webkit-scrollbar-track{
+      background: #d8d8d8 !important;
+      border-left: 1px solid #b8b8b8 !important;
+    }
+    .chat_cont ::-webkit-scrollbar-thumb{
+      background: linear-gradient(#9a9a9a,#7f7f7f) !important;
+      border: 1px solid #6f6f6f !important;
+      border-radius: 8px !important;
+    }
+    .chat_cont ::-webkit-scrollbar-corner{
+      background: #d8d8d8 !important;
+    }
+
+    .chat_cont .chat_users_container,
+    .chat_cont .chat_smileys,
+    .chat_cont .chat_settings,
+    .chat_cont .chat_bottom,
+    .chat_cont .chat_tabs > div,
+    .chat_cont .chat_private_tabs > div,
+    .chat_cont .chat_common_tab,
+    .chat_cont .chat_private_tab{
+      background: #d9d9d9 !important;
+      color: #333 !important;
+      border-color: #b6b6b6 !important;
+      box-shadow: none !important;
+    }
+
+    .chat_cont .chat_common_tab.selected,
+    .chat_cont .chat_private_tabs > div.selected,
+    .chat_cont .chat_tabs > div.selected{
+      background: #e7e7e7 !important;
+      color: #2f2f2f !important;
+      border-color: #b3b3b3 !important;
+    }
+
+    .chat_cont .chat_message_input,
+    .chat_cont .chat_nick_input,
+    .chat_cont input[type="text"],
+    .chat_cont textarea{
+      background: #f3f3f3 !important;
+      color: #222 !important;
+      border-color: #b8b8b8 !important;
+      box-shadow: inset 0 1px 1px rgba(0,0,0,.05) !important;
+      caret-color: #333 !important;
+    }
+
+    .chat_cont .chat_msg_date span,
+    .chat_cont .chat_usr,
+    .chat_cont .chat_mynick,
+    .chat_cont .chat_label,
+    .chat_cont .chat_user_name,
+    .chat_cont .chat_user_nick{
+      color: #5b5b5b !important;
+    }
+
+    .chat_cont button,
+    .chat_cont input[type="button"],
+    .chat_cont input[type="submit"],
+    .chat_cont .button,
+    .chat_cont .btn,
+    .chat_cont [role="button"]{
+      background: linear-gradient(#a1a1a1,#7d7d7d) !important;
+      color: #fff !important;
+      border-color: #6e6e6e !important;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.25) !important;
+    }
+
+    .chat_cont .chat_bottom img:not([src*="smile"]):not([src*="smiley"]):not([src*="/static/smileys/"]):not([src*="/plugins/wchat/"]),
+    .chat_cont .chat_users_container img:not([src*="smile"]):not([src*="smiley"]):not([src*="/static/smileys/"]):not([src*="/plugins/wchat/"]),
+    .chat_cont .chat_settings img:not([src*="smile"]):not([src*="smiley"]):not([src*="/static/smileys/"]):not([src*="/plugins/wchat/"]){
+      filter: grayscale(1) saturate(0) brightness(.78) !important;
+    }
+
+    .chat_cont [style*="rgb(75, 134, 180)"],
+    .chat_cont [style*="rgb(41, 69, 117)"],
+    .chat_cont [style*="rgb(89, 127, 156)"],
+    .chat_cont [style*="75,134,180"],
+    .chat_cont [style*="41,69,117"],
+    .chat_cont [style*="89,127,156"]{
+      color: #666 !important;
+      background-color: #d9d9d9 !important;
+      border-color: #b5b5b5 !important;
+    }
+
+    .chat_cont [style*="184,207,227"],
+    .chat_cont [style*="228,230,237"],
+    .chat_cont [style*="75, 134, 180"],
+    .chat_cont [style*="41, 69, 117"]{
+      background: #d9d9d9 !important;
+      background-color: #d9d9d9 !important;
+      color: #666 !important;
+      border-color: #b5b5b5 !important;
+    }
+
+    /* common custom scrollbar / slider rails */
+    .chat_cont .scrollbar,
+    .chat_cont .scroll_track,
+    .chat_cont .slider,
+    .chat_cont .slider_track,
+    .chat_cont .ui-slider,
+    .chat_cont .ui-slider-track{
+      background: #d0d0d0 !important;
+      border-color: #afafaf !important;
+    }
+    .chat_cont .scrollbar div,
+    .chat_cont .scroll_thumb,
+    .chat_cont .slider_thumb,
+    .chat_cont .ui-slider-handle{
+      background: linear-gradient(#9a9a9a,#7f7f7f) !important;
+      border-color: #6f6f6f !important;
+    }
+
+    /* preserve smile images and attachments themselves */
+    .chat_msg .chat_msg_text img[src*="smile"],
+    .chat_msg .chat_msg_text img[src*="smiley"],
+    .chat_msg .chat_msg_text img[src*="/static/smileys/"],
+    .chat_msg .chat_msg_text img[src*="/plugins/wchat/"]{
+      filter: none !important;
+    }
+
   </style>
-</head>
 
-<body>
   <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <script>
     (async () => {
-      try {
-        if (window.vkBridge && vkBridge.send) {
-          await vkBridge.send('VKWebAppInit');
-        }
-      } catch (e) {
-        console.log('VK init error:', e);
-      }
+      try { await vkBridge.send('VKWebAppInit'); } catch (e) {}
     })();
   </script>
-
+</head>
+<body>
   <div class="app">
-    <div class="body-wrap">
+    <div class="top-menu bevel">
+      <div class="brand">ПыЛь_ДоРоГ FM — Радио и чат</div>
 
-      <!-- ПЛЕЕР -->
-      <div class="player-box">
-        <div id="vplayer001e157d">
-          <a href="https://volnorez.com/pyl_dorog-fm" title="радио ПыЛь_ДоРоГ FM">
-            радио ПыЛь_ДоРоГ FM
-          </a>
-          <script
-            async
-            type="text/javascript"
-            src="https://volnorez.com/plugins/jscode/player_js/001e157d/%7B%22autoplay%22%3Atrue%2C%22share%22%3A%22source%22%2C%22skin%22%3A%22skin2%22%2C%22style%22%3A%7B%22bg_clr%22%3A%22237%2C237%2C237%22%2C%22b_clr%22%3A%22179%2C179%2C179%22%2C%22icon_clr%22%3A%2266%2C66%2C66%22%2C%22ch%22%3A%2237%22%2C%22bg_clr1%22%3A%22243%2C243%2C243%22%2C%22bg_clr2%22%3A%22196%2C196%2C196%22%2C%22bg_clr3%22%3A%22183%2C183%2C183%22%2C%22bg_clr4%22%3A%22167%2C167%2C167%22%2C%22txt_clr%22%3A%22205%2C209%2C205%22%7D%7D">
-          </script>
+      <div class="menu-group">
+        <button class="menu-button" type="button">Перейти на Волнорез</button>
+        <div class="dropdown">
+          <a class="menu-item" href="https://volnorez.com/pyl_dorog-fm" target="_blank" rel="noopener">💻 Обычный сайт</a>
+          <a class="menu-item" href="https://m.volnorez.com/pyl_dorog-fm" target="_blank" rel="noopener">📱 Мобильная версия</a>
         </div>
       </div>
 
-      <!-- ЧАТ -->
-      <div class="chat-frame">
-        <div
-          id="volnorez_chat"
-          data-code="001e157d"
-          data-skin="skin_4"
-          data-skin-params="'bg_clr':'222,222,222','panel_clr':'216,216,216','ib_clr':'250,250,250','msgbg_clr':'238,238,238','omsgbg_clr':'229,229,229','txt_clr':'18,18,18','b_clr':'145,145,145','icon_clr':'120,120,120','label_clr':'60,61,61','dj_clr':'63,191,7'">
+      <div class="menu-group">
+        <button class="menu-button" type="button">Разное</button>
+        <div class="dropdown">
+          <a class="menu-item" href="https://vk.com/dust_dorogfm" target="_blank" rel="noopener">📢 Группа ПыЛь_ДоРоГ FM</a>
+          <a class="menu-item" href="https://vk.com/topic-227352123_52478122" target="_blank" rel="noopener">📝 Книга жалоб и предложений</a>
+          <a class="menu-item" href="https://vk.com/topic-227352123_52496434" target="_blank" rel="noopener">🎵 Стол заказов</a>
         </div>
-
-        <script async src="https://volnorez.com/plugins/jscode/chat_js"></script>
       </div>
     </div>
 
-    <div class="fail" id="failBox">
-      Чат не загрузился.
+    <div class="layout">
+      <div class="player-panel bevel">
+        <div class="player-title">Онлайн-эфир станции</div>
+        <div class="player-box">
+          <div id="vplayer001e157d">
+            <a href="https://volnorez.com/pyl_dorog-fm" title="радио ПыЛь_ДоРоГ FM">радио ПыЛь_ДоРоГ FM</a>
+            <script async type="text/javascript"
+              src="https://volnorez.com/plugins/jscode/player_js/001e157d/%7B%22share%22%3A%22source%22%2C%22skin%22%3A%22skin2%22%2C%22style%22%3A%7B%22bg_clr%22%3A%22237%2C237%2C237%22%2C%22b_clr%22%3A%22179%2C179%2C179%22%2C%22icon_clr%22%3A%2266%2C66%2C66%22%2C%22ch%22%3A%2237%22%2C%22bg_clr1%22%3A%22243%2C243%2C243%22%2C%22bg_clr2%22%3A%22196%2C196%2C196%22%2C%22bg_clr3%22%3A%22183%2C183%2C183%22%2C%22bg_clr4%22%3A%22167%2C167%2C167%22%2C%22txt_clr%22%3A%22205%2C209%2C205%22%7D%7D">
+            </script>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-shell bevel">
+        <div class="chat-frame">
+          <div
+            id="volnorez_chat"
+            data-code="001e157d"
+            data-skin-params="'bg_clr':'224,224,224','panel_clr':'214,214,214','ib_clr':'247,247,247','msgbg_clr':'239,239,239','omsgbg_clr':'231,231,231','txt_clr':'32,32,32','b_clr':'186,186,186','icon_clr':'108,108,108','label_clr':'78,78,78','dj_clr':'52,52,52'"
+            data-skin="skin_4">
+          </div>
+          <div class="fallback" id="chatFallback" aria-live="polite">
+            <div class="fallback-inner">
+              <h3 style="margin:0 0 10px">Чат не загрузился</h3>
+              <p style="margin:0 0 10px">Обычно это связано с блокировкой внешнего скрипта, ограничением браузера или ответом Volnorez.</p>
+              <p style="margin:0">Открой чат напрямую на <a href="https://volnorez.com/pyl_dorog-fm" target="_blank" rel="noopener">странице станции</a>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
+  <script async src="https://volnorez.com/plugins/jscode/chat_js"></script>
   <script>
     window.addEventListener('load', () => {
+      const root = document.getElementById('volnorez_chat');
+      const fallback = document.getElementById('chatFallback');
       setTimeout(() => {
-        const root = document.getElementById('volnorez_chat');
-        const fail = document.getElementById('failBox');
-
-        if (!root || root.children.length === 0) {
-          fail.style.display = 'block';
-        }
-      }, 4000);
+        const hasRendered = root && root.children.length > 0 && root.innerText.trim().length > 0;
+        if (!hasRendered && fallback) fallback.classList.add('show');
+      }, 5000);
     });
+  </script>
+
+  <script>
+    (function () {
+      const GARBAGE_TEXTS = new Set(['test', 'test1']);
+
+      function isGarbageText(text) {
+        if (!text) return false;
+        return GARBAGE_TEXTS.has(text.trim().toLowerCase());
+      }
+
+      function cleanGarbage(root = document.body) {
+        if (!root) return;
+
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+        const nodes = [];
+
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          if (isGarbageText(node.nodeValue)) {
+            nodes.push(node);
+          }
+        }
+
+        nodes.forEach((node) => {
+          const parent = node.parentElement;
+          if (!parent) return;
+
+          const parentText = (parent.textContent || '').trim().toLowerCase();
+
+          if (GARBAGE_TEXTS.has(parentText)) {
+            parent.style.display = 'none';
+          } else {
+            node.nodeValue = '';
+          }
+        });
+      }
+
+      function runAntiTextFix() {
+        cleanGarbage(document.body);
+      }
+
+      window.addEventListener('load', () => {
+        runAntiTextFix();
+        setTimeout(runAntiTextFix, 700);
+        setTimeout(runAntiTextFix, 1600);
+        setTimeout(runAntiTextFix, 3200);
+      });
+
+      const observer = new MutationObserver((mutations) => {
+        let shouldRun = false;
+
+        for (const mutation of mutations) {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+              if (isGarbageText(node.nodeValue)) {
+                const parent = node.parentElement;
+                if (parent) parent.style.display = 'none';
+              }
+              shouldRun = true;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+              shouldRun = true;
+            }
+          });
+        }
+
+        if (shouldRun) runAntiTextFix();
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    })();
+  </script>
+
+  <script>
+    (function () {
+      const VOLNOREZ_HOST = 'https://volnorez.com';
+
+      function normalizeUrl(url) {
+        if (!url) return url;
+        if (url.startsWith('//')) return 'https:' + url;
+        if (url.startsWith('/')) return VOLNOREZ_HOST + url;
+        return url;
+      }
+
+      function looksLikeSmile(img) {
+        const src = ((img.getAttribute('src') || '') + ' ' + (img.getAttribute('data-src') || '')).toLowerCase();
+        const cls = (img.className || '').toLowerCase();
+        return (
+          src.includes('smile') ||
+          src.includes('smiley') ||
+          src.includes('/plugins/wchat/') ||
+          src.includes('/static/smileys/') ||
+          cls.includes('smile_')
+        );
+      }
+
+      function fixSmileUrls() {
+        const chatRoot = document.getElementById('volnorez_chat');
+        if (!chatRoot) return;
+
+        chatRoot.querySelectorAll('img').forEach((img) => {
+          if (!looksLikeSmile(img)) return;
+
+          const src = img.getAttribute('src') || '';
+          const dataSrc = img.getAttribute('data-src') || '';
+
+          if (!src && dataSrc) {
+            img.setAttribute('src', normalizeUrl(dataSrc));
+          } else if (src) {
+            img.setAttribute('src', normalizeUrl(src));
+          }
+
+          if (!img.dataset.smileFixedBound) {
+            img.dataset.smileFixedBound = '1';
+            img.addEventListener('error', () => {
+              const current = img.getAttribute('src') || '';
+              const fixed = normalizeUrl(current);
+              if (fixed && fixed !== current) {
+                img.src = fixed;
+              }
+            });
+          }
+        });
+      }
+
+      function runSmileFix() {
+        fixSmileUrls();
+      }
+
+      window.addEventListener('load', () => {
+        runSmileFix();
+        setTimeout(runSmileFix, 700);
+        setTimeout(runSmileFix, 1600);
+        setTimeout(runSmileFix, 3200);
+      });
+
+      const observer = new MutationObserver(() => {
+        runSmileFix();
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    })();
   </script>
 </body>
 </html>
