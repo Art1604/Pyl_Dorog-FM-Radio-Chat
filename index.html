@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ПыЛь_ДоРоГ FM — серый HTML5-чат Волнореза — GIF и анимашки</title>
+<title>ПыЛь_ДоРоГ FM — радио и чат</title>
+<meta name="description" content="ПыЛь_ДоРоГ FM — прямой эфир, настоящий чат Волнореза, GIF и анимашки.">
+<meta property="og:type" content="website"><meta property="og:title" content="ПыЛь_ДоРоГ FM — радио и чат"><meta property="og:description" content="Слушай эфир и общайся в чате Волнореза.">
+<meta property="og:url" content="https://art1604.github.io/Pyl_Dorog-FM-Radio-Chat/">
 <style>
 :root{font:14px Arial,Helvetica,sans-serif;color:#252525;background:#c8c8c8;--panel:#dedede;--line:#929292;--inset:#f0f0f0}
 *{box-sizing:border-box}body{margin:0}.wrap{max-width:1150px;margin:0 auto;padding:12px}.bevel{background:var(--panel);border:1px solid var(--line);box-shadow:inset 1px 1px #fff,inset -1px -1px #999;padding:12px;margin-bottom:10px}.head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.head h1{font-size:19px;margin:0}.head a{font-size:13px}.muted{font-size:12px;color:#555;line-height:1.55}h2{font-size:16px;margin:0 0 10px}.controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}button{padding:9px 12px;background:linear-gradient(#f5f5f5,#c8c8c8);border:1px solid #969696;box-shadow:inset 1px 1px white;cursor:pointer;color:#222}button:disabled{opacity:.5;cursor:default}audio{width:100%;margin:5px 0 8px}.state{margin:10px 0;border:1px solid #aaa;background:#eee;padding:9px;font-weight:600}.state.ok{color:#215a2d}.state.bad{color:#a22c2c}.chat-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(215px,1fr);gap:9px}.chatsurface{height:min(54vh,520px);min-height:310px;overflow:auto;background:var(--inset);border:1px solid #999;box-shadow:inset 1px 1px 3px #aaa;padding:10px}.people{height:min(54vh,520px);min-height:310px;overflow:auto;background:#e7e7e7;border:1px solid #999;box-shadow:inset 1px 1px 3px #aaa;padding:7px}.column-title{font-weight:700;background:#ccc;padding:8px;border:1px solid #aaa;border-bottom:0}.msg{padding:7px 5px;border-bottom:1px solid #dedede;overflow-wrap:anywhere}.msg:nth-child(even){background:#e8e8e8}.nick{font-weight:bold;color:#374e6a}.textbody{white-space:pre-wrap}.person{padding:5px 8px;border-bottom:1px solid #d1d1d1;overflow-wrap:anywhere}.log{white-space:pre-wrap;overflow:auto;max-height:230px;min-height:100px;background:#eeeeee;border:1px inset #aaa;padding:9px;font:12px/1.6 ui-monospace,Consolas,monospace}.notice{padding:10px;background:#eee;border:1px solid #aaa}.notice strong{color:#7f2c2c}.count{font-weight:normal;font-size:12px}.hide{display:none}.footer{text-align:center;font-size:12px;color:#555;padding:6px}@media(max-width:680px){.chat-grid{grid-template-columns:1fr}.chatsurface{height:50vh}.people{height:160px;min-height:160px}.wrap{padding:6px}}
@@ -1231,16 +1234,56 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .gallery-tile video,.textbody video{display:inline-block;max-width:100%;object-fit:contain;background:transparent}
 .state.bad{border-color:#a55}.send-error{color:#9c2626!important}
 @media(prefers-reduced-motion:reduce){.gallery-tile video,.textbody video{animation:none}}
+
+/* Дополнения финальной версии: кликабельные ники и информация об эфире */
+.nick-action,.person-action{background:none;color:#294f7c;border:0;padding:0 2px;font:inherit;font-weight:bold;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+.nick-action:hover,.person-action:hover{color:#bb3131}
+.nick-action:focus-visible,.person-action:focus-visible,.chat-smile-action:focus-visible{outline:2px solid #3f78ab;outline-offset:2px}
+.chat-smile-action{display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;background:transparent;padding:1px;vertical-align:middle;cursor:pointer;min-width:28px;min-height:28px}
+.chat-smile-action:hover{border-color:#888;background:#e6e6e6}
+.chat-smile-action .lottie-holder,.chat-smile-action .smiley-media{pointer-events:none}
+.nick-popover{position:fixed;z-index:10000;max-width:min(310px,92vw);border:1px solid #777;box-shadow:2px 3px 8px #666;background:#f0f0f0;padding:8px;display:grid;gap:6px}
+.nick-popover[hidden]{display:none}.nick-popover strong{font-size:14px;overflow-wrap:anywhere}.nick-popover button{padding:8px;background:#ddd;border:1px solid #888;cursor:pointer}
+.airmeta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 8px}
+.airmeta .airitem{background:#f1f1f1;border:1px solid #aaa;padding:10px;min-height:70px;overflow-wrap:anywhere}
+.airmeta .airlabel{display:block;color:#555;font-size:12px;margin-bottom:6px}
+.airmeta .airvalue{font-weight:bold;color:#252525;font-size:14px}
+.airmeta .airvalue:empty::before{content:'Нет данных';color:#777;font-weight:normal}
+.airfoot{font-size:12px;color:#555;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.airfoot button{background:#ddd;border:1px solid #888;cursor:pointer;padding:5px 9px}
+@media(max-width:750px){.airmeta{grid-template-columns:1fr}.airmeta .airitem{min-height:0}}
+/* Ведущий внутри оригинального серого чата */
+.chat-dj-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#d0d0d0;border:1px solid #999;border-bottom:0;padding:7px 9px;font-size:13px}
+.chat-dj-strip[hidden]{display:none!important}
+.chat-dj-strip .dj-label{font-weight:bold;color:#333}
+.chat-dj-strip .dj-online{font-size:11px;color:#3b643b}
+.chat-dj-strip .dj-name{font-weight:bold;color:#294f7c;text-decoration:underline;cursor:pointer;background:transparent;border:0;padding:0;box-shadow:none}
+.msg.dj-message{border-left:3px solid #757575;background:#e5e5e5}
+.msg.dj-message .nick-action::after,.person.dj-person .person-action::after{content:' 🎙️';font-size:12px}
+.person.dj-person{background:#d5d5d5;border-left:3px solid #898989}
+/* v1.2 — отчётливый список участников справа */
+.people{font-size:13px;line-height:1.5}
+.people .person{padding:7px 9px;border-bottom:1px solid #d2d2d2}
+.people .person-action{font-size:13px;font-weight:600;line-height:1.4;color:#2b455e;text-align:left;overflow-wrap:anywhere}
+.people .person.dj-person{background:#d1d1d1;border-left:3px solid #777;padding-left:6px}
+.people .person.dj-person .person-action{font-weight:800;color:#233e5c}
+@media(max-width:680px){.people{font-size:12px}.people .person{padding:6px 4px}.people .person-action{font-size:12px}}
+
 </style>
 </head>
-<body><div class="wrap">
-<header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — серый прямоугольный HTML5-чат v4</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
-<section class="bevel"><h2>🎵 Прямой эфир</h2><audio controls preload="none"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Аудио не поддерживается.</audio><div class="muted">Прямой поток станции. Не зависит от подключения чата.</div></section>
+<body><div id="nickPopover" class="nick-popover" hidden role="dialog" aria-label="Действия с ником"><strong id="nickSelected"></strong><button type="button" id="mentionSelected">Написать @нику</button><button type="button" id="copySelected">Скопировать ник</button><button type="button" id="closeNick">Закрыть</button></div><div class="wrap">
+<header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — радио и чат</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
+<section class="bevel"><h2>🎵 Прямой эфир</h2><audio controls preload="none"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Аудио не поддерживается.</audio><div class="muted">Прямой поток станции. Не зависит от подключения чата.</div><div class="airmeta" aria-label="Сведения о текущем эфире">
+  <div class="airitem" id="airHostBox" hidden><span class="airlabel">🎙️ Ведущий в эфире</span><span id="airHost" class="airvalue"></span></div>
+  <div class="airitem" id="airTopicBox" hidden><span class="airlabel">📢 Тема эфира</span><span id="airTopic" class="airvalue"></span></div>
+  <div class="airitem" id="airTrackBox" hidden><span class="airlabel">🎵 Сейчас играет</span><span id="airTrack" class="airvalue"></span></div>
+</div>
+<div class="airfoot"><span id="airStatus" role="status">Информация об эфире: проверяем источник…</span><button type="button" id="refreshAir" title="Обновить сведения об эфире">Обновить сведения</button><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener">Смотреть эфир на Волнорезе</a></div></section>
 <section class="bevel"><div class="head"><h2>💬 Оригинальный HTML5-чат Волнореза</h2><div class="controls"><button id="connect">Подключить гостевой чат</button><button id="disconnect" disabled>Отключить</button></div></div>
 <div id="status" class="state" role="status">Не подключено</div>
 <div class="login-strip" id="loginStrip"><div class="controls"><label for="nickname">Твой ник:</label><input id="nickname" maxlength="30" placeholder="Имя в чате" autocomplete="nickname" disabled><button id="guestLogin" disabled>Войти гостем</button><span class="muted" id="myIdentity">Не авторизован в чате</span></div></div>
 <div class="chat-grid">
-<div><div class="column-title">Сообщения <span class="count" id="msgCount"></span></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">После подключения здесь появятся сообщения, если сервер разрешает гостевое чтение.</div></div></div>
+<div><div class="column-title">Сообщения <span class="count" id="msgCount"></span></div><div id="chatDjStrip" class="chat-dj-strip" hidden><span class="dj-label">🎙️ Ведущий в эфире:</span><button id="chatDjName" class="dj-name" type="button" data-chat-nick="" title="Нажми, чтобы обратиться к ведущему"></button><span class="dj-online">● В эфире</span></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">После подключения здесь появятся сообщения, если сервер разрешает гостевое чтение.</div></div></div>
 <div><div class="column-title">👥 Участники <span class="count" id="userCount"></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
 <form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><textarea id="messageInput" rows="2" maxlength="1000" placeholder="Сначала подключись и войди гостем…" disabled></textarea><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><button type="button" id="emotesButton">😊 Смайлы — оригинальные разделы</button><span class="muted" id="sendState">Отправка станет доступна только после подтверждения входа сервером.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. Для «Анимашек» требуются локальные .lottie-файлы в assets/volnorez-lottie/.</p><div class="gallery-grid" id="galleryGrid"></div></section></form>
@@ -1300,12 +1343,27 @@ function smileNode(id){const s=SMILES[id];if(!s){const text=document.createEleme
  if(s.cls){const el=document.createElement('span');el.className='smiley msg-smile '+s.cls;el.title='Смайл '+id;el.setAttribute('role','img');el.setAttribute('aria-label','Смайл '+id);return el;}
  const img=document.createElement('img');img.className='smiley-media';img.src=s.file;img.loading='lazy';img.alt='Смайл '+id;img.addEventListener('error',()=>{img.replaceWith(document.createTextNode('%'+id+'%'));});return img;
 }
-function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));target.append(smileNode(m[1]));p=m.index+m[0].length;}if(p<str.length)target.append(document.createTextNode(str.slice(p)));}
+function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));const b=document.createElement('button');b.type='button';b.className='chat-smile-action';b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';b.append(smileNode(m[1]));target.append(b);p=m.index+m[0].length;}if(p<str.length)target.append(document.createTextNode(str.slice(p)));}
+let currentAirHost='';
+function comparableNick(v){return String(v||'').normalize('NFKC').trim().replace(/^@/,'').replace(/\s+/g,' ').toLocaleLowerCase('ru-RU');}
+function isCurrentDJ(nick){return !!currentAirHost&&comparableNick(nick)===comparableNick(currentAirHost);}
+function updateChatDJ(){
+ const strip=$('chatDjStrip'),button=$('chatDjName');
+ strip.hidden=!currentAirHost;
+ button.textContent=currentAirHost;
+ button.dataset.chatNick=currentAirHost;
+ E.messages.querySelectorAll('.msg').forEach(el=>{
+  const nick=el.querySelector('[data-chat-nick]');el.classList.toggle('dj-message',!!nick&&isCurrentDJ(nick.dataset.chatNick));
+ });
+ E.users.querySelectorAll('.person').forEach(el=>{
+  const nick=el.querySelector('[data-chat-nick]');el.classList.toggle('dj-person',!!nick&&isCurrentDJ(nick.dataset.chatNick));
+ });
+}
 function showMessage(m){if(!m||typeof m!=='object')return;const first=E.messages.querySelector('.muted');if(first&&E.messages.children.length===1)E.messages.replaceChildren();
- const d=document.createElement('div');d.className='msg';const n=document.createElement('span');n.className='nick';n.textContent=safe(m.nick||m.user?.nick||m.username||m.user_name,100)||'Слушатель';
- const b=document.createElement('span');b.className='textbody';b.append(document.createTextNode(': '));appendRich(b,m.text??m.message??m.msg??m.body??'');d.append(n,b);E.messages.append(d);historySize++;E.msgCount.textContent='('+historySize+')';while(E.messages.children.length>180)E.messages.firstChild.remove();E.messages.scrollTop=E.messages.scrollHeight;}
+ const d=document.createElement('div');d.className='msg';const n=document.createElement('button');n.type='button';n.className='nick nick-action';n.textContent=safe(m.nick||m.user?.nick||m.username||m.user_name,100)||'Слушатель';n.dataset.chatNick=n.textContent;n.title='Нажми, чтобы обратиться к пользователю';
+ const b=document.createElement('span');b.className='textbody';b.append(document.createTextNode(': '));appendRich(b,m.text??m.message??m.msg??m.body??'');d.append(n,b);if(isCurrentDJ(n.textContent))d.classList.add('dj-message');E.messages.append(d);historySize++;E.msgCount.textContent='('+historySize+')';while(E.messages.children.length>180)E.messages.firstChild.remove();E.messages.scrollTop=E.messages.scrollHeight;}
 function userKey(u){return String(u?.id??u?.uid??u?.nick??'');}
-function renderUsers(){E.users.replaceChildren();E.userCount.textContent='('+roster.size+')';if(!roster.size){placeholder(E.users,'Список пока пуст.');return;}for(const u of [...roster.values()].slice(0,250)){const e=document.createElement('div');e.className='person';e.textContent=safe(u.nick||u.name,100)||'Гость';E.users.append(e);}}
+function renderUsers(){E.users.replaceChildren();E.userCount.textContent='('+roster.size+')';if(!roster.size){placeholder(E.users,'Список пока пуст.');return;}for(const u of [...roster.values()].slice(0,250)){const e=document.createElement('div');e.className='person';const btn=document.createElement('button');btn.type='button';btn.className='person-action';btn.textContent=safe(u.nick||u.name,100)||'Гость';btn.dataset.chatNick=btn.textContent;btn.title='Нажми, чтобы обратиться';e.append(btn);if(isCurrentDJ(btn.textContent))e.classList.add('dj-person');E.users.append(e);}}
 function failSend(t){pending=false;updateButtons();note(t,'send-error');log(t);}
 function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получено событие не в JSON.');return;}if(!obj||typeof obj!=='object')return;const cmd=String(obj.cmd||'неизвестно');
  switch(cmd){
@@ -1419,6 +1477,44 @@ E.emotes.addEventListener('click',()=>{E.picker.hidden=!E.picker.hidden;if(!E.pi
 showTab('classic');
 $('copy').addEventListener('click',async()=>{const txt=E.log.textContent;try{await navigator.clipboard.writeText(txt);$('copy').textContent='Скопировано';}catch{window.prompt('Скопируй журнал:',txt);}});
 window.addEventListener('pagehide',()=>{stopped=true;clearTimeout(retryTimer);if(socket)socket.close(1000);});
+
+/* Никнеймы: упоминание и копирование (без отправки личных сообщений) */
+const nickPopup=$('nickPopover');let selectedNick='';
+function closeNickPopup(){nickPopup.hidden=true;}
+function insertIntoMessage(value){if(!authorized||E.input.disabled){note('Чтобы вставить в отправляемое сообщение, сначала войди гостем.','send-note');return false;}
+ const left=E.input.selectionStart,right=E.input.selectionEnd;
+ E.input.setRangeText(value,left,right,'end');E.input.focus();return true;}
+function showNickPopup(nick,anchor){selectedNick=String(nick||'').slice(0,100);$('nickSelected').textContent=selectedNick;nickPopup.hidden=false;
+ const r=anchor.getBoundingClientRect();nickPopup.style.left=Math.max(8,Math.min(r.left,window.innerWidth-320))+'px';nickPopup.style.top=Math.max(8,Math.min(r.bottom+4,window.innerHeight-160))+'px';}
+$('mentionSelected').addEventListener('click',()=>{if(insertIntoMessage('@'+selectedNick+' '))closeNickPopup();});
+$('copySelected').addEventListener('click',()=>{if(navigator.clipboard?.writeText)navigator.clipboard.writeText(selectedNick).then(()=>note('Ник скопирован.')).catch(()=>note('Не удалось скопировать ник.','send-error'));else note('Выдели ник, чтобы скопировать.');closeNickPopup();});
+$('closeNick').addEventListener('click',closeNickPopup);
+document.addEventListener('click',event=>{
+ const btn=event.target.closest('[data-chat-nick]');if(btn){showNickPopup(btn.dataset.chatNick,btn);return;}
+ const emoji=event.target.closest('.chat-smile-action[data-smile-id]');if(emoji){const code='%'+emoji.dataset.smileId+'%';if(!insertIntoMessage(code))note('Смайл '+code+' можно смотреть гостем. Для отправки войди в чат.');return;}
+ if(!nickPopup.hidden&&!event.target.closest('#nickPopover'))closeNickPopup();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeNickPopup();});
+/* Обновляемые публичные метаданные с GitHub Pages (никаких персональных токенов) */
+let lastAirUpdate='';const airFields=[['host','airHost','airHostBox'],['topic','airTopic','airTopicBox'],['track','airTrack','airTrackBox']];
+async function refreshAir(){const status=$('airStatus');$('refreshAir').disabled=true;
+ try{const url='./data/onair.json?cache='+Date.now();const resp=await fetch(url,{cache:'no-store'});
+ if(!resp.ok)throw new Error('HTTP '+resp.status);
+ const data=await resp.json();if(!data||typeof data!=='object')throw new Error('Неверный ответ');
+ const stamp=Date.parse(data.updated_at||'');const age=Date.now()-stamp;
+ if(!Number.isFinite(stamp)||age< -300000||age>20*60*1000)throw new Error('данные устарели');
+ for(const [key,id,box] of airFields){const value=safe(data[key],200).trim();$(id).textContent=value;$(box).hidden=!value;}
+ const any=airFields.some(([key])=>safe(data[key],200).trim());
+ currentAirHost=safe(data.host,100).trim();updateChatDJ();
+ lastAirUpdate=data.updated_at;
+ status.textContent=any?'Данные эфира обновлены: '+new Date(stamp).toLocaleTimeString('ru-RU'):'Сейчас ведущий, тема и трек не указаны на Волнорезе.';
+ }catch(e){for(const [,id,box] of airFields){$(id).textContent='';$(box).hidden=true;}
+ currentAirHost='';updateChatDJ();
+ status.textContent='Сведения об эфире недоступны ('+String(e.message).slice(0,55)+'). Нужна настройка GitHub Actions.';
+ }finally{$('refreshAir').disabled=false;}}
+$('refreshAir').addEventListener('click',refreshAir);
+refreshAir();setInterval(()=>{if(!document.hidden)refreshAir();},60000);
+
 updateButtons();log('Готово. Подключи чат, затем нажми «Войти гостем».');
 })();
 </script></body></html>
