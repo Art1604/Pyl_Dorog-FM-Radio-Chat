@@ -1409,10 +1409,22 @@ function showMessage(m){
  E.messages.scrollTop=E.messages.scrollHeight;
 }
 function userKey(u){return String(u?.id??u?.uid??u?.nick??'');}
+/* Сортировка перенесена из оригинального chat_client Волнореза (чат 3.htm):
+   generate_sorting_key + compare_users. Порядок не зависит от вручную выбранных ников. */
+function volnorezSortKey(u){
+ const type=String(u?.type??u?.utype??'');
+ const group=type==='moderator'?'0':type==='owner'?'1':type==='rj'?'2':type==='guest'?'3':type==='user'?'4':'5';
+ return group+String(u?.nick??'').toLowerCase();
+}
+function compareVolnorezUsers(left,right){
+ const result=volnorezSortKey(left).localeCompare(volnorezSortKey(right));
+ if(result===0)return String(right?.nick??'').localeCompare(String(left?.nick??''));
+ return result;
+}
 function renderUsers(){
  E.users.replaceChildren();E.userCount.textContent='('+roster.size+')';
  if(!roster.size){placeholder(E.users,'Список пока пуст.');return;}
- for(const u of [...roster.values()].slice(0,250)){
+ for(const u of [...roster.values()].sort(compareVolnorezUsers).slice(0,250)){
   const e=document.createElement('div');e.className='person';
   const btn=document.createElement('button');btn.type='button';btn.className='person-action';
   btn.textContent=safe(u.nick||u.name,100)||'Гость';btn.dataset.chatNick=btn.textContent;
