@@ -1242,8 +1242,6 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .chat-smile-action{display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;background:transparent;padding:1px;vertical-align:middle;cursor:pointer;min-width:28px;min-height:28px}
 .chat-smile-action:hover{border-color:#888;background:#e6e6e6}
 .chat-smile-action .lottie-holder,.chat-smile-action .smiley-media{pointer-events:none}
-.nick-popover{position:fixed;z-index:10000;max-width:min(310px,92vw);border:1px solid #777;box-shadow:2px 3px 8px #666;background:#f0f0f0;padding:8px;display:grid;gap:6px}
-.nick-popover[hidden]{display:none}.nick-popover strong{font-size:14px;overflow-wrap:anywhere}.nick-popover button{padding:8px;background:#ddd;border:1px solid #888;cursor:pointer}
 .airmeta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:12px 0 8px}
 .airmeta .airitem{background:#f1f1f1;border:1px solid #aaa;padding:10px;min-height:70px;overflow-wrap:anywhere}
 .airmeta .airlabel{display:block;color:#555;font-size:12px;margin-bottom:6px}
@@ -1393,9 +1391,31 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .chatsurface .msg-delete-menu .msg-delete-confirm{display:flex;align-items:center;justify-content:center;width:36px;height:33px;padding:5px;color:#555}
 .chatsurface .msg-delete-menu .msg-delete-confirm svg{pointer-events:none}
 .chatsurface .msg-delete-dots:disabled{opacity:.55;cursor:wait}
+<style>
+/* v3.5: самостоятельная компактная смена гостевого ника, без панели входа */
+.nick-change-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#d7d7d7;border:1px solid #999;padding:7px 9px;margin:9px 0 0;color:#303030;font:13px Arial,sans-serif}
+.nick-change-row input{width:195px;max-width:100%;padding:7px 8px;border:1px solid #999;background:#fff;color:#222;border-radius:0}
+.nick-change-row button{padding:7px 11px;border-radius:0}
+.nick-change-row #nickChangeStatus{font-size:12px;color:#555}
+.nick-change-row #nickChangeStatus.nick-error{color:#8c2525}
+@media(max-width:680px){.nick-change-row input{width:155px;flex:1;min-width:110px}}
+</style>
+<style>
+/* v3.6: ник внутри строки отправки, как в оригинале; без панели и кнопки сохранения. */
+#nickChangeRow.nick-inline{display:flex;align-items:stretch;flex:0 1 155px;min-width:94px;max-width:210px;min-height:38px;margin:0;padding:0;border:1px solid #999;background:#d4d4d4;box-sizing:border-box}
+#nickChangeRow.nick-inline input{width:100%;max-width:none;min-width:0;height:auto;min-height:36px;padding:5px 7px;border:0;border-radius:0;background:transparent;color:#333;font:13px Arial,sans-serif;box-sizing:border-box;text-overflow:ellipsis}
+#nickChangeRow.nick-inline input:focus{outline:1px solid #777;outline-offset:-1px;background:#eee}
+#nickChangeRow.nick-inline input:disabled{opacity:1;color:#555}
+#nickChangeRow.nick-inline button[hidden]{display:none!important}
+#nickChangeStatus.nick-inline-status{display:none}
+#nickChangeStatus.nick-inline-status.nick-error{display:block;color:#8c2525;font-size:12px;padding:3px 0}
+#sendForm .send-row textarea{resize:none!important;height:38px!important;min-height:38px!important;max-height:38px!important;overflow:hidden;white-space:nowrap}
+#sendForm .send-row{align-items:stretch}
+.sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:680px){#nickChangeRow.nick-inline{flex-basis:100px;min-width:75px}#nickChangeRow.nick-inline input{font-size:12px;padding:4px}}
 </style>
 </head>
-<body><div id="nickPopover" class="nick-popover" hidden role="dialog" aria-label="Действия с ником"><strong id="nickSelected"></strong><button type="button" id="mentionSelected">Написать @нику</button><button type="button" id="copySelected">Скопировать ник</button><button type="button" id="closeNick">Закрыть</button></div><div class="wrap">
+<body><div class="wrap">
 <header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — радио и чат</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
 <section class="bevel"><audio controls preload="none"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Аудио не поддерживается.</audio><div class="airmeta" aria-label="Сведения о текущем эфире">
   <div class="airitem" id="airHostBox" hidden><span class="airlabel">🎙️ Ведущий в эфире</span><span id="airHost" class="airvalue"></span></div>
@@ -1411,12 +1431,12 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 
 </div>
 <div id="status" class="state" role="status">Подключение к чату…</div>
-<div class="login-strip" id="loginStrip"><div class="controls"><label for="nickname">Твой ник:</label><input id="nickname" maxlength="30" placeholder="Имя в чате" autocomplete="nickname" disabled><button id="guestLogin" disabled>Повторить гостевой вход</button><span class="muted" id="myIdentity">Не авторизован в чате</span></div></div>
+<div class="login-strip" id="loginStrip"><div class="controls"><button id="guestLogin" disabled>Повторить гостевой вход</button><span class="muted" id="myIdentity">Не авторизован в чате</span></div></div>
 <div class="chat-grid">
 <div><div class="column-title">Сообщения <span class="count" id="msgCount" hidden></span></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">Загружаем сообщения из чата Волнореза…</div></div></div>
 <div><div class="column-title">👥 Участники <span class="count" id="userCount" hidden></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
-<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><textarea id="messageInput" rows="2" maxlength="1000" placeholder="Автоматический вход в чат…" disabled></textarea><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. Для «Анимашек» требуются локальные .lottie-файлы в assets/volnorez-lottie/.</p><div class="gallery-grid" id="galleryGrid"></div></section></form>
+<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><textarea id="messageInput" rows="1" maxlength="1000" placeholder="Автоматический вход в чат…" aria-label="Сообщение" disabled></textarea><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. Для «Анимашек» требуются локальные .lottie-файлы в assets/volnorez-lottie/.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
 <p class="muted" id="technicalExplanation">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
 <div class="notice" id="outdatedWarning"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
@@ -1430,6 +1450,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 const WSURL='wss://s05.volnorez.com/chat-app/869683';
 const SMILES=JSON.parse(document.getElementById('smiles-json').textContent);
 const $=id=>document.getElementById(id);
+const nickSave=$('saveNickname'),nickChangeStatus=$('nickChangeStatus');
 const E={connect:$('connect'),disconnect:$('disconnect'),login:$('guestLogin'),nick:$('nickname'),identity:$('myIdentity'),status:$('status'),log:$('log'),messages:$('messages'),users:$('users'),msgCount:$('msgCount'),userCount:$('userCount'),form:$('sendForm'),input:$('messageInput'),send:$('sendButton'),sendState:$('sendState'),emotes:$('emotesButton'),picker:$('smilesPicker')};
 let socket=null,authorized=false,currentUser=null,salt='',attempts=0,historySize=0,roster=new Map(),pending=false,initDone=false,initTimer=null;
 let stopped=true,retryTimer=null,retryCount=0,loginTimer=null,guestAllowed=null;
@@ -1493,7 +1514,7 @@ function note(t,cls=''){E.sendState.className='muted '+cls;E.sendState.textConte
 function safe(t,n=1500){return (typeof t==='string'||typeof t==='number')?String(t).slice(0,n):'';}
 function placeholder(node,t){node.replaceChildren();const e=document.createElement('div');e.className='muted';e.textContent=t;node.append(e);}
 function socketSend(payload){if(!socket||socket.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(payload));return true;}
-function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!initDone;E.input.disabled=!online||!authorized;E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
+function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!authorized;nickSave.disabled=!online||!authorized;E.input.disabled=!online||!authorized;E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
 function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=document.createElement('span');text.textContent=inGallery?'Смайл недоступен':'%'+id+'%';return text;}
  if(s.kind==='lottie'){
   // .lottie is a compressed animation, not an image: it requires a registered player.
@@ -1715,9 +1736,9 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  case 'set_users_list':{const arr=Array.isArray(obj.users)?obj.users:[];roster.clear();arr.forEach(u=>{if(u&&typeof u==='object')roster.set(userKey(u),u);});renderUsers();log('Участники: '+roster.size);break;}
  case 'add_user':case 'update_user':{const u=obj.user;if(u&&typeof u==='object'){roster.set(userKey(u),u);renderUsers();}break;}
  case 'remove_user':{const u=obj.user;if(u&&typeof u==='object'){roster.delete(userKey(u));renderUsers();}break;}
- case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;pending=false;refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
+ case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
  case 'logout':clearTimeout(loginTimer);loginTimer=null;authorized=false;currentUser=null;pending=false;refreshDeleteControls();E.identity.textContent='Не авторизован';note('Сервер завершил гостевой вход.','send-error');updateButtons();break;
- case 'set_nick':E.nick.value=safe(obj.nick,30);E.identity.textContent='В чате: '+safe(obj.nick,50);desiredGuestNick=safe(obj.nick,30);try{localStorage.setItem('pylfm_guest_nick',desiredGuestNick);}catch{}log('Ник подтверждён сервером');break;
+ case 'set_nick':nickRequestInFlight=false;E.nick.value=safe(obj.nick,30);E.identity.textContent='В чате: '+safe(obj.nick,50);if(currentUser)currentUser.nick=safe(obj.nick,30);desiredGuestNick=safe(obj.nick,30);try{localStorage.setItem('pylfm_guest_nick',desiredGuestNick);}catch{}nickChangeStatus.className='';nickChangeStatus.textContent='Ник сохранён';log('Ник подтверждён сервером');break;
  case 'accept_msg':pending=false;updateButtons();E.input.value='';note('✅ Сообщение принято сервером.','send-good');log('Сообщение принято сервером');break;
  case 'reject_msg':failSend('❌ Сервер отклонил сообщение. Проверь права гостя и правила чата.');break;
  case 'set_unauth_login':guestAllowed=obj.value!==false;log('Гостевой вход по настройкам станции: '+(guestAllowed?'разрешён':'запрещён'));if(!guestAllowed&&!authorized){clearTimeout(loginTimer);loginTimer=null;note('Станция запретила гостевой вход. Читать сообщения и смотреть смайлы можно.','send-error');}else if(guestAllowed&&initDone&&!authorized)requestGuestLogin();updateButtons();break;
@@ -1727,7 +1748,7 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
 }
 function resetAccess(){
  lastShownMessage=null;
- authorized=false;currentUser=null;initDone=false;pending=false;guestLoginAttempted=false;pendingDeletionId=null;refreshDeleteControls();clearTimeout(initTimer);initTimer=null;
+ authorized=false;currentUser=null;initDone=false;pending=false;nickChangeStatus.textContent='';guestLoginAttempted=false;pendingDeletionId=null;refreshDeleteControls();clearTimeout(initTimer);initTimer=null;
  clearTimeout(loginTimer);loginTimer=null;E.identity.textContent='Не авторизован';updateButtons();
 }
 function scheduleReconnect(code){
@@ -1793,8 +1814,50 @@ function requestGuestLogin(manual=false){
  },10000);
 }
 E.login.addEventListener('click',()=>requestGuestLogin(true));
-E.nick.addEventListener('change',()=>{if(!authorized)return;const nick=E.nick.value.trim().slice(0,30);if(!nick)return;if(nick===currentUser?.nick)return;socketSend({cmd:'set_nick',nick});log('Запрошена смена ника');});
-E.form.addEventListener('submit',event=>{event.preventDefault();if(!authorized||pending||!socket)return;const text=E.input.value.trim();if(!text)return;if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}pending=true;updateButtons();const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');socketSend({cmd:'send_message',text,local_id:localId});note('Ожидаем подтверждение Волнореза…');log('SEND send_message ('+text.length+' символов)');setTimeout(()=>{if(pending){pending=false;updateButtons();note('Нет подтверждения отправки. Не повторяй сразу: сообщение могло дойти.','send-note');}},9000);});
+function requestNicknameChange(){
+ if(!authorized||!socket||socket.readyState!==WebSocket.OPEN){nickChangeStatus.textContent='Нет соединения с чатом';nickChangeStatus.className='nick-error';return;}
+ const nick=E.nick.value.trim().slice(0,30);
+ if(!nick){nickChangeStatus.textContent='Введите ник';nickChangeStatus.className='nick-error';E.nick.focus();return;}
+ if(nick===currentUser?.nick){nickChangeStatus.textContent='';nickChangeStatus.className='';return;}
+ if(socketSend({cmd:'set_nick',nick})){
+  nickChangeStatus.textContent='Запрос отправлен…';nickChangeStatus.className='';log('Запрошена смена ника');
+ }else{nickChangeStatus.textContent='Не удалось отправить запрос';nickChangeStatus.className='nick-error';}
+}
+nickSave.addEventListener('click',requestNicknameChange);
+let nickRequestInFlight=false;
+// Ник сохраняется Enter или выходом из поля. Сервер подтверждает изменение через set_nick.
+function saveInlineNick(){
+ if(nickRequestInFlight||!authorized)return;
+ const candidate=E.nick.value.trim().slice(0,30);
+ if(!candidate||candidate===String(currentUser?.nick||''))return;
+ nickRequestInFlight=true;
+ requestNicknameChange();
+ // Защищаем от дублей при одновременных blur и Enter.
+ setTimeout(()=>{nickRequestInFlight=false;},1200);
+}
+E.nick.addEventListener('keydown',event=>{
+ if(event.key==='Enter'){
+  event.preventDefault();event.stopPropagation();saveInlineNick();E.input.focus();
+ }
+});
+E.nick.addEventListener('blur',saveInlineNick);
+// Enter и Shift+Enter отправляют сообщение, перенос строки не разрешён.
+E.input.addEventListener('keydown',event=>{
+ if(event.key==='Enter'&&!event.isComposing){
+  event.preventDefault();
+  if(!event.repeat)E.form.requestSubmit();
+ }
+});
+E.input.addEventListener('input',()=>{
+ const old=E.input.value;
+ if(/[\r\n]/.test(old)){
+  const pos=E.input.selectionStart;
+  const before=old.slice(0,pos).replace(/[\r\n]+/g,' ').length;
+  E.input.value=old.replace(/[\r\n]+/g,' ');
+  E.input.setSelectionRange(before,before);
+ }
+});
+E.form.addEventListener('submit',event=>{event.preventDefault();if(!authorized||pending||!socket)return;const text=E.input.value.replace(/[\r\n]+/g,' ').trim();if(!text)return;if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}pending=true;updateButtons();const localId=Date.now().toString(16)+'-'+(++attempts).toString(16)+(salt?'-'+salt:'');socketSend({cmd:'send_message',text,local_id:localId});note('Ожидаем подтверждение Волнореза…');log('SEND send_message ('+text.length+' символов)');setTimeout(()=>{if(pending){pending=false;updateButtons();note('Нет подтверждения отправки. Не повторяй сразу: сообщение могло дойти.','send-note');}},9000);});
 const cats={classic:[],retro:[],emoji:[],stickers:[],gif:[],animashki:[]};
 const groupToCategory={1:'classic',2:'retro',6:'emoji',8:'stickers',9:'gif',10:'animashki'};
 for(const [id,s] of Object.entries(SMILES)){
@@ -1836,23 +1899,29 @@ showTab('classic');
 $('copy').addEventListener('click',async()=>{const txt=E.log.textContent;try{await navigator.clipboard.writeText(txt);$('copy').textContent='Скопировано';}catch{window.prompt('Скопируй журнал:',txt);}});
 window.addEventListener('pagehide',()=>{stopped=true;clearTimeout(retryTimer);if(socket)socket.close(1000);});
 
-/* Никнеймы: упоминание и копирование (без отправки личных сообщений) */
-const nickPopup=$('nickPopover');let selectedNick='';
-function closeNickPopup(){nickPopup.hidden=true;}
-function insertIntoMessage(value){if(!authorized||E.input.disabled){note('Чтобы вставить в отправляемое сообщение, сначала войди гостем.','send-note');return false;}
+/* При нажатии на ник вставляем его сразу в сообщение, без @ и без меню. */
+function insertIntoMessage(value){
+ if(!authorized||E.input.disabled){
+  note('Гостевой вход ещё выполняется. После подключения можно нажать на ник снова.','send-note');
+  return false;
+ }
  const left=E.input.selectionStart,right=E.input.selectionEnd;
- E.input.setRangeText(value,left,right,'end');E.input.focus();return true;}
-function showNickPopup(nick,anchor){selectedNick=String(nick||'').slice(0,100);$('nickSelected').textContent=selectedNick;nickPopup.hidden=false;
- const r=anchor.getBoundingClientRect();nickPopup.style.left=Math.max(8,Math.min(r.left,window.innerWidth-320))+'px';nickPopup.style.top=Math.max(8,Math.min(r.bottom+4,window.innerHeight-160))+'px';}
-$('mentionSelected').addEventListener('click',()=>{if(insertIntoMessage('@'+selectedNick+' '))closeNickPopup();});
-$('copySelected').addEventListener('click',()=>{if(navigator.clipboard?.writeText)navigator.clipboard.writeText(selectedNick).then(()=>note('Ник скопирован.')).catch(()=>note('Не удалось скопировать ник.','send-error'));else note('Выдели ник, чтобы скопировать.');closeNickPopup();});
-$('closeNick').addEventListener('click',closeNickPopup);
+ E.input.setRangeText(value,left,right,'end');
+ E.input.focus();return true;
+}
 document.addEventListener('click',event=>{
- const btn=event.target.closest('[data-chat-nick]');if(btn){showNickPopup(btn.dataset.chatNick,btn);return;}
- const emoji=event.target.closest('.chat-smile-action[data-smile-id]');if(emoji){const code='%'+emoji.dataset.smileId+'%';if(!insertIntoMessage(code))note('Смайл '+code+' можно смотреть гостем. Для отправки войди в чат.');return;}
- if(!nickPopup.hidden&&!event.target.closest('#nickPopover'))closeNickPopup();
+ const btn=event.target.closest('[data-chat-nick]');
+ if(btn){
+  const nick=String(btn.dataset.chatNick||'').trim();
+  if(nick)insertIntoMessage(nick+' ');
+  return;
+ }
+ const emoji=event.target.closest('.chat-smile-action[data-smile-id]');
+ if(emoji){
+  const code='%'+emoji.dataset.smileId+'%';
+  insertIntoMessage(code);
+ }
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeNickPopup();});
 /* v2.3: публичные данные эфира через WebSocket; GitHub JSON — резерв.
    Отдельный аудиопоток никогда не включаем. HAR подтверждает add_player
    с paused:false, но получение set_desc при paused:true нужно проверить живьём. */
