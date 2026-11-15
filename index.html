@@ -1370,11 +1370,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 #sendForm > .controls { padding:0; min-height:0; }
 
 
-/* Наши GIF: общая закреплённая анимация из GitHub, без передачи в Волнорез. */
-.chatsurface .our-gif-pinned{display:flex;gap:9px;align-items:center;background:#e6e6e6;border:1px solid #aaa;padding:5px 8px;margin:4px 3px 7px;color:#333;font-size:12px}
-.chatsurface .our-gif-pinned img{display:block;width:68px;height:68px;object-fit:contain;border:1px solid #999;background:#fff}
-.chatsurface .our-gif-pinned .our-gif-text{display:flex;flex-direction:column;gap:3px}
-.gallery-tile.our-gif-tile img{max-width:70px;max-height:65px;object-fit:contain}
+/* Просмотр собственных GIF без закрепления в общем чате. */
 </style>
 <style>
 /* v2.2 — поле → смайлы → Отправить, крайний элемент справа */
@@ -1442,6 +1438,18 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 #sendForm .composer-smile-preview .preview-smile video{object-fit:contain}
 @media(max-width:680px){#sendForm .composer-input-wrap{flex:1 1 145px;min-width:0}}
 </style>
+<style>
+/* v4.5 — полноценный редактор: текст и смайлы являются реальными узлами. */
+#sendForm .composer-input-wrap{height:38px;min-height:38px;max-height:38px}
+#sendForm .rich-message-editor{display:block;overflow-x:auto;overflow-y:hidden;white-space:pre;min-width:0;width:100%;height:38px;min-height:38px;max-height:38px;padding:4px 9px;background:white;border:1px solid #aaa;border-radius:0;outline-offset:-2px;color:#222;font:13px/28px Arial,sans-serif;caret-color:#222;scrollbar-width:thin}
+#sendForm .rich-message-editor:focus{outline:1px solid #777}
+#sendForm .rich-message-editor[contenteditable="false"]{background:#eee;color:#666;cursor:not-allowed}
+#sendForm .rich-message-editor:empty::before{content:attr(data-placeholder);color:#777;pointer-events:none}
+#sendForm .rich-message-editor .editor-smile{display:inline-flex;align-items:center;justify-content:center;width:30px;height:29px;min-width:30px;max-width:30px;vertical-align:middle;overflow:hidden;line-height:normal;user-select:all}
+#sendForm .rich-message-editor .editor-smile .smiley{display:block;width:27px!important;height:27px!important;min-width:27px!important;min-height:27px!important;max-width:27px!important;max-height:27px!important;margin:0!important}
+#sendForm .rich-message-editor .editor-smile .smiley-media{display:block;width:27px!important;height:27px!important;max-width:27px!important;max-height:27px!important;object-fit:contain;margin:0!important}
+#sendForm .rich-message-editor .editor-smile .lottie-holder,#sendForm .rich-message-editor .editor-smile dotlottie-wc{display:block;width:27px!important;height:27px!important;min-width:27px!important;min-height:27px!important}
+</style>
 </head>
 <body><div class="wrap">
 <header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — радио и чат</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
@@ -1464,7 +1472,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 <div><div class="column-title">Сообщения <span class="count" id="msgCount" hidden></span></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">Загружаем сообщения из чата Волнореза…</div></div></div>
 <div><div class="column-title">👥 Участники <span class="count" id="userCount" hidden></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
-<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><div class="composer-input-wrap" id="composerInputWrap"><div class="composer-smile-preview" id="composerSmilePreview" aria-hidden="true"></div><textarea id="messageInput" rows="1" maxlength="1000" placeholder="Автоматический вход в чат…" aria-label="Сообщение" disabled></textarea></div><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button><button type="button" data-category="ours">Наши</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. GIF и анимашки загружаются из папок assets/volnorez-gifs и assets/volnorez-lottie.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
+<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><div class="composer-input-wrap" id="composerInputWrap"><div id="messageInput" class="rich-message-editor" contenteditable="false" role="textbox" aria-multiline="false" aria-label="Сообщение" data-placeholder="Автоматический вход в чат…"></div></div><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. GIF и анимашки загружаются из папок assets/volnorez-gifs и assets/volnorez-lottie.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
 <p class="muted" id="technicalExplanation">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
 <div class="notice" id="outdatedWarning"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
@@ -1503,7 +1511,7 @@ function finishPendingMessage(ack){
  clearTimeout(pendingMessage.timeout);
  pendingMessage=null;pending=false;updateButtons();
  // Do not erase new edits typed while awaiting a reply.
- if(E.input.value===sentText){E.input.value='';refreshComposerSmilePreview();}
+ if(editorText()===sentText){E.input.replaceChildren();savedEditorRange=null;}
  note(ack==='add_msg'?'✅ Сообщение появилось в общем чате.':'✅ Сообщение принято Волнорезом.','send-good');
 }
 function ownMessageArrived(message){
@@ -1578,7 +1586,7 @@ function note(t,cls=''){E.sendState.className='muted '+cls;E.sendState.textConte
 function safe(t,n=1500){return (typeof t==='string'||typeof t==='number')?String(t).slice(0,n):'';}
 function placeholder(node,t){node.replaceChildren();const e=document.createElement('div');e.className='muted';e.textContent=t;node.append(e);}
 function socketSend(payload){if(!socket||socket.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(payload));return true;}
-function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!authorized;nickSave.disabled=!online||!authorized;E.input.disabled=!online||!authorized;E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
+function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!authorized;nickSave.disabled=!online||!authorized;E.input.setAttribute('contenteditable',online&&authorized?'true':'false');E.input.dataset.placeholder=(online&&authorized?'Написать сообщение…':'Автоматический вход в чат…');E.input.setAttribute('aria-disabled',String(!online||!authorized));E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
 function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=document.createElement('span');text.textContent=inGallery?'Смайл недоступен':'%'+id+'%';return text;}
  if(s.kind==='lottie'){
   // .lottie is a compressed animation, not an image: it requires a registered player.
@@ -1606,27 +1614,65 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
 }
 /* Предпросмотр всех штатных смайлов: оставляем текстовый код в textarea,
    чтобы протокол send_message не изменился. Свои GIF не участвуют. */
-const composerWrap=$('composerInputWrap');
-const composerPreview=$('composerSmilePreview');
-function refreshComposerSmilePreview(){
- const value=E.input.value;
- const pattern=/%(\d{1,4})%/g;
- let match,offset=0,recognized=0;
- const nodes=document.createDocumentFragment();
- while((match=pattern.exec(value))){
-  if(!SMILES[match[1]]||!SMILES[match[1]].allowed)continue;
-  if(match.index>offset){const span=document.createElement('span');span.className='preview-text';span.textContent=value.slice(offset,match.index);nodes.append(span);}
-  const holder=document.createElement('span');holder.className='preview-smile';
-  holder.append(smileNode(match[1]));nodes.append(holder);
-  offset=match.index+match[0].length;
-  recognized++;
+/* Rich contenteditable: DOM has text nodes and atomic smile spans.
+   The actual WebSocket protocol still receives plain text with %id% codes. */
+let savedEditorRange=null;
+function editorText(){
+ let text='';
+ function walk(node){
+  if(node.nodeType===Node.TEXT_NODE){text+=node.nodeValue;return;}
+  if(node.nodeType!==Node.ELEMENT_NODE)return;
+  if(node.dataset?.smileId){text+='%'+node.dataset.smileId+'%';return;}
+  if(node.tagName==='BR'){text+=' ';return;}
+  for(const child of node.childNodes)walk(child);
  }
- if(!recognized){composerWrap.classList.remove('has-smile-preview');composerPreview.replaceChildren();return;}
- if(offset<value.length){const span=document.createElement('span');span.className='preview-text';span.textContent=value.slice(offset);nodes.append(span);}
- composerPreview.replaceChildren(nodes);
- composerWrap.classList.add('has-smile-preview');
+ for(const child of E.input.childNodes)walk(child);
+ return text.replace(/[\r\n]+/g,' ');
 }
-E.input.addEventListener('input',refreshComposerSmilePreview);
+function refreshComposerSmilePreview(){/* Old overlay removed: real DOM is the preview. */}
+function editorIsEnabled(){return E.input.getAttribute('contenteditable')==='true';}
+function editorContains(node){return node===E.input||E.input.contains(node);}
+function editorSaveRange(){
+ const sel=window.getSelection();
+ if(!sel?.rangeCount)return;
+ const r=sel.getRangeAt(0);
+ if(editorContains(r.startContainer)&&editorContains(r.endContainer))savedEditorRange=r.cloneRange();
+}
+function editorRange(){
+ const sel=window.getSelection();
+ if(sel?.rangeCount){const r=sel.getRangeAt(0);if(editorContains(r.startContainer)&&editorContains(r.endContainer))return r.cloneRange();}
+ if(savedEditorRange&&editorContains(savedEditorRange.startContainer)&&editorContains(savedEditorRange.endContainer))return savedEditorRange.cloneRange();
+ const r=document.createRange();r.selectNodeContents(E.input);r.collapse(false);return r;
+}
+function insertEditorNode(node){
+ if(!editorIsEnabled())return false;
+ const range=editorRange();
+ range.deleteContents();range.insertNode(node);range.setStartAfter(node);range.collapse(true);
+ E.input.focus();const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);savedEditorRange=range.cloneRange();
+ E.input.dispatchEvent(new Event('input',{bubbles:true}));return true;
+}
+function insertEditorText(value){return insertEditorNode(document.createTextNode(value));}
+function insertEditorSmile(id){
+ if(!SMILES[id]||!SMILES[id].allowed)return false;
+ const holder=document.createElement('span');holder.className='editor-smile';
+ holder.contentEditable='false';holder.dataset.smileId=String(id);
+ holder.title='Смайл %'+id+'%';holder.setAttribute('aria-label','Смайл '+id);
+ holder.append(smileNode(id));return insertEditorNode(holder);
+}
+E.input.addEventListener('keyup',editorSaveRange);
+E.input.addEventListener('mouseup',editorSaveRange);
+E.input.addEventListener('focusout',editorSaveRange);
+E.input.addEventListener('input',editorSaveRange);
+E.input.addEventListener('paste',event=>{
+ event.preventDefault();
+ const value=(event.clipboardData?.getData('text/plain')||'').replace(/[\r\n]+/g,' ');
+ if(value)insertEditorText(value.slice(0,1000));
+});
+E.input.addEventListener('drop',event=>event.preventDefault());
+E.input.addEventListener('beforeinput',event=>{
+ if(event.inputType==='insertParagraph'||event.inputType==='insertLineBreak'){event.preventDefault();return;}
+ if(event.inputType==='insertText'&&editorText().length>=1000&&!window.getSelection()?.toString())event.preventDefault();
+});
 function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));const b=document.createElement('button');b.type='button';b.className='chat-smile-action';b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';b.append(smileNode(m[1]));target.append(b);p=m.index+m[0].length;}if(p<str.length)target.append(document.createTextNode(str.slice(p)));}
 let currentAirHost='';
 function comparableNick(v){return String(v||'').normalize('NFKC').trim().replace(/^@/,'').replace(/\s+/g,' ').toLocaleLowerCase('ru-RU');}
@@ -1732,7 +1778,7 @@ function localDayKey(date){
 function showMessage(m){
  if(!m||typeof m!=='object')return;
  const first=E.messages.querySelector('.muted');
- if(first&&(E.messages.children.length===1||(E.messages.children.length===2&&E.messages.firstElementChild===pinned)))first.remove();
+ if(first&&E.messages.children.length===1)first.remove();
  const nick=safe(m.nick||m.user?.nick||m.username||m.user_name,100)||'Слушатель';
  const uid=String(m.uid??m.user?.id??m.user_id??nick);
  const when=messageDate(m.time??m.timestamp??m.created_at);
@@ -1946,22 +1992,14 @@ E.input.addEventListener('keydown',event=>{
   if(!event.repeat)E.form.requestSubmit();
  }
 });
-E.input.addEventListener('input',()=>{
- const old=E.input.value;
- if(/[\r\n]/.test(old)){
-  const pos=E.input.selectionStart;
-  const before=old.slice(0,pos).replace(/[\r\n]+/g,' ').length;
-  E.input.value=old.replace(/[\r\n]+/g,' ');
-  E.input.setSelectionRange(before,before);
- }
-});
+
 // v4.3: use the original send_message protocol for ALL official smilies and text.
 // A presentation overlay never becomes the source of the outgoing message.
 E.form.addEventListener('submit',event=>{
  event.preventDefault();
  if(!authorized||!socket||socket.readyState!==WebSocket.OPEN){note('Нет подтверждённого входа в чат Волнореза. Сообщение не отправлено.','send-error');return;}
  if(pending){note('Предыдущее сообщение ещё ожидает ответ Волнореза.','send-note');return;}
- let text=E.input.value.replace(/[\r\n]+/g,' ').trim();
+ let text=editorText().trim();
  if(!text){note('Поле сообщения пустое.','send-note');return;}
  if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}
  // Use the same four-part local_id shape observed in genuine Volnorez HAR traffic.
@@ -1982,7 +2020,7 @@ E.form.addEventListener('submit',event=>{
   }
  },12000);
 });
-const cats={classic:[],retro:[],emoji:[],stickers:[],gif:[],animashki:[],ours:[]};
+const cats={classic:[],retro:[],emoji:[],stickers:[],gif:[],animashki:[]};
 const groupToCategory={1:'classic',2:'retro',6:'emoji',8:'stickers',9:'gif',10:'animashki'};
 for(const [id,s] of Object.entries(SMILES)){
  const cat=groupToCategory[s.group];
@@ -1990,76 +2028,9 @@ for(const [id,s] of Object.entries(SMILES)){
 }
 let activeCat='classic';let tabToken=0;
 const gallery=$('galleryGrid'),galleryTabs=$('galleryTabs'),galleryHint=$('galleryHint');
-/* Файлы для раздела «Наши» берутся из GitHub Pages. Безопасный показ,
-   не отправляем собственные GIF в сервер Волнореза и не вмешиваемся в send_message. */
-const OUR_GIFS_DIR='./assets/our-gifs/';
-const OUR_GIFS_API='https://api.github.com/repos/Art1604/Pyl_Dorog-FM-Radio-Chat/contents/assets/our-gifs?ref=main';
-const OUR_DEFAULT_GIF='dance-dancing.gif';
-function validOurGifName(name){return typeof name==='string'&&name.length<180&&/^[^/\\?#<>]+\.gif$/i.test(name);}
-function ourGifUrl(name){return new URL(OUR_GIFS_DIR+encodeURIComponent(name),document.baseURI).href;}
-let ourGifsCache=null;
-async function loadOurGifs(){
- if(ourGifsCache)return ourGifsCache;
- let names=[];
- try{
-  const res=await fetch(new URL(OUR_GIFS_DIR+'list.json',document.baseURI),{cache:'no-store'});
-  if(!res.ok)throw Error('list.json not found');
-  const data=await res.json();
-  names=(Array.isArray(data)?data:(Array.isArray(data?.files)?data.files:[])).filter(validOurGifName);
- }catch(_){/* резервный список GitHub API */}
- if(!names.length){
-  try{
-   const res=await fetch(OUR_GIFS_API,{headers:{Accept:'application/vnd.github+json'}});
-   if(res.ok){const data=await res.json();if(Array.isArray(data))names=data.filter(x=>x?.type==='file'&&validOurGifName(x.name)).map(x=>x.name);}
-  }catch(_){}
- }
- if(!names.length)names=[OUR_DEFAULT_GIF];
- ourGifsCache=[...new Set(names)];
- return ourGifsCache;
-}
-// Закреплённый GIF одинаков для всех посетителей, т.к. берётся из статических файлов.
-const pinned=document.createElement('div');
-pinned.className='our-gif-pinned';
-pinned.setAttribute('aria-label','Наш общий GIF из GitHub');
-const pinnedImg=document.createElement('img');
-pinnedImg.src=ourGifUrl(OUR_DEFAULT_GIF);
-pinnedImg.alt='Танцующий GIF';
-pinnedImg.loading='lazy';
-const pinnedText=document.createElement('div');pinnedText.className='our-gif-text';
-const pinnedTitle=document.createElement('strong');pinnedTitle.textContent='Наш GIF 💃';
-const pinnedSubtitle=document.createElement('span');pinnedSubtitle.textContent='Закреплён в чате для всех посетителей сайта';
-pinnedText.append(pinnedTitle,pinnedSubtitle);pinned.append(pinnedImg,pinnedText);
-function ensurePinnedGif(){if(E.messages.firstElementChild!==pinned)E.messages.prepend(pinned);}
-const pinnedObserver=new MutationObserver(()=>{if(E.messages.firstElementChild!==pinned)ensurePinnedGif();});
-pinnedObserver.observe(E.messages,{childList:true});
-ensurePinnedGif();
-async function showOurGifs(){
- const token=++tabToken;
- gallery.replaceChildren();galleryHint.textContent='Загружаем наши GIF из GitHub…';
- const names=await loadOurGifs();
- if(activeCat!=='ours'||token!==tabToken)return;
- galleryHint.textContent='Наши GIF доступны на сайте. Танцующий GIF закреплён в чате для всех. Нажатие на другие GIF показывает локальный предпросмотр, но не отправляет их другим участникам.';
- const tiles=document.createDocumentFragment();
- for(const name of names){
-  const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title='Посмотреть '+name;
-  const img=document.createElement('img');img.src=ourGifUrl(name);img.alt=name;img.loading='lazy';
-  img.addEventListener('error',()=>{tile.disabled=true;tile.title='Файл недоступен';});
-  tile.append(img);
-  tile.addEventListener('click',()=>{
-   pinnedImg.src=ourGifUrl(name);
-   pinnedTitle.textContent=name===OUR_DEFAULT_GIF?'Наш GIF 💃':'Предпросмотр: '+name;
-   pinnedSubtitle.textContent=name===OUR_DEFAULT_GIF?'Закреплён в чате для всех посетителей сайта':'Выбранный предпросмотр виден только в этом браузере';
-   ensurePinnedGif();
-   note('GIF показан в нашем чате. Это просмотр из GitHub, без отправки сообщения.','send-note');
-  });
-  tiles.append(tile);
- }
- gallery.append(tiles);gallery.scrollTop=0;
-}
 function showTab(category){
  if(!cats[category])return;activeCat=category;
  for(const button of galleryTabs.querySelectorAll('button')){const active=button.dataset.category===category;button.classList.toggle('selected',active);button.setAttribute('aria-selected',String(active));}
- if(category==='ours'){showOurGifs();return;}
  gallery.replaceChildren();const ids=cats[category];galleryHint.textContent=ids.length+' элементов · Просмотр доступен всем. Для отправки нужен гостевой вход и разрешение сервера.';
  if(category==='animashki'){
   customElements.whenDefined('dotlottie-wc').then(()=>{if(activeCat==='animashki')galleryHint.textContent=ids.length+' анимашек · Файлы .lottie загружаются из assets/volnorez-lottie/ на GitHub Pages.';});
@@ -2074,16 +2045,11 @@ function showTab(category){
  for(const id of ids){
   const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile';tile.title='Выбрать смайл';
   const preview=smileNode(id,true);tile.append(preview);
+  tile.addEventListener('mousedown',()=>editorSaveRange());
   // Код смайла не показываем в каталоге; он используется при нажатии.
   tile.addEventListener('click',()=>{
    if(!authorized){note('Смайл виден в гостевом режиме. Чтобы отправить его, сначала войди гостем.','send-note');return;}
-   const t='%'+id+'%';
-   const before=E.input.value;
-   let start=E.input.selectionStart,end=E.input.selectionEnd;
-   // Clicking a sticker after selecting a preview may leave the cursor inside %123%.
-   // In that case append instead of corrupting an existing official code.
-   if(start===end){for(const m of before.matchAll(/%\d{1,4}%/g)){const a=m.index,b=a+m[0].length;if(start>a&&start<b){start=end=before.length;break;}}}
-   E.input.setRangeText(t,start,end,'end');refreshComposerSmilePreview();E.input.focus();note('Смайл добавлен в сообщение.');
+   if(insertEditorSmile(id))note('Смайл добавлен в сообщение.');
   });
   tiles.append(tile);
  }
@@ -2098,13 +2064,11 @@ window.addEventListener('pagehide',()=>{stopped=true;clearTimeout(retryTimer);if
 
 /* При нажатии на ник вставляем его сразу в сообщение, без @ и без меню. */
 function insertIntoMessage(value){
- if(!authorized||E.input.disabled){
+ if(!authorized||!editorIsEnabled()){
   note('Гостевой вход ещё выполняется. После подключения можно нажать на ник снова.','send-note');
   return false;
  }
- const left=E.input.selectionStart,right=E.input.selectionEnd;
- E.input.setRangeText(value,left,right,'end');
- refreshComposerSmilePreview();E.input.focus();return true;
+ return insertEditorText(value);
 }
 document.addEventListener('click',event=>{
  const btn=event.target.closest('[data-chat-nick]');
@@ -2115,8 +2079,7 @@ document.addEventListener('click',event=>{
  }
  const emoji=event.target.closest('.chat-smile-action[data-smile-id]');
  if(emoji){
-  const code='%'+emoji.dataset.smileId+'%';
-  insertIntoMessage(code);
+  if(authorized&&editorIsEnabled())insertEditorSmile(emoji.dataset.smileId);
  }
 });
 /* v2.3: публичные данные эфира через WebSocket; GitHub JSON — резерв.
