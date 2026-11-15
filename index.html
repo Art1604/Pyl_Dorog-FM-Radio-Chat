@@ -1480,6 +1480,13 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 #sendForm .rich-smile{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;vertical-align:middle;line-height:1;white-space:nowrap;user-select:all;cursor:default;overflow:hidden}
 #sendForm .rich-smile .smiley{max-width:27px!important;max-height:27px!important;transform:scale(.9);transform-origin:center}
 #sendForm .rich-smile .smiley-media,#sendForm .rich-smile video,#sendForm .rich-smile .lottie-holder,#sendForm .rich-smile dotlottie-wc{width:27px!important;height:27px!important;max-width:27px!important;max-height:27px!important;object-fit:contain}
+/* Л/С — вкладки внутри общего окна, без всплывающих окон */
+.chat-dialog-tabs{flex:0 0 auto;max-width:100%;scrollbar-width:thin}
+.chat-dialog-tab{flex:0 0 auto;cursor:pointer}
+.chat-dialog-tab .pm-tab-title{display:inline-block;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.private-dialog-view{flex:1 1 auto;height:auto;min-height:0;border:0;background:#fff;overflow-y:auto}
+.pm-id-warning{padding:9px;border:1px solid #b6a06c;background:#f7f1e2;color:#715413}
+@media(max-width:680px){.chat-dialog-tab .pm-tab-title{max-width:90px}}
 </style>
 </head>
 <body><div class="wrap">
@@ -1524,21 +1531,35 @@ const dialogTabs=$('dialogTabs'),privateDialogView=$('privateDialogView');
 const privateDialogs=new Map();
 let activeDialog='common';
 const privateSeen=new Set();
+// ID берём только из полей идентификатора, которые действительно прислал сервер.
+// Волнорез может передавать ID числом или непробельной строкой; ник НЕ является ID.
 function numericUserId(value){
- if(value==null)return '';
+ if(value==null||typeof value==='object')return '';
  const id=String(value).trim();
- return /^\d+$/.test(id)?id:'';
+ return /^\d+$/.test(id)&&id!=='0'?id:'';
+}
+function serverIdentifier(value){
+ if(value==null||(typeof value!=='string'&&typeof value!=='number'))return '';
+ const id=String(value).trim();
+ return id.length<=128&&id!=='0'&&/^[a-zA-Z0-9_.:-]+$/.test(id)?id:'';
 }
 function serverUserId(user){
  if(!user||typeof user!=='object')return '';
- return numericUserId(user.uid??user.id??user.user_id??user.user?.uid??user.user?.id);
+ // Не используем ?? между полями: пустой uid не должен скрывать заполненный id.
+ for(const candidate of [user.uid,user.user_id,user.userId,user.id,user.userid,user.user?.uid,user.user?.user_id,user.user?.id]){
+  const id=serverIdentifier(candidate);
+  if(id)return id;
+ }
+ return '';
 }
 function findPrivateUserId(id,nick=''){
- const direct=numericUserId(id);
- if(direct)return direct;
+ const direct=serverIdentifier(id);
+ // Строковый ID принимаем лишь при совпадении с реальными данными участников.
+ // Цифровой ID также может прийти с сообщением до получения списка участников.
+ if(direct&&(numericUserId(direct)||[...roster.values()].some(u=>serverUserId(u)===direct)))return direct;
  const wanted=comparableNick(nick||id);
  if(!wanted)return '';
- const matches=[...roster.values()].filter(u=>comparableNick(u.nick??u.name)===wanted);
+ const matches=[...roster.values()].filter(u=>comparableNick(u.nick??u.name??u.username)===wanted);
  const ids=[...new Set(matches.map(serverUserId).filter(Boolean))];
  return ids.length===1?ids[0]:'';
 }
@@ -1552,6 +1573,11 @@ function renderPrivateDialog(){
  privateDialogView.replaceChildren();
  const heading=document.createElement('div');heading.className='private-heading';heading.textContent='Л/С: '+contact.nick;
  privateDialogView.append(heading);
+ if(!contact.userId){
+  const warning=document.createElement('p');warning.className='muted pm-id-warning';
+  warning.textContent='Вкладка открыта. Ожидаем ID собеседника от Волнореза. До получения ID отправка личных сообщений недоступна.';
+  privateDialogView.append(warning);
+ }
  if(!contact.messages.length){
   const empty=document.createElement('p');empty.className='muted';
   empty.textContent=contact.loading?'Загружаем историю личных сообщений…':'Пока нет личных сообщений.';
@@ -1573,7 +1599,7 @@ function selectDialog(id){
  for(const btn of dialogTabs.querySelectorAll('.chat-dialog-tab')){
   const chosen=btn.dataset.dialogId===activeDialog;
   btn.classList.toggle('selected',chosen);btn.setAttribute('aria-selected',String(chosen));
-  const count=btn.querySelector('.pm-unread');if(chosen&&count){count.remove();}
+  const count=btn.querySelector('.pm-unread');if(chosen&&count)count.remove();
  }
  const isPrivate=activeDialog!=='common';
  E.messages.hidden=isPrivate;privateDialogView.hidden=!isPrivate;
@@ -1583,31 +1609,59 @@ function selectDialog(id){
  updateButtons();
 }
 function openPrivateDialog(uid,nick,load=true){
- uid=findPrivateUserId(uid,nick);
- if(!uid){note('Не удалось получить ID собеседника из списка участников. Л/С пока недоступны.','send-error');log('Л/С: числовой ID не найден для «'+safe(nick,50)+'»');return;}
- nick=resolvePrivateNick(uid,String(nick||'Слушатель'));
- if(!privateDialogs.has(uid)){
-  privateDialogs.set(uid,{nick,messages:[],loading:false,loaded:false});
-  const tab=document.createElement('button');tab.type='button';tab.className='chat-dialog-tab';tab.dataset.dialogId=uid;
-  const title=document.createElement('span');title.textContent=nick;
-  const close=document.createElement('span');close.className='chat-dialog-close';close.textContent='×';close.title='Закрыть диалог';close.dataset.dialogClose=uid;
+ nick=safe(nick||'Слушатель',100)||'Слушатель';
+ const knownId=findPrivateUserId(uid,nick);
+ // Вкладку можно открыть и без ID, но не отправлять по одному лишь нику.
+ const key=knownId||'pending:'+comparableNick(nick);
+ if(!knownId&&!comparableNick(nick)){
+  note('Не удалось определить собеседника.','send-error');return;
+ }
+ if(!privateDialogs.has(key)){
+  privateDialogs.set(key,{nick:knownId?resolvePrivateNick(knownId,nick):nick,userId:knownId||'',messages:[],loading:false,loaded:false});
+  const tab=document.createElement('button');tab.type='button';tab.className='chat-dialog-tab';tab.dataset.dialogId=key;
+  const title=document.createElement('span');title.className='pm-tab-title';title.textContent='✉ '+nick;
+  const close=document.createElement('span');close.className='chat-dialog-close';close.textContent='×';close.title='Закрыть диалог';close.dataset.dialogClose=key;
   tab.append(title,close);dialogTabs.append(tab);
  }
- selectDialog(uid);
- const contact=privateDialogs.get(uid);
- if(load&&!contact.loaded&&authorized){
+ selectDialog(key);
+ const contact=privateDialogs.get(key);
+ if(load&&contact.userId&&!contact.loaded&&authorized){
   contact.loading=true;renderPrivateDialog();
-  // Структура подтверждена в оригинальном chat_client.get_messages().
-  if(socketSend({cmd:'load_private_history',target_id:uid,last_msg_id:0})){
-   contact.loaded=true;log('Запрошена история Л/С для ID '+uid);
+  if(socketSend({cmd:'load_private_history',target_id:contact.userId,last_msg_id:0})){
+   contact.loaded=true;log('Запрошена история Л/С для ID '+contact.userId);
   }else{contact.loading=false;renderPrivateDialog();}
+ }
+}
+function reconcilePendingPrivateTabs(){
+ for(const [oldKey,contact] of [...privateDialogs.entries()]){
+  if(contact.userId)continue;
+  const id=findPrivateUserId('',contact.nick);
+  if(!id)continue;
+  const existing=privateDialogs.get(id);
+  if(existing){
+   existing.messages.push(...contact.messages);
+   privateDialogs.delete(oldKey);
+   dialogTabs.querySelectorAll('.chat-dialog-tab').forEach(tab=>{if(tab.dataset.dialogId===oldKey)tab.remove();});
+   if(activeDialog===oldKey)activeDialog=id;
+  }else{
+   privateDialogs.delete(oldKey);contact.userId=id;privateDialogs.set(id,contact);
+   dialogTabs.querySelectorAll('.chat-dialog-tab').forEach(tab=>{
+    if(tab.dataset.dialogId===oldKey){tab.dataset.dialogId=id;const close=tab.querySelector('[data-dialog-close]');if(close)close.dataset.dialogClose=id;}
+   });
+   if(activeDialog===oldKey)activeDialog=id;
+  }
+ }
+ if(activeDialog!=='common'&&privateDialogs.has(activeDialog)){
+  selectDialog(activeDialog);
+  const contact=privateDialogs.get(activeDialog);
+  if(contact.userId&&!contact.loaded&&authorized)openPrivateDialog(contact.userId,contact.nick,true);
  }
 }
 function privateMessageKey(m,id){
  return m.id!=null?'id:'+String(m.id):'local:'+String(m.local_id||'')+':'+String(m.uid||'')+':'+String(id);
 }
 function addPrivateMessage(msg,id,{historical=false}={}){
- if(!msg||typeof msg!=='object'||!/^\d+$/.test(String(id||'')))return;
+ if(!msg||typeof msg!=='object'||!serverIdentifier(id))return;
  id=String(id);
  if(isLocalBlockedUser(id)||isLocalBlockedUser(String(msg.uid??'')))return;
  if(!privateDialogs.has(id)){const previous=activeDialog;openPrivateDialog(id,resolvePrivateNick(id,msg.nick||'Слушатель'),false);selectDialog(previous);}
@@ -1634,7 +1688,7 @@ function incomingPrivateId(msg){
  const recipient=String(msg.target_uid??msg.target_id??msg.to_id??msg.recipient_id??'');
  // Incoming: peer is the sender; outgoing: peer is the recipient.
  const peer=recipient&&recipient!==myId?recipient:sender;
- return /^\d+$/.test(peer)&&peer!=='0'?peer:null;
+ return serverIdentifier(peer)||null;
 }
 dialogTabs.addEventListener('click',event=>{
  const close=event.target.closest('[data-dialog-close]');
@@ -1742,7 +1796,7 @@ function note(t,cls=''){E.sendState.className='muted '+cls;E.sendState.textConte
 function safe(t,n=1500){return (typeof t==='string'||typeof t==='number')?String(t).slice(0,n):'';}
 function placeholder(node,t){node.replaceChildren();const e=document.createElement('div');e.className='muted';e.textContent=t;node.append(e);}
 function socketSend(payload){if(!socket||socket.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(payload));return true;}
-function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!authorized;nickSave.disabled=!online||!authorized;E.input.disabled=!online||!authorized;richEditor.contentEditable=online&&authorized?'true':'false';richEditor.setAttribute('aria-disabled',String(!online||!authorized));richEditor.dataset.placeholder=online&&authorized?(activeDialog==='common'?'Напишите сообщение…':'Сообщение лично…'):'Автоматический вход в чат…';E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
+function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!authorized;nickSave.disabled=!online||!authorized;E.input.disabled=!online||!authorized;richEditor.contentEditable=online&&authorized?'true':'false';richEditor.setAttribute('aria-disabled',String(!online||!authorized));richEditor.dataset.placeholder=online&&authorized?(activeDialog==='common'?'Напишите сообщение…':'Сообщение лично…'):'Автоматический вход в чат…';E.send.disabled=!online||!authorized||pending||(activeDialog!=='common'&&!privateDialogs.get(activeDialog)?.userId);E.emotes.disabled=false;}
 function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=document.createElement('span');text.textContent=inGallery?'Смайл недоступен':'%'+id+'%';return text;}
  if(s.kind==='lottie'){
   // .lottie is a compressed animation, not an image: it requires a registered player.
@@ -1942,7 +1996,7 @@ function localDayKey(date){
 /* Локальная блокировка: не банит пользователя на сервере Волнореза. */
 const LOCAL_BLOCK_KEY='pylfm_local_blocked_ids_v1';
 const locallyBlocked=new Set();
-try{const saved=JSON.parse(localStorage.getItem(LOCAL_BLOCK_KEY)||'[]');if(Array.isArray(saved))saved.filter(v=>/^\d+$/.test(String(v))).forEach(v=>locallyBlocked.add(String(v)));}catch{}
+try{const saved=JSON.parse(localStorage.getItem(LOCAL_BLOCK_KEY)||'[]');if(Array.isArray(saved))saved.map(serverIdentifier).filter(Boolean).forEach(v=>locallyBlocked.add(v));}catch{}
 function saveLocalBlocks(){try{localStorage.setItem(LOCAL_BLOCK_KEY,JSON.stringify([...locallyBlocked]));}catch{}}
 function localUserId(u){return serverUserId(u);}
 function isLocalBlockedUser(id){return !!id&&locallyBlocked.has(String(id));}
@@ -2012,7 +2066,7 @@ function showMessage(m){
  while(E.messages.children.length>220)E.messages.firstChild.remove();
  E.messages.scrollTop=E.messages.scrollHeight;
 }
-function userKey(u){return String(u?.id??u?.uid??u?.nick??'');}
+function userKey(u){return serverUserId(u)||String(u?.nick??u?.name??'');}
 /* Сортировка: moderator → owner → rj → user → guest/simple.
    Внутри группы — локализованное сравнение ПОЛНОГО ника (любые языки,
    цифры, пробелы, подчёркивания и другие спецсимволы сохранены).
@@ -2029,10 +2083,11 @@ function compareChatUsers(a,b){
  return userNickCollator.compare(String(a?.nick??a?.name??''),String(b?.nick??b?.name??''));
 }
 function renderUsers(){
+ reconcilePendingPrivateTabs();
  // Earlier messages may contain only a nickname; upgrade their IDs once the roster arrives.
  E.messages.querySelectorAll('.msg[data-local-author]').forEach(row=>{
   const oldId=row.dataset.localAuthor;
-  if(numericUserId(oldId))return;
+  if(serverIdentifier(oldId)&&[...roster.values()].some(u=>serverUserId(u)===oldId))return;
   const nick=row.dataset.senderNick||oldId;
   const resolved=findPrivateUserId('',nick);
   if(resolved){row.dataset.localAuthor=resolved;row.dataset.msgUid=resolved;}
@@ -2055,9 +2110,9 @@ function renderUsers(){
    const privateBtn=document.createElement('button');privateBtn.type='button';
    privateBtn.className='person-private-btn';privateBtn.dataset.privateUserId=id;
    privateBtn.dataset.privateNick=nickname;
-   privateBtn.textContent='✉ Л/С';privateBtn.title='Личное сообщение';
+   privateBtn.textContent='✉ Л/С';privateBtn.title=id?'Личное сообщение':'Волнорез не передал ID: откройте Л/С на оригинальном сайте';
    tools.append(privateBtn);
-   // Локальная блокировка использует только надёжный числовой ID.
+   // Локальная блокировка использует только ID, переданный сервером.
    if(id){
     const blocked=isLocalBlockedUser(id);
     e.classList.toggle('local-blocked',blocked);
@@ -2077,7 +2132,7 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  case 'initialize':salt=typeof obj.salt==='string'?obj.salt:'';initDone=true;retryCount=0;clearTimeout(initTimer);initTimer=null;info('✅ Чат подключён. Выполняется гостевой вход…','ok');updateButtons();requestGuestLogin();break;
  case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;lastShownMessage=null;placeholder(E.messages,'История пуста.');arr.filter(m=>!incomingPrivateId(m)).slice(-180).forEach(showMessage);log('История: '+arr.length+' сообщений');break;}
  case 'add_msg':{const msg=obj.msg;const peer=incomingPrivateId(msg);const isOwn=ownMessageArrived(msg);if(peer){addPrivateMessage(msg,peer);}else{showMessage(msg);}if(isOwn)finishPendingMessage('add_msg');log(peer?'Новое Л/С':'Новое общее сообщение');break;}
- case 'add_private_history':{const peer=String(obj.target_id??'');if(/^\d+$/.test(peer)){if(!privateDialogs.has(peer)){const previous=activeDialog;openPrivateDialog(peer,resolvePrivateNick(peer),false);selectDialog(previous);}const contact=privateDialogs.get(peer);contact.loading=false;for(const m of Array.isArray(obj.messages)?obj.messages:[])addPrivateMessage({...m,private:true,target_id:peer},peer,{historical:true});if(activeDialog===peer)renderPrivateDialog();log('История Л/С получена.');}break;}
+ case 'add_private_history':{const peer=String(obj.target_id??'');if(serverIdentifier(peer)){if(!privateDialogs.has(peer)){const previous=activeDialog;openPrivateDialog(peer,resolvePrivateNick(peer),false);selectDialog(previous);}const contact=privateDialogs.get(peer);contact.loading=false;for(const m of Array.isArray(obj.messages)?obj.messages:[])addPrivateMessage({...m,private:true,target_id:peer},peer,{historical:true});if(activeDialog===peer)renderPrivateDialog();log('История Л/С получена.');}break;}
  case 'delete_message':removeConfirmedMessage(obj.id);break;
  case 'private_message':case 'add_private_msg':case 'add_private_message':case 'new_private_message':case 'add_pm':{
   const m=obj.msg||obj.message;
@@ -2216,7 +2271,8 @@ E.form.addEventListener('submit',event=>{
  if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}
  // Use the same four-part local_id shape observed in genuine Volnorez HAR traffic.
  const localId=nextMessageLocalId();
- const targetId=activeDialog==='common'?null:activeDialog;
+ const targetId=activeDialog==='common'?null:(privateDialogs.get(activeDialog)?.userId||null);
+ if(activeDialog!=='common'&&!targetId){note('Волнорез ещё не передал ID собеседника. Л/С не отправлено.','send-error');return;}
  let sent=false;
  try{sent=socketSend(targetId?{cmd:'send_message',text,local_id:localId,target_id:targetId}:{cmd:'send_message',text,local_id:localId});}
  catch(err){log('Ошибка WebSocket при отправке: '+String(err));}
@@ -2332,7 +2388,7 @@ document.addEventListener('click',event=>{
  const localBlock=event.target.closest('[data-local-block-id]');
  if(localBlock){
   const id=String(localBlock.dataset.localBlockId||'');
-  if(!/^\d+$/.test(id))return;
+  if(!serverIdentifier(id))return;
   if(locallyBlocked.has(id))locallyBlocked.delete(id);else locallyBlocked.add(id);
   saveLocalBlocks();refreshLocalBlockedMessages();renderUsers();
   log('Локальная блокировка обновлена (без команды серверу).');
