@@ -1661,13 +1661,13 @@ function clearSpectrum(){
  spectrumDisplayedLevels.fill(0);
  spectrumLastFrameTime=0;
 }
-// Двигаем шкалы только при реальном воспроизведении со звуком.
-// В частности, mute и громкость 0 останавливают визуализацию, несмотря на то,
-// что Web Audio AnalyserNode всё ещё получает исходный поток.
+// Спектр анализирует входящий аудиопоток независимо от громкости динамиков.
+// При mute или громкости 0% аудио продолжает проигрываться, поэтому визуализация
+// остаётся активной. Пауза, отсутствие данных и потеря сети останавливают её.
 function canAnimateSpectrum(){
  return !!(spectrumReady&&spectrumAnalyser&&radioPlayer&&radioWanted&&!radioPlayer.paused&&
   !radioPlayer.ended&&!radioPlayer.seeking&&radioPlayer.readyState>=3&&
-  !radioPlayer.muted&&radioPlayer.volume>0&&navigator.onLine!==false&&
+  navigator.onLine!==false&&
   (!spectrumCtx||spectrumCtx.state==='running'));
 }
 function renderSpectrum(now=performance.now()){
