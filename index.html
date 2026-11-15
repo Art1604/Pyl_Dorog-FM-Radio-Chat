@@ -1379,6 +1379,8 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .person .local-block-btn:hover{background:#d7d7d7}
 .person.local-blocked .person-action{opacity:.55;text-decoration:line-through}
 .person.local-blocked .local-block-btn{background:#d6d6d6}
+
+.radio-player-shell{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 10px}.radio-play-btn{min-width:110px}.radio-volume-wrap{display:inline-flex;align-items:center;gap:6px}.radio-volume{width:120px}.radio-live-note{font-size:12px;color:#555;font-weight:600}
 </style>
 <style>
 /* v2.2 — поле → смайлы → Отправить, крайний элемент справа */
@@ -1544,10 +1546,53 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 }
 @media(prefers-reduced-motion:reduce){.people .person .person-action .nick-marquee-track{animation:none!important}}
 </style>
+<style>
+
+/* ПК-плеер ПыЛь_ДоРоГ FM — прямые углы, никаких скруглений */
+.radio-player-shell{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:2px 0 12px;padding:8px 10px;background:#e4e4e4;border:1px solid #b1b1b1;border-radius:0}
+.radio-player-shell *{box-sizing:border-box}
+.radio-player-shell button{border-radius:0;box-shadow:none;transition:background-color .15s ease,border-color .15s ease}
+.radio-player-shell .radio-play-btn{width:124px;height:38px;flex:0 0 auto;padding:0 12px;background:#545454;color:#f8f8f8;border:1px solid #464646;font:600 13px Arial,sans-serif;letter-spacing:.1px}
+.radio-player-shell .radio-play-btn:hover{background:#3f3f3f}
+.radio-player-shell .radio-play-btn:active{background:#303030}
+.radio-player-shell .radio-mute-btn{width:38px;height:38px;flex:0 0 38px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid #aaa;background:#ededed;color:#515151}
+.radio-player-shell .radio-mute-btn:hover{background:#d1d1d1}
+.radio-player-shell .radio-mute-btn.is-muted{background:#d0d0d0}
+.radio-player-shell .radio-mute-btn.is-muted .radio-sound-wave{display:none}
+.radio-player-shell .radio-mute-btn.is-muted .radio-sound-cross{display:block!important}
+.radio-player-shell .radio-volume-wrap{display:flex;align-items:center;gap:10px;min-width:160px;flex:0 1 220px}
+.radio-player-shell .radio-volume{appearance:none;-webkit-appearance:none;width:100%;min-width:90px;height:7px;margin:0;background:linear-gradient(to right,#737373 0%,#737373 var(--radio-fill,65%),#c6c6c6 var(--radio-fill,65%),#c6c6c6 100%);border:1px solid #b5b5b5;border-radius:0;cursor:pointer}
+.radio-player-shell .radio-volume::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:19px;border:1px solid #666;border-radius:0;background:#efefef;box-shadow:none;cursor:ew-resize}
+.radio-player-shell .radio-volume::-moz-range-thumb{width:10px;height:17px;border:1px solid #666;border-radius:0;background:#efefef;box-shadow:none;cursor:ew-resize}
+.radio-player-shell .radio-volume-percent{display:inline-block;width:43px;flex:0 0 43px;text-align:right;color:#555;font:600 12px Arial,sans-serif;font-variant-numeric:tabular-nums}
+.radio-player-shell .radio-live-note{font:600 12px Arial,sans-serif;color:#616161;margin-left:auto;white-space:nowrap}
+
+.radio-spectrum{width:172px;height:48px;flex:0 0 172px;display:flex;align-items:flex-end;gap:2px;padding:5px 6px 4px;border:1px solid #a5a5a5;background:#d4d4d4;overflow:hidden}
+.radio-spectrum .radio-spectrum-col{position:relative;display:block;flex:1;min-width:0;height:100%;border-radius:0;background:#c5c5c5}
+.radio-spectrum .radio-spectrum-level{position:absolute;bottom:0;left:0;right:0;height:0;background:#777;transition:height .05s linear}
+.radio-spectrum .radio-spectrum-peak{position:absolute;left:0;right:0;height:2px;bottom:0;background:#535353;opacity:0;transition:bottom .08s linear}
+.radio-spectrum-status{font:11px/1.2 Arial,sans-serif;color:#686868;min-width:92px;max-width:132px}
+.radio-player-shell .radio-spectrum-status{margin-left:0}
+@media(max-width:800px){.radio-player-shell .radio-live-note{margin-left:0}}
+@media(prefers-reduced-motion:reduce){.radio-spectrum .radio-spectrum-level,.radio-spectrum .radio-spectrum-peak{transition:none}}
+
+/* Миниатюрный маяк эфира: прямые углы, без декоративной имитации спектра. */
+.radio-beacon{position:relative;display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;flex:0 0 21px;margin-left:auto;border:1px solid #9b9b9b;background:#dedede;border-radius:0}
+.radio-beacon::before{content:"";width:9px;height:9px;background:#a7a7a7;border:1px solid #969696;border-radius:0;opacity:.75}
+/* Маяк: мягкая серебристая пульсация при эфире, две короткие вспышки при восстановлении связи. */
+.radio-beacon.is-playing::before{background:#737373;border-color:#626262;animation:radio-beacon-pulse 2.1s ease-in-out infinite}
+.radio-beacon.is-connecting::before{background:#777;border-color:#646464;animation:radio-beacon-double-flash 1.8s linear infinite}
+.radio-beacon.is-offline::before{background:#b9b9b9;border-color:#999;opacity:.36;animation:none}
+@keyframes radio-beacon-pulse{0%,100%{opacity:.35}45%,55%{opacity:1}}
+@keyframes radio-beacon-double-flash{0%,7%,18%,100%{opacity:.2}9%,15%,21%,27%{opacity:1}30%{opacity:.2}}
+@media(prefers-reduced-motion:reduce){.radio-beacon::before{animation:none!important;opacity:.72}.radio-beacon.is-offline::before{opacity:.36}}
+.radio-player-shell .radio-live-note{margin-left:0}
+.radio-player-shell #radioConnectionStatus[hidden]{display:none!important}
+</style>
 </head>
 <body><div class="wrap">
 <header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — радио и чат</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
-<section class="bevel"><audio controls preload="none"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Аудио не поддерживается.</audio><div class="airmeta" aria-label="Сведения о текущем эфире">
+<section class="bevel"><audio id="radioPlayer" preload="none"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Аудио не поддерживается.</audio><div class="radio-player-shell" aria-label="Радиоплеер"><button type="button" id="radioToggle" class="radio-play-btn" aria-pressed="false">▶ Слушать</button><div id="radioSpectrum" class="radio-spectrum" aria-label="Спектроанализатор радио" role="img"></div><span id="radioSpectrumStatus" class="radio-spectrum-status" role="status">Спектр: ожидание</span><button type="button" id="radioMute" class="radio-mute-btn" title="Выключить звук" aria-label="Выключить звук" aria-pressed="false"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="radio-sound-wave" d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/><path class="radio-sound-cross" d="m16 9 5 6m0-6-5 6" style="display:none"/></svg></button><div class="radio-volume-wrap"><label class="sr-only" for="radioVolume">Громкость</label><input id="radioVolume" class="radio-volume" type="range" min="0" max="100" step="1" value="65" aria-label="Громкость"><output id="radioVolumePercent" class="radio-volume-percent" for="radioVolume">65%</output></div><span id="radioBeacon" class="radio-beacon" role="img" aria-label="Плеер остановлен" title="Плеер остановлен"></span><span id="radioConnectionStatus" class="radio-live-note" role="status" aria-live="polite" hidden></span></div><div class="airmeta" aria-label="Сведения о текущем эфире">
   <div class="airitem" id="airHostBox" hidden><span class="airlabel">🎙️ Ведущий в эфире</span><span id="airHost" class="airvalue"></span></div>
   <div class="airitem" id="airTopicBox" hidden><span class="airlabel">📢 Тема эфира</span><span id="airTopic" class="airvalue"></span></div>
   <div class="airitem" id="airTrackBox" hidden><span class="airlabel">🎵 Сейчас играет</span><span id="airTrack" class="airvalue"></span></div>
@@ -1582,6 +1627,257 @@ const SMILES=JSON.parse(document.getElementById('smiles-json').textContent);
 const $=id=>document.getElementById(id);
 const nickSave=$('saveNickname'),nickChangeStatus=$('nickChangeStatus');
 const E={connect:$('connect'),disconnect:$('disconnect'),login:$('guestLogin'),nick:$('nickname'),identity:$('myIdentity'),status:$('status'),log:$('log'),messages:$('messages'),users:$('users'),msgCount:$('msgCount'),userCount:$('userCount'),form:$('sendForm'),input:$('messageInput'),send:$('sendButton'),sendState:$('sendState'),emotes:$('emotesButton'),picker:$('smilesPicker')};
+const radioPlayer=$('radioPlayer'),radioToggle=$('radioToggle'),radioMute=$('radioMute'),radioVolume=$('radioVolume');
+const radioVolumePercent=$('radioVolumePercent');
+const radioSpectrum=$('radioSpectrum'),radioSpectrumStatus=$('radioSpectrumStatus');
+const RADIO_VOLUME_KEY='pyl_dorog_fm_radio_volume_v1';
+const RADIO_MUTED_KEY='pyl_dorog_fm_radio_muted_v1';
+const RADIO_STREAM_URL='https://stream.volnorez.com/live-app/869683';
+const RADIO_SPECTRUM_BARS=24;
+let spectrumCtx=null,spectrumAnalyser=null,spectrumData=null,spectrumFrame=0;
+let spectrumProbeDone=false,spectrumReady=false,spectrumPeakPositions=[];
+const spectrumLevels=[];
+function storedRadioValue(key){try{return window.localStorage.getItem(key);}catch{return null;}}
+function saveRadioValue(key,value){try{window.localStorage.setItem(key,String(value));}catch{/* Private mode or disabled storage */}}
+function spectrumStatus(message){if(radioSpectrumStatus)radioSpectrumStatus.textContent=message;}
+function createSpectrumDisplay(){
+ if(!radioSpectrum)return;
+ const fragment=document.createDocumentFragment();
+ for(let i=0;i<RADIO_SPECTRUM_BARS;i++){
+  const column=document.createElement('span');column.className='radio-spectrum-col';
+  const level=document.createElement('span');level.className='radio-spectrum-level';
+  const peak=document.createElement('span');peak.className='radio-spectrum-peak';
+  column.append(level,peak);fragment.append(column);
+  spectrumLevels.push({level,peak});spectrumPeakPositions.push(0);
+ }
+ radioSpectrum.replaceChildren(fragment);
+}
+function clearSpectrum(){
+ if(spectrumFrame){cancelAnimationFrame(spectrumFrame);spectrumFrame=0;}
+ for(const bar of spectrumLevels){bar.level.style.height='0%';bar.peak.style.opacity='0';}
+ spectrumPeakPositions.fill(0);
+}
+function renderSpectrum(){
+ spectrumFrame=0;
+ if(!spectrumReady||!spectrumAnalyser||!radioPlayer||radioPlayer.paused||radioPlayer.ended||radioPlayer.readyState<2){clearSpectrum();return;}
+ spectrumAnalyser.getByteFrequencyData(spectrumData);
+ // Logarithmic frequency bands are closer to classic Winamp spectrum visualizers.
+ const low=3,high=Math.min(spectrumData.length-1,340),ratio=high/low;
+ for(let i=0;i<RADIO_SPECTRUM_BARS;i++){
+  const first=Math.min(high,Math.floor(low*Math.pow(ratio,i/RADIO_SPECTRUM_BARS)));
+  const last=Math.min(high,Math.max(first+1,Math.floor(low*Math.pow(ratio,(i+1)/RADIO_SPECTRUM_BARS))));
+  let strongest=0;
+  for(let bin=first;bin<=last;bin++)strongest=Math.max(strongest,spectrumData[bin]);
+  const level=Math.min(100,Math.round(Math.pow(strongest/255,0.82)*100));
+  const bar=spectrumLevels[i];
+  bar.level.style.height=level+'%';
+  spectrumPeakPositions[i]=Math.max(level,spectrumPeakPositions[i]-0.9);
+  bar.peak.style.bottom=Math.min(98,spectrumPeakPositions[i])+'%';
+  bar.peak.style.opacity=strongest>0||spectrumPeakPositions[i]>0?'1':'0';
+ }
+ spectrumFrame=requestAnimationFrame(renderSpectrum);
+}
+// Переподключение относится только к плееру; работа чата не зависит от него.
+const radioConnectionStatus=$('radioConnectionStatus'),radioBeacon=$('radioBeacon');
+const RADIO_RETRY_DELAYS=[2000,4000,8000,15000,30000,60000];
+let radioWanted=false,radioReconnectTimer=null,radioBufferTimer=null,radioStartupTimer=null;
+let radioRetryCount=0,radioStarting=false,radioAttemptToken=0;
+function radioConnectionText(message){if(!radioConnectionStatus)return;const visibleMessage=(message==='Прямой эфир'||message==='Эфир на паузе')?'':message;radioConnectionStatus.textContent=visibleMessage;radioConnectionStatus.hidden=!visibleMessage;}
+function clearRadioReconnect(){
+ if(radioReconnectTimer!==null){clearTimeout(radioReconnectTimer);radioReconnectTimer=null;}
+ if(radioBufferTimer!==null){clearTimeout(radioBufferTimer);radioBufferTimer=null;}
+ if(radioStartupTimer!==null){clearTimeout(radioStartupTimer);radioStartupTimer=null;}
+}
+function syncRadioUi(){
+ if(!radioPlayer||!radioToggle||!radioMute||!radioVolume)return;
+ const muted=radioPlayer.muted||radioPlayer.volume===0;
+ const volume=Math.round(radioPlayer.volume*100);
+ const active=(!radioPlayer.paused&&!radioPlayer.ended&&radioPlayer.readyState>=2);
+ if(radioBeacon){
+  const offline=radioWanted&&!active&&navigator.onLine===false;
+  const connecting=radioWanted&&!active&&!offline;
+  const state=active?'Эфир воспроизводится':offline?'Нет подключения к интернету':connecting?'Подключение или восстановление эфира':'Плеер остановлен';
+  radioBeacon.classList.toggle('is-playing',active);
+  radioBeacon.classList.toggle('is-connecting',connecting);
+  radioBeacon.classList.toggle('is-offline',offline);
+  radioBeacon.setAttribute('aria-label',state);
+  radioBeacon.title=state;
+ }
+ radioToggle.textContent=radioWanted?(active?'⏸ Пауза':radioStarting?'Подключаем…':'■ Остановить'):'▶ Слушать';
+ radioToggle.setAttribute('aria-pressed',String(radioWanted));
+ radioMute.setAttribute('aria-pressed',String(muted));
+ radioMute.setAttribute('aria-label',muted?'Включить звук':'Выключить звук');
+ radioMute.title=muted?'Включить звук':'Выключить звук';
+ radioMute.classList.toggle('is-muted',muted);
+ if(spectrumReady&&active&&!spectrumFrame)spectrumFrame=requestAnimationFrame(renderSpectrum);
+ if(!active&&spectrumFrame)clearSpectrum();
+ if(document.activeElement!==radioVolume)radioVolume.value=String(volume);
+ radioVolume.style.setProperty('--radio-fill',volume+'%');
+ if(radioVolumePercent)radioVolumePercent.textContent=muted?'Выкл.':volume+'%';
+}
+function scheduleRadioReconnect(reason){
+ if(!radioWanted||radioReconnectTimer!==null||radioStarting)return;
+ if(radioBufferTimer!==null){clearTimeout(radioBufferTimer);radioBufferTimer=null;}
+ const delay=RADIO_RETRY_DELAYS[Math.min(radioRetryCount,RADIO_RETRY_DELAYS.length-1)];
+ radioRetryCount++;
+ radioConnectionText(navigator.onLine===false?'Нет интернета · ждём сеть':`Связь прервана · повтор через ${Math.ceil(delay/1000)} с`);
+ radioReconnectTimer=setTimeout(()=>{radioReconnectTimer=null;attemptRadioStart(true);},delay);
+ syncRadioUi();
+}
+function checkRadioBuffer(){
+ if(!radioWanted||radioStarting||radioReconnectTimer!==null)return;
+ if(radioBufferTimer!==null)clearTimeout(radioBufferTimer);
+ radioConnectionText(navigator.onLine===false?'Нет интернета · ждём сеть':'Буферизация эфира…');
+ radioBufferTimer=setTimeout(()=>{
+  radioBufferTimer=null;
+  if(!radioWanted||radioStarting||radioReconnectTimer!==null)return;
+  if(radioPlayer.paused||radioPlayer.ended||radioPlayer.readyState<3) scheduleRadioReconnect('buffer timeout');
+ },12000);
+}
+async function attemptRadioStart(reconnect=false){
+ if(!radioWanted||radioStarting)return;
+ if(radioReconnectTimer!==null){clearTimeout(radioReconnectTimer);radioReconnectTimer=null;}
+ if(radioBufferTimer!==null){clearTimeout(radioBufferTimer);radioBufferTimer=null;}
+ if(navigator.onLine===false){scheduleRadioReconnect('offline');return;}
+ radioStarting=true;
+ const token=++radioAttemptToken;
+ radioStartupTimer=setTimeout(()=>{
+  if(!radioWanted||token!==radioAttemptToken)return;
+  radioAttemptToken++;
+  radioStarting=false;
+  try{radioPlayer.pause();}catch{}
+  scheduleRadioReconnect('startup timeout');
+ },16000);
+ radioConnectionText(reconnect?'Восстанавливаем эфир…':'Подключение к эфиру…');
+ syncRadioUi();
+ try{
+  if(!reconnect)await setupRealSpectrum();
+  if(!radioWanted||token!==radioAttemptToken)return;
+  if(spectrumCtx&&spectrumCtx.state==='suspended')await spectrumCtx.resume();
+  if(!radioWanted||token!==radioAttemptToken)return;
+  if(reconnect)radioPlayer.load(); // Перезапрос прямого потока вместо перемотки.
+  await radioPlayer.play();
+  if(!radioWanted||token!==radioAttemptToken){radioPlayer.pause();return;}
+  radioRetryCount=0;
+  radioConnectionText('Прямой эфир');
+ }catch(error){
+  if(radioWanted&&token===radioAttemptToken){
+   console.warn('Потеря или ошибка подключения к эфиру:',error);
+   // Вызываем повтор после выхода из состояния radioStarting.
+   queueMicrotask(()=>scheduleRadioReconnect('play failed'));
+  }
+ }finally{
+  if(token===radioAttemptToken){
+   if(radioStartupTimer!==null){clearTimeout(radioStartupTimer);radioStartupTimer=null;}
+   radioStarting=false;syncRadioUi();
+  }
+ }
+}
+// Probe cross-origin access BEFORE connecting Web Audio: on an inaccessible radio stream,
+// createMediaElementSource() may silence playback. Never risk muting the live radio.
+async function probeSpectrumCors(){
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),2500);
+ try{
+  const response=await fetch(RADIO_STREAM_URL,{method:'GET',mode:'cors',signal:controller.signal,cache:'no-store'});
+  return response.ok&&response.type!=='opaque';
+ }catch{return false;}
+ finally{clearTimeout(timeout);controller.abort();}
+}
+async function setupRealSpectrum(){
+ if(spectrumProbeDone)return spectrumReady;
+ spectrumProbeDone=true;
+ spectrumStatus('Спектр: проверка…');
+ const AudioCtx=window.AudioContext||window.webkitAudioContext;
+ if(!AudioCtx||!await probeSpectrumCors()){
+  spectrumStatus('Спектр недоступен');
+  return false;
+ }
+ try{
+  // crossOrigin must be set before the first audio network request.
+  radioPlayer.crossOrigin='anonymous';
+  spectrumCtx=new AudioCtx();
+  const source=spectrumCtx.createMediaElementSource(radioPlayer);
+  spectrumAnalyser=spectrumCtx.createAnalyser();
+  spectrumAnalyser.fftSize=1024;
+  spectrumAnalyser.smoothingTimeConstant=.7;
+  spectrumData=new Uint8Array(spectrumAnalyser.frequencyBinCount);
+  source.connect(spectrumAnalyser);
+  spectrumAnalyser.connect(spectrumCtx.destination);
+  spectrumReady=true;
+  spectrumStatus('Живой спектр');
+  return true;
+ }catch(error){
+  console.warn('Анализ спектра не поддерживается:',error);
+  spectrumStatus('Спектр недоступен');
+  // No MediaElementSource attached: revert CORS setting for ordinary playback.
+  if(!spectrumAnalyser)radioPlayer.removeAttribute('crossorigin');
+  return false;
+ }
+}
+createSpectrumDisplay();
+if(radioPlayer&&radioToggle&&radioMute&&radioVolume){
+ const savedVolume=Number(storedRadioValue(RADIO_VOLUME_KEY));
+ radioPlayer.volume=Number.isFinite(savedVolume)&&storedRadioValue(RADIO_VOLUME_KEY)!==null?Math.max(0,Math.min(1,savedVolume)):0.65;
+ radioPlayer.muted=storedRadioValue(RADIO_MUTED_KEY)==='true';
+ radioToggle.addEventListener('click',()=>{
+  if(radioWanted){
+   // Явная пауза: никогда не перезапускаем эфир сами.
+   radioWanted=false;
+   radioAttemptToken++;
+   radioStarting=false;
+   clearRadioReconnect();
+   radioRetryCount=0;
+   radioPlayer.pause();
+   radioConnectionText('Эфир на паузе');
+   syncRadioUi();
+   return;
+  }
+  radioWanted=true;
+  radioRetryCount=0;
+  attemptRadioStart(false);
+ });
+ radioMute.addEventListener('click',()=>{
+  if(radioPlayer.volume===0){radioPlayer.volume=0.65;saveRadioValue(RADIO_VOLUME_KEY,0.65);radioPlayer.muted=false;}
+  else radioPlayer.muted=!radioPlayer.muted;
+  saveRadioValue(RADIO_MUTED_KEY,radioPlayer.muted);
+  syncRadioUi();
+ });
+ radioVolume.addEventListener('input',()=>{
+  const value=Math.max(0,Math.min(100,Number(radioVolume.value)||0));
+  radioPlayer.volume=value/100;
+  if(value>0)radioPlayer.muted=false;
+  saveRadioValue(RADIO_VOLUME_KEY,radioPlayer.volume);
+  saveRadioValue(RADIO_MUTED_KEY,radioPlayer.muted);
+  syncRadioUi();
+ });
+ ['play','pause','playing','waiting','stalled','ended','volumechange','emptied','loadedmetadata','canplay','error'].forEach(evt=>radioPlayer.addEventListener(evt,syncRadioUi));
+ radioPlayer.addEventListener('playing',()=>{
+  if(!radioWanted)return;
+  clearRadioReconnect();
+  radioRetryCount=0;
+  radioConnectionText('Прямой эфир');
+  syncRadioUi();
+ });
+ radioPlayer.addEventListener('waiting',checkRadioBuffer);
+ radioPlayer.addEventListener('stalled',checkRadioBuffer);
+ radioPlayer.addEventListener('error',()=>scheduleRadioReconnect('media error'));
+ radioPlayer.addEventListener('ended',()=>scheduleRadioReconnect('ended'));
+ radioPlayer.addEventListener('pause',()=>{
+  if(radioWanted&&!radioStarting)scheduleRadioReconnect('unexpected pause');
+ });
+ window.addEventListener('offline',()=>{
+  if(!radioWanted)return;
+  clearRadioReconnect();
+  scheduleRadioReconnect('offline');
+ });
+ window.addEventListener('online',()=>{
+  if(!radioWanted)return;
+  clearRadioReconnect();
+  attemptRadioStart(true);
+ });
+ syncRadioUi();
+}
 // Настоящие Л/С через протокол оригинального клиента Волнореза.
 const dialogTabs=$('dialogTabs'),privateDialogView=$('privateDialogView');
 const privateDialogs=new Map();
