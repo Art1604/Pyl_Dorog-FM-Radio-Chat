@@ -1370,7 +1370,17 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 #sendForm > .controls { padding:0; min-height:0; }
 
 
-/* Просмотр собственных GIF без закрепления в общем чате. */
+/* Наши GIF: общая закреплённая анимация из GitHub, без передачи в Волнорез. */
+.chatsurface .our-gif-pinned{display:flex;gap:9px;align-items:center;background:#e6e6e6;border:1px solid #aaa;padding:5px 8px;margin:4px 3px 7px;color:#333;font-size:12px}
+.chatsurface .our-gif-pinned img{display:block;width:68px;height:68px;object-fit:contain;border:1px solid #999;background:#fff}
+.chatsurface .our-gif-pinned .our-gif-text{display:flex;flex-direction:column;gap:3px}
+.gallery-tile.our-gif-tile img{max-width:70px;max-height:65px;object-fit:contain}
+
+/* Локальная блокировка сообщений: без административных команд и прав */
+.person .local-block-btn{float:right;margin-left:6px;padding:1px 5px;border:1px solid #9a9a9a;background:#ececec;color:#333;border-radius:2px;font:11px Arial,sans-serif;cursor:pointer}
+.person .local-block-btn:hover{background:#d7d7d7}
+.person.local-blocked .person-action{opacity:.55;text-decoration:line-through}
+.person.local-blocked .local-block-btn{background:#d6d6d6}
 </style>
 <style>
 /* v2.2 — поле → смайлы → Отправить, крайний элемент справа */
@@ -1439,24 +1449,28 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 @media(max-width:680px){#sendForm .composer-input-wrap{flex:1 1 145px;min-width:0}}
 </style>
 <style>
-/* v4.5 — полноценный редактор: текст и смайлы являются реальными узлами. */
-#sendForm .composer-input-wrap{height:38px;min-height:38px;max-height:38px}
-#sendForm .rich-message-editor{display:block;overflow-x:auto;overflow-y:hidden;white-space:pre;min-width:0;width:100%;height:38px;min-height:38px;max-height:38px;padding:4px 9px;background:white;border:1px solid #aaa;border-radius:0;outline-offset:-2px;color:#222;font:13px/28px Arial,sans-serif;caret-color:#222;scrollbar-width:thin}
-#sendForm .rich-message-editor:focus{outline:1px solid #777}
-#sendForm .rich-message-editor[contenteditable="false"]{background:#eee;color:#666;cursor:not-allowed}
-#sendForm .rich-message-editor:empty::before{content:attr(data-placeholder);color:#777;pointer-events:none}
-#sendForm .rich-message-editor .editor-smile{display:inline-flex;align-items:center;justify-content:center;width:30px;height:29px;min-width:30px;max-width:30px;vertical-align:middle;overflow:hidden;line-height:normal;user-select:all}
-#sendForm .rich-message-editor .editor-smile .smiley{display:block;width:27px!important;height:27px!important;min-width:27px!important;min-height:27px!important;max-width:27px!important;max-height:27px!important;margin:0!important}
-#sendForm .rich-message-editor .editor-smile .smiley-media{display:block;width:27px!important;height:27px!important;max-width:27px!important;max-height:27px!important;object-fit:contain;margin:0!important}
-#sendForm .rich-message-editor .editor-smile .lottie-holder,#sendForm .rich-message-editor .editor-smile dotlottie-wc{display:block;width:27px!important;height:27px!important;min-width:27px!important;min-height:27px!important}
-</style>
-<style>
-/* Собственные GIF: единый локальный каталог, без отдельного чата. */
-.gallery-tile.our-gif-tile img{display:block;max-width:70px;max-height:65px;width:auto;height:auto;object-fit:contain}
-.chatsurface .chat-own-gif{display:inline-flex;align-items:center;vertical-align:middle;margin:2px 3px}
-.chatsurface .chat-own-gif img{display:block;max-width:100px;max-height:100px;width:auto;height:auto;object-fit:contain}
-#sendForm .rich-message-editor .editor-own-gif{width:31px;min-width:31px;max-width:31px;height:29px;overflow:hidden}
-#sendForm .rich-message-editor .editor-own-gif img{display:block;width:27px;height:27px;object-fit:contain}
+.msg-delete-confirm[hidden]{display:none!important}
+/* v4.5 — вкладки Л/С, меню сообщения, две операции в списке пользователей */
+.chat-dialog-tabs{display:flex;align-items:center;gap:0;overflow-x:auto;background:#d0d0d0;border:1px solid #999;border-bottom:0;min-height:29px}
+.chat-dialog-tab{display:inline-flex;align-items:center;gap:6px;max-width:220px;min-height:28px;white-space:nowrap;font:12px Arial,sans-serif;padding:4px 9px;border:0;border-right:1px solid #aaa;border-radius:0;background:#d1d1d1;box-shadow:none}
+.chat-dialog-tab.selected{background:#f0f0f0;font-weight:bold}
+.chat-dialog-close{border:0;border-radius:0;box-shadow:none;padding:0 2px;background:transparent;font-size:17px;line-height:14px}
+.private-dialog-view{height:min(54vh,520px);min-height:310px;overflow:auto;background:#f0f0f0;border:1px solid #999;padding:15px;font:13px/1.6 Arial,sans-serif}
+.private-dialog-view[hidden],#messages[hidden]{display:none!important}
+.person{display:flex;align-items:center;gap:3px;min-width:0}
+.person .person-action{min-width:0;flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person .person-tools{display:inline-flex;gap:3px;flex:none}
+.person .person-tools button{font:12px Arial,sans-serif;padding:3px 4px;border:1px solid #999;background:#e2e2e2;box-shadow:none;border-radius:0}
+.person .person-tools button:hover{background:#c7c7c7}
+.person .person-tools .local-block-btn{float:none;margin:0;font-size:11px}
+.chatsurface .msg-body{position:relative}
+.chatsurface .msg-delete-actions{visibility:hidden}
+.chatsurface .msg:hover .msg-delete-actions,.chatsurface .msg:focus-within .msg-delete-actions{visibility:visible}
+.chatsurface .msg-delete-menu{min-width:156px;max-width:190px;padding:3px;white-space:nowrap}
+.chatsurface .msg-delete-menu button{width:100%;display:block;text-align:left;padding:5px 8px;margin:1px 0;font:12px Arial,sans-serif}
+.chatsurface .msg-delete-menu .msg-delete-confirm{width:100%;height:auto;display:block;text-align:left;padding:5px 8px}
+@media(max-width:680px){.private-dialog-view{height:50vh}.person .person-tools{display:inline-flex}.chatsurface .msg-delete-actions{visibility:visible}}
+.private-heading{font-weight:bold;padding:4px 5px 10px;border-bottom:1px solid #aaa}.private-message{padding:6px;border-bottom:1px solid #ddd;overflow-wrap:anywhere}.private-message time{float:right;font-size:10px;color:#666;margin-left:8px}.pm-unread{background:#777;color:white;border-radius:7px;padding:1px 4px;font-size:10px}
 </style>
 </head>
 <body><div class="wrap">
@@ -1477,10 +1491,10 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 <div id="status" class="state" role="status">Подключение к чату…</div>
 <div class="login-strip" id="loginStrip"><div class="controls"><button id="guestLogin" disabled>Повторить гостевой вход</button><span class="muted" id="myIdentity">Не авторизован в чате</span></div></div>
 <div class="chat-grid">
-<div><div class="column-title">Сообщения <span class="count" id="msgCount" hidden></span></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">Загружаем сообщения из чата Волнореза…</div></div></div>
+<div><div class="column-title">Сообщения <span class="count" id="msgCount" hidden></span></div><div class="chat-dialog-tabs" id="dialogTabs" role="tablist" aria-label="Чаты"><button type="button" class="chat-dialog-tab selected" data-dialog-id="common" aria-selected="true">Общий</button></div><div class="private-dialog-view" id="privateDialogView" hidden aria-live="polite"></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">Загружаем сообщения из чата Волнореза…</div></div></div>
 <div><div class="column-title">👥 Участники <span class="count" id="userCount" hidden></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
-<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><div class="composer-input-wrap" id="composerInputWrap"><div id="messageInput" class="rich-message-editor" contenteditable="false" role="textbox" aria-multiline="false" aria-label="Сообщение" data-placeholder="Автоматический вход в чат…"></div></div><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button><button type="button" data-category="ours">Наши GIF</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. GIF и анимашки загружаются из папок assets/volnorez-gifs и assets/volnorez-lottie.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
+<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><div class="composer-input-wrap" id="composerInputWrap"><div class="composer-smile-preview" id="composerSmilePreview" aria-hidden="true"></div><textarea id="messageInput" rows="1" maxlength="1000" placeholder="Автоматический вход в чат…" aria-label="Сообщение" disabled></textarea></div><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button><button type="button" data-category="ours">Наши</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. GIF и анимашки загружаются из папок assets/volnorez-gifs и assets/volnorez-lottie.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
 <p class="muted" id="technicalExplanation">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
 <div class="notice" id="outdatedWarning"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
@@ -1493,33 +1507,113 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 (()=>{'use strict';
 const WSURL='wss://s05.volnorez.com/chat-app/869683';
 const SMILES=JSON.parse(document.getElementById('smiles-json').textContent);
-// Собственные GIF: без отдельного сервера, хранятся на GitHub Pages.
-// В чат Волнореза отправляем обычный текст pylgif:001.
-// Только наша страница преобразует известные маркеры в GIF.
-const OUR_GIFS=Object.create(null);
-async function loadOurGifs(){
- try{
-  const response=await fetch('./assets/our-gifs/list.json',{cache:'no-cache'});
-  if(!response.ok)throw Error('HTTP '+response.status);
-  const data=await response.json();
-  // Поддержка каталога в формате {"001": {"file":"...", "code":"pylgif:001", "title":"..."}}
-  // и старого формата [{"id":"001", "file":"...", "name":"..."}].
-  const list=Array.isArray(data)?data:Object.entries(data).map(([id,value])=>({id,...value}));
-  for(const item of list){
-   if(!item||!/^\d{3,6}$/.test(String(item.id||'')))continue;
-   if(!/^[a-zA-Z0-9_-]+\.gif$/i.test(String(item.file||'')))continue;
-   const id=String(item.id);
-   if(item.code && item.code!=='pylgif:'+id)continue;
-   OUR_GIFS[id]={file:'./assets/our-gifs/'+item.file,name:String(item.title||item.name||'Наша GIF').slice(0,80)};
-  }
-  if(activeCat==='ours')showTab('ours');
- }catch(err){log('Каталог наших GIF не загружен: '+err.message);}
-}
 const $=id=>document.getElementById(id);
 const nickSave=$('saveNickname'),nickChangeStatus=$('nickChangeStatus');
 const E={connect:$('connect'),disconnect:$('disconnect'),login:$('guestLogin'),nick:$('nickname'),identity:$('myIdentity'),status:$('status'),log:$('log'),messages:$('messages'),users:$('users'),msgCount:$('msgCount'),userCount:$('userCount'),form:$('sendForm'),input:$('messageInput'),send:$('sendButton'),sendState:$('sendState'),emotes:$('emotesButton'),picker:$('smilesPicker')};
+// Настоящие Л/С через протокол оригинального клиента Волнореза.
+const dialogTabs=$('dialogTabs'),privateDialogView=$('privateDialogView');
+const privateDialogs=new Map();
+let activeDialog='common';
+const privateSeen=new Set();
+function resolvePrivateNick(id, fallback='Слушатель'){
+ const user=[...roster.values()].find(u=>String(u.id??u.uid)===String(id));
+ return safe(user?.nick||fallback,100)||'Слушатель';
+}
+function renderPrivateDialog(){
+ const contact=privateDialogs.get(activeDialog);
+ if(!contact)return;
+ privateDialogView.replaceChildren();
+ const heading=document.createElement('div');heading.className='private-heading';heading.textContent='Л/С: '+contact.nick;
+ privateDialogView.append(heading);
+ if(!contact.messages.length){
+  const empty=document.createElement('p');empty.className='muted';
+  empty.textContent=contact.loading?'Загружаем историю личных сообщений…':'Пока нет личных сообщений.';
+  privateDialogView.append(empty);
+ }
+ for(const msg of contact.messages){
+  const row=document.createElement('div');row.className='private-message';
+  const author=document.createElement('b');author.textContent=safe(msg.nick||msg.user?.nick||'Слушатель',100)+': ';
+  const body=document.createElement('span');appendRich(body,msg.text??msg.message??msg.msg??'');
+  row.append(author,body);
+  const when=messageDate(msg.time??msg.timestamp);
+  if(when){const time=document.createElement('time');time.textContent=new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit'}).format(when);row.append(time);}
+  privateDialogView.append(row);
+ }
+ privateDialogView.scrollTop=privateDialogView.scrollHeight;
+}
+function selectDialog(id){
+ activeDialog=(id==='common'||privateDialogs.has(id))?id:'common';
+ for(const btn of dialogTabs.querySelectorAll('.chat-dialog-tab')){
+  const chosen=btn.dataset.dialogId===activeDialog;
+  btn.classList.toggle('selected',chosen);btn.setAttribute('aria-selected',String(chosen));
+  const count=btn.querySelector('.pm-unread');if(chosen&&count){count.remove();}
+ }
+ const isPrivate=activeDialog!=='common';
+ E.messages.hidden=isPrivate;privateDialogView.hidden=!isPrivate;
+ if(isPrivate)renderPrivateDialog();
+ E.input.placeholder=isPrivate?'Сообщение лично…':'Напишите сообщение…';
+ note(isPrivate?'Личное сообщение: '+privateDialogs.get(activeDialog).nick:'Общий чат Волнореза.');
+ updateButtons();
+}
+function openPrivateDialog(uid,nick,load=true){
+ uid=String(uid||'');if(!/^\d+$/.test(uid)){note('Неизвестен ID пользователя. Л/С открыть нельзя.','send-error');return;}
+ nick=resolvePrivateNick(uid,String(nick||'Слушатель'));
+ if(!privateDialogs.has(uid)){
+  privateDialogs.set(uid,{nick,messages:[],loading:false,loaded:false});
+  const tab=document.createElement('button');tab.type='button';tab.className='chat-dialog-tab';tab.dataset.dialogId=uid;
+  const title=document.createElement('span');title.textContent=nick;
+  const close=document.createElement('span');close.className='chat-dialog-close';close.textContent='×';close.title='Закрыть диалог';close.dataset.dialogClose=uid;
+  tab.append(title,close);dialogTabs.append(tab);
+ }
+ selectDialog(uid);
+ const contact=privateDialogs.get(uid);
+ if(load&&!contact.loaded&&authorized){
+  contact.loading=true;renderPrivateDialog();
+  // Структура подтверждена в оригинальном chat_client.get_messages().
+  if(socketSend({cmd:'load_private_history',target_id:uid,last_msg_id:0})){
+   contact.loaded=true;log('Запрошена история Л/С для ID '+uid);
+  }else{contact.loading=false;renderPrivateDialog();}
+ }
+}
+function privateMessageKey(m,id){
+ return m.id!=null?'id:'+String(m.id):'local:'+String(m.local_id||'')+':'+String(m.uid||'')+':'+String(id);
+}
+function addPrivateMessage(msg,id,{historical=false}={}){
+ if(!msg||typeof msg!=='object'||!/^\d+$/.test(String(id||'')))return;
+ id=String(id);
+ if(isLocalBlockedUser(id)||isLocalBlockedUser(String(msg.uid??'')))return;
+ if(!privateDialogs.has(id)){const previous=activeDialog;openPrivateDialog(id,resolvePrivateNick(id,msg.nick||'Слушатель'),false);selectDialog(previous);}
+ const contact=privateDialogs.get(id);if(!contact)return;
+ const key=privateMessageKey(msg,id);
+ if(contact.messages.some(m=>privateMessageKey(m,id)===key))return;
+ contact.messages.push(msg);contact.messages.sort((a,b)=>Number(a.time||0)-Number(b.time||0));
+ contact.loading=false;
+ if(activeDialog===id)renderPrivateDialog();
+ else if(!historical){
+  const tab=[...dialogTabs.querySelectorAll('.chat-dialog-tab')].find(t=>t.dataset.dialogId===id);
+  if(tab){let count=tab.querySelector('.pm-unread');if(!count){count=document.createElement('span');count.className='pm-unread';tab.insertBefore(count,tab.querySelector('.chat-dialog-close'));}count.textContent=String((Number(count.textContent)||0)+1);}
+ }
+ if(!historical&&String(msg.uid??'')!==String(currentUser?.id??currentUser?.uid??''))playPersonalSound();
+}
+function incomingPrivateId(msg){
+ if(!msg||typeof msg!=='object')return null;
+ // Оригинальный chat_client.add_message: target_uid определяет вкладку Л/С.
+ const explicit=msg.private===true||msg.target_uid!=null||msg.chat_type==='private'||msg.is_private===true;
+ if(!explicit)return null;
+ const myId=String(currentUser?.id??currentUser?.uid??'');
+ const sender=String(msg.uid??msg.user?.id??'');
+ const recipient=String(msg.target_uid??msg.target_id??'');
+ const peer=recipient&&recipient!==myId?recipient:sender;
+ return /^\d+$/.test(peer)?peer:null;
+}
+dialogTabs.addEventListener('click',event=>{
+ const close=event.target.closest('[data-dialog-close]');
+ if(close){const id=close.dataset.dialogClose;privateDialogs.delete(id);close.closest('.chat-dialog-tab')?.remove();if(activeDialog===id)selectDialog('common');return;}
+ const tab=event.target.closest('[data-dialog-id]');if(tab)selectDialog(tab.dataset.dialogId);
+});
 let socket=null,authorized=false,currentUser=null,salt='',attempts=0,historySize=0,roster=new Map(),pending=false,initDone=false,initTimer=null;
 let pendingMessage=null;
+let pendingMessageDialog=null;
 // Original Volnorez HAR: local_id consists of 4 hexadecimal groups.
 // The identifier is an opaque correlation token, not an authorization token.
 const messageClientTag=(()=>{
@@ -1541,11 +1635,13 @@ function finishPendingMessage(ack){
  clearTimeout(pendingMessage.timeout);
  pendingMessage=null;pending=false;updateButtons();
  // Do not erase new edits typed while awaiting a reply.
- if(editorText()===sentText){E.input.replaceChildren();savedEditorRange=null;}
- note(ack==='add_msg'?'✅ Сообщение появилось в общем чате.':'✅ Сообщение принято Волнорезом.','send-good');
+ if(activeDialog===(pendingMessageDialog||'common')&&E.input.value===sentText){E.input.value='';refreshComposerSmilePreview();}
+ pendingMessageDialog=null;
+ note(ack==='add_msg'?'✅ Сообщение доставлено в чат Волнореза.':'✅ Сообщение принято Волнорезом.','send-good');
 }
 function ownMessageArrived(message){
  if(!pendingMessage||!message||typeof message!=='object')return false;
+ if(pendingMessage.targetId!==incomingPrivateId(message))return false;
  const receivedId=message.local_id;
  // If the server supplies an ID, a different ID cannot confirm this send.
  if(receivedId!=null&&String(receivedId)!=='')return String(receivedId)===pendingMessage.id;
@@ -1616,7 +1712,7 @@ function note(t,cls=''){E.sendState.className='muted '+cls;E.sendState.textConte
 function safe(t,n=1500){return (typeof t==='string'||typeof t==='number')?String(t).slice(0,n):'';}
 function placeholder(node,t){node.replaceChildren();const e=document.createElement('div');e.className='muted';e.textContent=t;node.append(e);}
 function socketSend(payload){if(!socket||socket.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(payload));return true;}
-function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!authorized;nickSave.disabled=!online||!authorized;E.input.setAttribute('contenteditable',online&&authorized?'true':'false');E.input.dataset.placeholder=(online&&authorized?'Написать сообщение…':'Автоматический вход в чат…');E.input.setAttribute('aria-disabled',String(!online||!authorized));E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
+function updateButtons(){const online=!!socket&&socket.readyState===WebSocket.OPEN;E.connect.disabled=!!socket||!!retryTimer;E.disconnect.disabled=!socket&&!retryTimer;E.login.disabled=!online||!initDone||authorized||guestAllowed===false;E.nick.disabled=!online||!authorized;nickSave.disabled=!online||!authorized;E.input.disabled=!online||!authorized;E.send.disabled=!online||!authorized||pending;E.emotes.disabled=false;}
 function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=document.createElement('span');text.textContent=inGallery?'Смайл недоступен':'%'+id+'%';return text;}
  if(s.kind==='lottie'){
   // .lottie is a compressed animation, not an image: it requires a registered player.
@@ -1644,96 +1740,28 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
 }
 /* Предпросмотр всех штатных смайлов: оставляем текстовый код в textarea,
    чтобы протокол send_message не изменился. Свои GIF не участвуют. */
-/* Rich contenteditable: DOM has text nodes and atomic smile spans.
-   The actual WebSocket protocol still receives plain text with %id% codes. */
-let savedEditorRange=null;
-function editorText(){
- let text='';
- function walk(node){
-  if(node.nodeType===Node.TEXT_NODE){text+=node.nodeValue;return;}
-  if(node.nodeType!==Node.ELEMENT_NODE)return;
-  if(node.dataset?.smileId){text+='%'+node.dataset.smileId+'%';return;}
-  if(node.dataset?.ourGifId){text+='pylgif:'+node.dataset.ourGifId;return;}
-  if(node.tagName==='BR'){text+=' ';return;}
-  for(const child of node.childNodes)walk(child);
+const composerWrap=$('composerInputWrap');
+const composerPreview=$('composerSmilePreview');
+function refreshComposerSmilePreview(){
+ const value=E.input.value;
+ const pattern=/%(\d{1,4})%/g;
+ let match,offset=0,recognized=0;
+ const nodes=document.createDocumentFragment();
+ while((match=pattern.exec(value))){
+  if(!SMILES[match[1]]||!SMILES[match[1]].allowed)continue;
+  if(match.index>offset){const span=document.createElement('span');span.className='preview-text';span.textContent=value.slice(offset,match.index);nodes.append(span);}
+  const holder=document.createElement('span');holder.className='preview-smile';
+  holder.append(smileNode(match[1]));nodes.append(holder);
+  offset=match.index+match[0].length;
+  recognized++;
  }
- for(const child of E.input.childNodes)walk(child);
- return text.replace(/[\r\n]+/g,' ');
+ if(!recognized){composerWrap.classList.remove('has-smile-preview');composerPreview.replaceChildren();return;}
+ if(offset<value.length){const span=document.createElement('span');span.className='preview-text';span.textContent=value.slice(offset);nodes.append(span);}
+ composerPreview.replaceChildren(nodes);
+ composerWrap.classList.add('has-smile-preview');
 }
-function refreshComposerSmilePreview(){/* Old overlay removed: real DOM is the preview. */}
-function editorIsEnabled(){return E.input.getAttribute('contenteditable')==='true';}
-function editorContains(node){return node===E.input||E.input.contains(node);}
-function editorSaveRange(){
- const sel=window.getSelection();
- if(!sel?.rangeCount)return;
- const r=sel.getRangeAt(0);
- if(editorContains(r.startContainer)&&editorContains(r.endContainer))savedEditorRange=r.cloneRange();
-}
-function editorRange(){
- const sel=window.getSelection();
- if(sel?.rangeCount){const r=sel.getRangeAt(0);if(editorContains(r.startContainer)&&editorContains(r.endContainer))return r.cloneRange();}
- if(savedEditorRange&&editorContains(savedEditorRange.startContainer)&&editorContains(savedEditorRange.endContainer))return savedEditorRange.cloneRange();
- const r=document.createRange();r.selectNodeContents(E.input);r.collapse(false);return r;
-}
-function insertEditorNode(node){
- if(!editorIsEnabled())return false;
- const range=editorRange();
- range.deleteContents();range.insertNode(node);range.setStartAfter(node);range.collapse(true);
- E.input.focus();const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);savedEditorRange=range.cloneRange();
- E.input.dispatchEvent(new Event('input',{bubbles:true}));return true;
-}
-function insertEditorText(value){return insertEditorNode(document.createTextNode(value));}
-function insertEditorSmile(id){
- if(!SMILES[id]||!SMILES[id].allowed)return false;
- const holder=document.createElement('span');holder.className='editor-smile';
- holder.contentEditable='false';holder.dataset.smileId=String(id);
- holder.title='Смайл %'+id+'%';holder.setAttribute('aria-label','Смайл '+id);
- holder.append(smileNode(id));return insertEditorNode(holder);
-}
-function ownGifNode(id){
- const gif=OUR_GIFS[id];if(!gif)return document.createTextNode('pylgif:'+id);
- const img=document.createElement('img');img.src=gif.file;img.alt=gif.name;
- img.className='our-gif-image';img.loading='lazy';img.decoding='async';
- img.onerror=()=>{img.replaceWith(document.createTextNode('pylgif:'+id));};
- return img;
-}
-function insertEditorOurGif(id){
- if(!OUR_GIFS[id])return false;
- const span=document.createElement('span');span.className='editor-smile editor-own-gif';
- span.contentEditable='false';span.dataset.ourGifId=id;span.title=OUR_GIFS[id].name;
- span.append(ownGifNode(id));return insertEditorNode(span);
-}
-E.input.addEventListener('keyup',editorSaveRange);
-E.input.addEventListener('mouseup',editorSaveRange);
-E.input.addEventListener('focusout',editorSaveRange);
-E.input.addEventListener('input',editorSaveRange);
-E.input.addEventListener('paste',event=>{
- event.preventDefault();
- const value=(event.clipboardData?.getData('text/plain')||'').replace(/[\r\n]+/g,' ');
- if(value)insertEditorText(value.slice(0,1000));
-});
-E.input.addEventListener('drop',event=>event.preventDefault());
-E.input.addEventListener('beforeinput',event=>{
- if(event.inputType==='insertParagraph'||event.inputType==='insertLineBreak'){event.preventDefault();return;}
- if(event.inputType==='insertText'&&editorText().length>=1000&&!window.getSelection()?.toString())event.preventDefault();
-});
-function appendRich(target,value){
- const str=safe(value,3500),pattern=/%(\d{1,4})%|pylgif:(\d{3,6})(?![\w])/g;
- let pos=0,m;
- while((m=pattern.exec(str))){
-  if(m.index>pos)target.append(document.createTextNode(str.slice(pos,m.index)));
-  if(m[1]){
-   const b=document.createElement('button');b.type='button';b.className='chat-smile-action';
-   b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';
-   b.append(smileNode(m[1]));target.append(b);
-  }else if(OUR_GIFS[m[2]]){
-   const span=document.createElement('span');span.className='chat-own-gif';
-   span.title=OUR_GIFS[m[2]].name;span.append(ownGifNode(m[2]));target.append(span);
-  }else target.append(document.createTextNode(m[0]));
-  pos=pattern.lastIndex;
- }
- if(pos<str.length)target.append(document.createTextNode(str.slice(pos)));
-}
+E.input.addEventListener('input',refreshComposerSmilePreview);
+function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));const b=document.createElement('button');b.type='button';b.className='chat-smile-action';b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';b.append(smileNode(m[1]));target.append(b);p=m.index+m[0].length;}if(p<str.length)target.append(document.createTextNode(str.slice(p)));}
 let currentAirHost='';
 function comparableNick(v){return String(v||'').normalize('NFKC').trim().replace(/^@/,'').replace(/\s+/g,' ').toLocaleLowerCase('ru-RU');}
 function isCurrentDJ(nick){return !!currentAirHost&&comparableNick(nick)===comparableNick(currentAirHost);}
@@ -1770,11 +1798,9 @@ function isOwnChatMessage(uid){
  return !!authorized&&!!socket&&socket.readyState===WebSocket.OPEN&&own!=null&&uid!=null&&String(own)===String(uid);
 }
 function refreshDeleteControls(){
- E.messages.querySelectorAll('.msg[data-msg-id]').forEach(row=>{
-  const action=row.querySelector('.msg-delete-actions');
-  if(!action)return;
-  action.hidden=!isOwnChatMessage(row.dataset.msgUid);
-  if(action.hidden){const menu=action.querySelector('.msg-delete-menu');if(menu)menu.hidden=true;}
+ E.messages.querySelectorAll('.msg').forEach(row=>{
+  const remove=row.querySelector('.msg-delete-confirm');
+  if(remove)remove.hidden=!isOwnChatMessage(row.dataset.msgUid);
  });
 }
 function closeDeleteMenus(){
@@ -1784,11 +1810,16 @@ function closeDeleteMenus(){
   if(toggle)toggle.setAttribute('aria-expanded','false');
  });
 }
-E.messages.addEventListener('click',event=>{
+ E.messages.addEventListener('click',event=>{
+ const pm=event.target.closest('.msg-open-private');
+ if(pm){const row=pm.closest('.msg');if(row){openPrivateDialog(row.dataset.localAuthor,row.dataset.senderNick);closeDeleteMenus();}return;}
+ const hide=event.target.closest('.msg-hide-local');
+ if(hide){const row=hide.closest('.msg');if(row){row.hidden=true;closeDeleteMenus();note('Выбранное сообщение скрыто только в этом браузере.');}return;}
+
  const dots=event.target.closest('.msg-delete-dots');
  if(dots){
   const row=dots.closest('.msg');
-  if(!row||!isOwnChatMessage(row.dataset.msgUid))return;
+  if(!row)return;
   const menu=row.querySelector('.msg-delete-menu');
   const wasOpen=!menu.hidden;closeDeleteMenus();menu.hidden=wasOpen;
   dots.setAttribute('aria-expanded',String(!menu.hidden));return;
@@ -1835,12 +1866,23 @@ function messageDate(raw){
 function localDayKey(date){
  return date?`${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`:'';
 }
+/* Локальная блокировка: не банит пользователя на сервере Волнореза. */
+const LOCAL_BLOCK_KEY='pylfm_local_blocked_ids_v1';
+const locallyBlocked=new Set();
+try{const saved=JSON.parse(localStorage.getItem(LOCAL_BLOCK_KEY)||'[]');if(Array.isArray(saved))saved.filter(v=>/^\d+$/.test(String(v))).forEach(v=>locallyBlocked.add(String(v)));}catch{}
+function saveLocalBlocks(){try{localStorage.setItem(LOCAL_BLOCK_KEY,JSON.stringify([...locallyBlocked]));}catch{}}
+function localUserId(u){const v=u?.id??u?.uid;return v==null?'':String(v);}
+function isLocalBlockedUser(id){return !!id&&locallyBlocked.has(String(id));}
+function refreshLocalBlockedMessages(){
+ E.messages.querySelectorAll('.msg[data-local-author]').forEach(row=>{row.hidden=isLocalBlockedUser(row.dataset.localAuthor);});
+}
 function showMessage(m){
- if(!m||typeof m!=='object')return;
+ if(!m||typeof m!=='object'||incomingPrivateId(m))return;
  const first=E.messages.querySelector('.muted');
- if(first&&E.messages.children.length===1)first.remove();
+ if(first&&(E.messages.children.length===1||(E.messages.children.length===2&&E.messages.firstElementChild===pinned)))first.remove();
  const nick=safe(m.nick||m.user?.nick||m.username||m.user_name,100)||'Слушатель';
  const uid=String(m.uid??m.user?.id??m.user_id??nick);
+ const locallyBlockedMessage=isLocalBlockedUser(uid);
  const when=messageDate(m.time??m.timestamp??m.created_at);
  const dateKey=localDayKey(when);
  // При отсутствии времени не делаем вывод о дате или соседних сообщениях.
@@ -1851,6 +1893,8 @@ function showMessage(m){
  }
  const grouped=!!(lastShownMessage&&dateKey&&lastShownMessage.day===dateKey&&lastShownMessage.uid===uid);
  const d=document.createElement('div');d.className='msg'+(grouped?'':' msg-first');
+ d.dataset.localAuthor=uid;
+ d.hidden=locallyBlockedMessage;
  const messageId=m.id;
  if(messageId!=null&&/^\d+$/.test(String(messageId))){d.dataset.msgId=String(messageId);d.dataset.msgUid=uid;}
  let type=m.utype??m.user?.type??m.type;
@@ -1872,18 +1916,22 @@ function showMessage(m){
   t.dateTime=when.toISOString();t.textContent=new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit',hour12:false}).format(when);
   body.append(t);
  }
- // Своё сообщение: кнопка «⋯» создаётся, но видна только после подтверждённого входа.
+ // Меню ⋮ доступно у каждого сообщения. Удаление — только для своих.
+ d.dataset.senderNick=nick;
+ const actions=document.createElement('span');actions.className='msg-delete-actions';
+ const dots=document.createElement('button');dots.type='button';dots.className='msg-delete-dots';
+ dots.textContent='⋮';dots.title='Действия с сообщением';dots.setAttribute('aria-label','Действия с сообщением');dots.setAttribute('aria-expanded','false');
+ const menu=document.createElement('span');menu.className='msg-delete-menu';menu.hidden=true;
+ const pm=document.createElement('button');pm.type='button';pm.className='msg-open-private';pm.textContent='Личное сообщение';
+ const hide=document.createElement('button');hide.type='button';hide.className='msg-hide-local';hide.textContent='Скрыть';
+ menu.append(pm,hide);
  if(d.dataset.msgId){
-  const actions=document.createElement('span');actions.className='msg-delete-actions';
-  actions.hidden=!isOwnChatMessage(uid);
-  const dots=document.createElement('button');dots.type='button';dots.className='msg-delete-dots';
-  dots.textContent='⋯';dots.title='Действия с моим сообщением';dots.setAttribute('aria-label','Действия с моим сообщением');dots.setAttribute('aria-expanded','false');
-  const menu=document.createElement('span');menu.className='msg-delete-menu';menu.hidden=true;
   const remove=document.createElement('button');remove.type='button';remove.className='msg-delete-confirm';
-  remove.title='Удалить своё сообщение сразу';remove.setAttribute('aria-label','Удалить своё сообщение');
-  remove.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg>';
-  menu.append(remove);actions.append(dots,menu);body.append(actions);
+  remove.title='Удалить своё сообщение';remove.setAttribute('aria-label','Удалить своё сообщение');
+  remove.textContent='Удалить своё';remove.hidden=!isOwnChatMessage(uid);
+  menu.append(remove);
  }
+ actions.append(dots,menu);body.append(actions);
  d.append(body);E.messages.append(d);
  lastShownMessage={day:dateKey,uid};
  historySize++;E.msgCount.textContent='('+historySize+')';
@@ -1915,21 +1963,38 @@ function renderUsers(){
   const btn=document.createElement('button');btn.type='button';btn.className='person-action';
   btn.textContent=safe(u.nick||u.name,100)||'Гость';btn.dataset.chatNick=btn.textContent;
   const role=roleFromType(u.type??u.utype);styleRole(btn,role);
-  const icon=iconForRole(role);if(icon)e.append(icon);e.append(btn);E.users.append(e);
+  const icon=iconForRole(role);if(icon)e.append(icon);e.append(btn);
+  const id=localUserId(u);
+  if(id&&id!==localUserId(currentUser)){
+   const tools=document.createElement('span');tools.className='person-tools';
+   const privateBtn=document.createElement('button');privateBtn.type='button';
+   privateBtn.className='person-private-btn';privateBtn.dataset.privateUserId=id;
+   privateBtn.dataset.privateNick=safe(u.nick||u.name,100)||'Гость';
+   privateBtn.textContent='✉ Л/С';privateBtn.title='Личное сообщение';
+   tools.append(privateBtn);
+   const blocked=isLocalBlockedUser(id);
+   e.classList.toggle('local-blocked',blocked);
+   const blockBtn=document.createElement('button');blockBtn.type='button';blockBtn.className='local-block-btn';
+   blockBtn.dataset.localBlockId=id;blockBtn.textContent=blocked?'Разблокировать':'Блокировать';
+   blockBtn.title=blocked?'Снова показывать сообщения этого пользователя':'Скрыть сообщения этого пользователя только у меня';
+   tools.append(blockBtn);e.append(tools);
+  }
+  E.users.append(e);
  }
 }
 function failSend(t){pending=false;updateButtons();note(t,'send-error');log(t);}
 function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получено событие не в JSON.');return;}if(!obj||typeof obj!=='object')return;const cmd=String(obj.cmd||'неизвестно');
  switch(cmd){
  case 'initialize':salt=typeof obj.salt==='string'?obj.salt:'';initDone=true;retryCount=0;clearTimeout(initTimer);initTimer=null;info('✅ Чат подключён. Выполняется гостевой вход…','ok');updateButtons();requestGuestLogin();break;
- case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;lastShownMessage=null;placeholder(E.messages,'История пуста.');arr.slice(-180).forEach(showMessage);log('История: '+arr.length+' сообщений');break;}
- case 'add_msg':{const isOwn=ownMessageArrived(obj.msg);showMessage(obj.msg);if(isOwn)finishPendingMessage('add_msg');notifyIfPrivate(obj,'add_msg');log('Новое сообщение');break;}
+ case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;lastShownMessage=null;placeholder(E.messages,'История пуста.');arr.filter(m=>!incomingPrivateId(m)).slice(-180).forEach(showMessage);log('История: '+arr.length+' сообщений');break;}
+ case 'add_msg':{const msg=obj.msg;const peer=incomingPrivateId(msg);const isOwn=ownMessageArrived(msg);if(peer){addPrivateMessage(msg,peer);}else{showMessage(msg);}if(isOwn)finishPendingMessage('add_msg');log(peer?'Новое Л/С':'Новое общее сообщение');break;}
+ case 'add_private_history':{const peer=String(obj.target_id??'');if(/^\d+$/.test(peer)){if(!privateDialogs.has(peer)){const previous=activeDialog;openPrivateDialog(peer,resolvePrivateNick(peer),false);selectDialog(previous);}const contact=privateDialogs.get(peer);contact.loading=false;for(const m of Array.isArray(obj.messages)?obj.messages:[])addPrivateMessage({...m,private:true,target_id:peer},peer,{historical:true});if(activeDialog===peer)renderPrivateDialog();log('История Л/С получена.');}break;}
  case 'delete_message':removeConfirmedMessage(obj.id);break;
- case 'private_message':case 'add_private_msg':case 'add_private_message':case 'new_private_message':case 'add_pm':notifyIfPrivate(obj,cmd);log('Личное сообщение от сервера');break;
+ case 'private_message':case 'add_private_msg':case 'add_private_message':case 'new_private_message':case 'add_pm':{const m=obj.msg||obj.message;const peer=incomingPrivateId(m);if(peer)addPrivateMessage(m,peer);break;}
  case 'set_users_list':{const arr=Array.isArray(obj.users)?obj.users:[];roster.clear();arr.forEach(u=>{if(u&&typeof u==='object')roster.set(userKey(u),u);});renderUsers();log('Участники: '+roster.size);break;}
  case 'add_user':case 'update_user':{const u=obj.user;if(u&&typeof u==='object'){roster.set(userKey(u),u);renderUsers();}break;}
  case 'remove_user':{const u=obj.user;if(u&&typeof u==='object'){roster.delete(userKey(u));renderUsers();}break;}
- case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
+ case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;renderUsers();if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
  case 'logout':clearTimeout(loginTimer);loginTimer=null;if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;authorized=false;currentUser=null;pending=false;refreshDeleteControls();E.identity.textContent='Не авторизован';note('Сервер завершил гостевой вход.','send-error');updateButtons();break;
  case 'set_nick':nickRequestInFlight=false;E.nick.value=safe(obj.nick,30);E.identity.textContent='В чате: '+safe(obj.nick,50);if(currentUser)currentUser.nick=safe(obj.nick,30);desiredGuestNick=safe(obj.nick,30);try{localStorage.setItem('pylfm_guest_nick',desiredGuestNick);}catch{}nickChangeStatus.className='';nickChangeStatus.textContent='Ник сохранён';log('Ник подтверждён сервером');break;
  case 'accept_msg':{
@@ -2052,26 +2117,35 @@ E.input.addEventListener('keydown',event=>{
   if(!event.repeat)E.form.requestSubmit();
  }
 });
-
+E.input.addEventListener('input',()=>{
+ const old=E.input.value;
+ if(/[\r\n]/.test(old)){
+  const pos=E.input.selectionStart;
+  const before=old.slice(0,pos).replace(/[\r\n]+/g,' ').length;
+  E.input.value=old.replace(/[\r\n]+/g,' ');
+  E.input.setSelectionRange(before,before);
+ }
+});
 // v4.3: use the original send_message protocol for ALL official smilies and text.
 // A presentation overlay never becomes the source of the outgoing message.
 E.form.addEventListener('submit',event=>{
  event.preventDefault();
  if(!authorized||!socket||socket.readyState!==WebSocket.OPEN){note('Нет подтверждённого входа в чат Волнореза. Сообщение не отправлено.','send-error');return;}
  if(pending){note('Предыдущее сообщение ещё ожидает ответ Волнореза.','send-note');return;}
- let text=editorText().trim();
+ let text=E.input.value.replace(/[\r\n]+/g,' ').trim();
  if(!text){note('Поле сообщения пустое.','send-note');return;}
  if(text.length>1000){note('Максимум 1000 символов.','send-error');return;}
  // Use the same four-part local_id shape observed in genuine Volnorez HAR traffic.
  const localId=nextMessageLocalId();
+ const targetId=activeDialog==='common'?null:activeDialog;
  let sent=false;
- try{sent=socketSend({cmd:'send_message',text,local_id:localId});}
+ try{sent=socketSend(targetId?{cmd:'send_message',text,local_id:localId,target_id:targetId}:{cmd:'send_message',text,local_id:localId});}
  catch(err){log('Ошибка WebSocket при отправке: '+String(err));}
  if(!sent){note('Не удалось передать сообщение на сервер. Проверь подключение.','send-error');return;}
  pending=true;
- pendingMessage={id:localId,text,timeout:null};
+ pendingMessage={id:localId,text,targetId,timeout:null};pendingMessageDialog=activeDialog;
  updateButtons();note('Сообщение передано по WebSocket. Ждём подтверждение сервера…','send-note');
- log('SEND send_message ('+text.length+' символов)');
+ log('SEND send_message ('+text.length+' символов, '+(targetId?'Л/С ID '+targetId:'общий чат')+')');
  pendingMessage.timeout=setTimeout(()=>{
   if(pendingMessage&&pendingMessage.id===localId){
    pendingMessage=null;pending=false;updateButtons();
@@ -2088,26 +2162,77 @@ for(const [id,s] of Object.entries(SMILES)){
 }
 let activeCat='classic';let tabToken=0;
 const gallery=$('galleryGrid'),galleryTabs=$('galleryTabs'),galleryHint=$('galleryHint');
+/* Файлы для раздела «Наши» берутся из GitHub Pages. Безопасный показ,
+   не отправляем собственные GIF в сервер Волнореза и не вмешиваемся в send_message. */
+const OUR_GIFS_DIR='./assets/our-gifs/';
+const OUR_GIFS_API='https://api.github.com/repos/Art1604/Pyl_Dorog-FM-Radio-Chat/contents/assets/our-gifs?ref=main';
+const OUR_DEFAULT_GIF='dance-dancing.gif';
+function validOurGifName(name){return typeof name==='string'&&name.length<180&&/^[^/\\?#<>]+\.gif$/i.test(name);}
+function ourGifUrl(name){return new URL(OUR_GIFS_DIR+encodeURIComponent(name),document.baseURI).href;}
+let ourGifsCache=null;
+async function loadOurGifs(){
+ if(ourGifsCache)return ourGifsCache;
+ let names=[];
+ try{
+  const res=await fetch(new URL(OUR_GIFS_DIR+'list.json',document.baseURI),{cache:'no-store'});
+  if(!res.ok)throw Error('list.json not found');
+  const data=await res.json();
+  names=(Array.isArray(data)?data:(Array.isArray(data?.files)?data.files:[])).filter(validOurGifName);
+ }catch(_){/* резервный список GitHub API */}
+ if(!names.length){
+  try{
+   const res=await fetch(OUR_GIFS_API,{headers:{Accept:'application/vnd.github+json'}});
+   if(res.ok){const data=await res.json();if(Array.isArray(data))names=data.filter(x=>x?.type==='file'&&validOurGifName(x.name)).map(x=>x.name);}
+  }catch(_){}
+ }
+ if(!names.length)names=[OUR_DEFAULT_GIF];
+ ourGifsCache=[...new Set(names)];
+ return ourGifsCache;
+}
+// Закреплённый GIF одинаков для всех посетителей, т.к. берётся из статических файлов.
+const pinned=document.createElement('div');
+pinned.className='our-gif-pinned';
+pinned.setAttribute('aria-label','Наш общий GIF из GitHub');
+const pinnedImg=document.createElement('img');
+pinnedImg.src=ourGifUrl(OUR_DEFAULT_GIF);
+pinnedImg.alt='Танцующий GIF';
+pinnedImg.loading='lazy';
+const pinnedText=document.createElement('div');pinnedText.className='our-gif-text';
+const pinnedTitle=document.createElement('strong');pinnedTitle.textContent='Наш GIF 💃';
+const pinnedSubtitle=document.createElement('span');pinnedSubtitle.textContent='Закреплён в чате для всех посетителей сайта';
+pinnedText.append(pinnedTitle,pinnedSubtitle);pinned.append(pinnedImg,pinnedText);
+function ensurePinnedGif(){if(E.messages.firstElementChild!==pinned)E.messages.prepend(pinned);}
+const pinnedObserver=new MutationObserver(()=>{if(E.messages.firstElementChild!==pinned)ensurePinnedGif();});
+pinnedObserver.observe(E.messages,{childList:true});
+ensurePinnedGif();
+async function showOurGifs(){
+ const token=++tabToken;
+ gallery.replaceChildren();galleryHint.textContent='Загружаем наши GIF из GitHub…';
+ const names=await loadOurGifs();
+ if(activeCat!=='ours'||token!==tabToken)return;
+ galleryHint.textContent='Наши GIF доступны на сайте. Танцующий GIF закреплён в чате для всех. Нажатие на другие GIF показывает локальный предпросмотр, но не отправляет их другим участникам.';
+ const tiles=document.createDocumentFragment();
+ for(const name of names){
+  const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title='Посмотреть '+name;
+  const img=document.createElement('img');img.src=ourGifUrl(name);img.alt=name;img.loading='lazy';
+  img.addEventListener('error',()=>{tile.disabled=true;tile.title='Файл недоступен';});
+  tile.append(img);
+  tile.addEventListener('click',()=>{
+   pinnedImg.src=ourGifUrl(name);
+   pinnedTitle.textContent=name===OUR_DEFAULT_GIF?'Наш GIF 💃':'Предпросмотр: '+name;
+   pinnedSubtitle.textContent=name===OUR_DEFAULT_GIF?'Закреплён в чате для всех посетителей сайта':'Выбранный предпросмотр виден только в этом браузере';
+   ensurePinnedGif();
+   note('GIF показан в нашем чате. Это просмотр из GitHub, без отправки сообщения.','send-note');
+  });
+  tiles.append(tile);
+ }
+ gallery.append(tiles);gallery.scrollTop=0;
+}
 function showTab(category){
  if(!cats[category])return;activeCat=category;
  for(const button of galleryTabs.querySelectorAll('button')){const active=button.dataset.category===category;button.classList.toggle('selected',active);button.setAttribute('aria-selected',String(active));}
- gallery.replaceChildren();
- if(category==='ours'){
-  const items=Object.entries(OUR_GIFS);
-  galleryHint.textContent=items.length+' наших GIF · На нашем сайте видны как картинки. На Волнорезе будут видны текстовые коды.';
-  if(!items.length){const hint=document.createElement('p');hint.className='muted';hint.textContent='Пока нет GIF. Убедись, что файлы загружены в assets/our-gifs/.';gallery.append(hint);return;}
-  const tiles=document.createDocumentFragment();
-  for(const [id,gif] of items){
-   const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title=gif.name;
-   tile.append(ownGifNode(id));tile.addEventListener('mousedown',()=>editorSaveRange());
-   tile.addEventListener('click',()=>{
-    if(!authorized){note('Для отправки нашей GIF требуется подключение к чату.','send-note');return;}
-    if(insertEditorOurGif(id))note('GIF добавлена в сообщение.');
-   });tiles.append(tile);
-  }
-  gallery.append(tiles);gallery.scrollTop=0;return;
- }
- const ids=cats[category];galleryHint.textContent=ids.length+' элементов · Просмотр доступен всем. Для отправки нужен гостевой вход и разрешение сервера.';
+ if(category==='ours'){showOurGifs();return;}
+ gallery.replaceChildren();const ids=cats[category];galleryHint.textContent=ids.length+' элементов · Просмотр доступен всем. Для отправки нужен гостевой вход и разрешение сервера.';
  if(category==='animashki'){
   customElements.whenDefined('dotlottie-wc').then(()=>{if(activeCat==='animashki')galleryHint.textContent=ids.length+' анимашек · Файлы .lottie загружаются из assets/volnorez-lottie/ на GitHub Pages.';});
   setTimeout(()=>{if(activeCat==='animashki'&&!customElements.get('dotlottie-wc'))galleryHint.textContent='Проигрыватель анимашек не загрузился с CDN. Проверь интернет, блокировщики и консоль браузера.';},7000);
@@ -2121,11 +2246,16 @@ function showTab(category){
  for(const id of ids){
   const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile';tile.title='Выбрать смайл';
   const preview=smileNode(id,true);tile.append(preview);
-  tile.addEventListener('mousedown',()=>editorSaveRange());
   // Код смайла не показываем в каталоге; он используется при нажатии.
   tile.addEventListener('click',()=>{
    if(!authorized){note('Смайл виден в гостевом режиме. Чтобы отправить его, сначала войди гостем.','send-note');return;}
-   if(insertEditorSmile(id))note('Смайл добавлен в сообщение.');
+   const t='%'+id+'%';
+   const before=E.input.value;
+   let start=E.input.selectionStart,end=E.input.selectionEnd;
+   // Clicking a sticker after selecting a preview may leave the cursor inside %123%.
+   // In that case append instead of corrupting an existing official code.
+   if(start===end){for(const m of before.matchAll(/%\d{1,4}%/g)){const a=m.index,b=a+m[0].length;if(start>a&&start<b){start=end=before.length;break;}}}
+   E.input.setRangeText(t,start,end,'end');refreshComposerSmilePreview();E.input.focus();note('Смайл добавлен в сообщение.');
   });
   tiles.append(tile);
  }
@@ -2135,19 +2265,31 @@ function showTab(category){
 galleryTabs.addEventListener('click',e=>{const btn=e.target.closest('button[data-category]');if(btn)showTab(btn.dataset.category);});
 E.emotes.addEventListener('click',()=>{E.picker.hidden=!E.picker.hidden;if(!E.picker.hidden)showTab(activeCat);});
 showTab('classic');
-loadOurGifs();
 $('copy').addEventListener('click',async()=>{const txt=E.log.textContent;try{await navigator.clipboard.writeText(txt);$('copy').textContent='Скопировано';}catch{window.prompt('Скопируй журнал:',txt);}});
 window.addEventListener('pagehide',()=>{stopped=true;clearTimeout(retryTimer);if(socket)socket.close(1000);});
 
 /* При нажатии на ник вставляем его сразу в сообщение, без @ и без меню. */
 function insertIntoMessage(value){
- if(!authorized||!editorIsEnabled()){
+ if(!authorized||E.input.disabled){
   note('Гостевой вход ещё выполняется. После подключения можно нажать на ник снова.','send-note');
   return false;
  }
- return insertEditorText(value);
+ const left=E.input.selectionStart,right=E.input.selectionEnd;
+ E.input.setRangeText(value,left,right,'end');
+ refreshComposerSmilePreview();E.input.focus();return true;
 }
 document.addEventListener('click',event=>{
+ const privateBtn=event.target.closest('[data-private-user-id]');
+ if(privateBtn){openPrivateDialog(privateBtn.dataset.privateUserId,privateBtn.dataset.privateNick);return;}
+ const localBlock=event.target.closest('[data-local-block-id]');
+ if(localBlock){
+  const id=String(localBlock.dataset.localBlockId||'');
+  if(!/^\d+$/.test(id))return;
+  if(locallyBlocked.has(id))locallyBlocked.delete(id);else locallyBlocked.add(id);
+  saveLocalBlocks();refreshLocalBlockedMessages();renderUsers();
+  log('Локальная блокировка обновлена (без команды серверу).');
+  return;
+ }
  const btn=event.target.closest('[data-chat-nick]');
  if(btn){
   const nick=String(btn.dataset.chatNick||'').trim();
@@ -2156,7 +2298,8 @@ document.addEventListener('click',event=>{
  }
  const emoji=event.target.closest('.chat-smile-action[data-smile-id]');
  if(emoji){
-  if(authorized&&editorIsEnabled())insertEditorSmile(emoji.dataset.smileId);
+  const code='%'+emoji.dataset.smileId+'%';
+  insertIntoMessage(code);
  }
 });
 /* v2.3: публичные данные эфира через WebSocket; GitHub JSON — резерв.
