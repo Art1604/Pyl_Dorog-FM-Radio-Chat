@@ -1494,6 +1494,24 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .pm-id-warning{padding:9px;border:1px solid #b6a06c;background:#f7f1e2;color:#715413}
 @media(max-width:680px){.chat-dialog-tab .pm-tab-title{max-width:90px}}
 </style>
+<style>
+/* Участники: расширенная колонка справа, компактные кнопки в одной строке. */
+@media(min-width:681px){
+  .chat-grid{grid-template-columns:minmax(0,1fr) 320px}
+}
+.people .person{display:flex;flex-wrap:nowrap;align-items:center;gap:4px;padding:7px 6px!important;min-width:0}
+.people .person .chat-role-icon{flex:0 0 19px;margin-right:0}
+.people .person .person-action{flex:1 1 auto;min-width:0;max-width:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-wrap:normal;text-align:left}
+.people .person .person-tools{flex:0 0 auto;width:auto;display:inline-flex;justify-content:flex-end;gap:3px;padding-left:0}
+.people .person .person-tools button{white-space:nowrap;padding:3px 4px;font-size:11px}
+/* На узком экране оставляем управление доступным, не сжимая ник до нуля. */
+@media(max-width:680px){
+  .people .person{flex-wrap:wrap;padding:6px 4px!important}
+  .people .person .person-action{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+  .people .person .person-tools{flex:0 0 100%;width:100%;justify-content:flex-start;flex-wrap:wrap;padding-left:0}
+  .people .person .person-tools button{padding:3px 4px}
+}
+</style>
 </head>
 <body><div class="wrap">
 <header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — радио и чат</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
