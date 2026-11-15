@@ -1636,7 +1636,9 @@ const RADIO_STREAM_URL='https://stream.volnorez.com/live-app/869683';
 const RADIO_SPECTRUM_BARS=24;
 let spectrumCtx=null,spectrumAnalyser=null,spectrumData=null,spectrumFrame=0;
 let spectrumProbeDone=false,spectrumReady=false,spectrumPeakPositions=[];
+let spectrumLastFrameTime=0;
 const spectrumLevels=[];
+const spectrumDisplayedLevels=Array(RADIO_SPECTRUM_BARS).fill(0);
 function storedRadioValue(key){try{return window.localStorage.getItem(key);}catch{return null;}}
 function saveRadioValue(key,value){try{window.localStorage.setItem(key,String(value));}catch{/* Private mode or disabled storage */}}
 function spectrumStatus(message){if(radioSpectrumStatus)radioSpectrumStatus.textContent=message;}
@@ -1654,26 +1656,54 @@ function createSpectrumDisplay(){
 }
 function clearSpectrum(){
  if(spectrumFrame){cancelAnimationFrame(spectrumFrame);spectrumFrame=0;}
- for(const bar of spectrumLevels){bar.level.style.height='0%';bar.peak.style.opacity='0';}
+ for(const bar of spectrumLevels){bar.level.style.height='0%';bar.peak.style.opacity='0';bar.peak.style.bottom='0%';}
  spectrumPeakPositions.fill(0);
+ spectrumDisplayedLevels.fill(0);
+ spectrumLastFrameTime=0;
 }
-function renderSpectrum(){
+// Двигаем шкалы только при реальном воспроизведении со звуком.
+// В частности, mute и громкость 0 останавливают визуализацию, несмотря на то,
+// что Web Audio AnalyserNode всё ещё получает исходный поток.
+function canAnimateSpectrum(){
+ return !!(spectrumReady&&spectrumAnalyser&&radioPlayer&&radioWanted&&!radioPlayer.paused&&
+  !radioPlayer.ended&&!radioPlayer.seeking&&radioPlayer.readyState>=3&&
+  !radioPlayer.muted&&radioPlayer.volume>0&&navigator.onLine!==false&&
+  (!spectrumCtx||spectrumCtx.state==='running'));
+}
+function renderSpectrum(now=performance.now()){
  spectrumFrame=0;
- if(!spectrumReady||!spectrumAnalyser||!radioPlayer||radioPlayer.paused||radioPlayer.ended||radioPlayer.readyState<2){clearSpectrum();return;}
+ if(!canAnimateSpectrum()){clearSpectrum();return;}
  spectrumAnalyser.getByteFrequencyData(spectrumData);
- // Logarithmic frequency bands are closer to classic Winamp spectrum visualizers.
- const low=3,high=Math.min(spectrumData.length-1,340),ratio=high/low;
+ // При тишине сам анализатор отдаёт нули: не показываем случайное движение.
+ // Полоски охватывают диапазон от низких до высоких частот по логарифмической сетке.
+ const hzPerBin=(spectrumCtx.sampleRate/2)/spectrumData.length;
+ const lowHz=65,highHz=Math.min(14000,spectrumCtx.sampleRate/2);
+ const ratio=highHz/lowHz;
+ const elapsed=spectrumLastFrameTime?Math.min(70,now-spectrumLastFrameTime):16.7;
+ spectrumLastFrameTime=now;
+ const fallFactor=Math.min(1,elapsed/140);
  for(let i=0;i<RADIO_SPECTRUM_BARS;i++){
-  const first=Math.min(high,Math.floor(low*Math.pow(ratio,i/RADIO_SPECTRUM_BARS)));
-  const last=Math.min(high,Math.max(first+1,Math.floor(low*Math.pow(ratio,(i+1)/RADIO_SPECTRUM_BARS))));
-  let strongest=0;
-  for(let bin=first;bin<=last;bin++)strongest=Math.max(strongest,spectrumData[bin]);
-  const level=Math.min(100,Math.round(Math.pow(strongest/255,0.82)*100));
+  const startHz=lowHz*Math.pow(ratio,i/RADIO_SPECTRUM_BARS);
+  const endHz=lowHz*Math.pow(ratio,(i+1)/RADIO_SPECTRUM_BARS);
+  const first=Math.min(spectrumData.length-1,Math.max(0,Math.floor(startHz/hzPerBin)));
+  const last=Math.min(spectrumData.length-1,Math.max(first,Math.ceil(endHz/hzPerBin)));
+  let energy=0,peak=0,count=0;
+  for(let bin=first;bin<=last;bin++){
+   const val=spectrumData[bin];energy+=val*val;peak=Math.max(peak,val);count++;
+  }
+  const rms=Math.sqrt(energy/Math.max(1,count));
+  const combined=0.78*rms+0.22*peak;
+  const normalized=combined<6?0:Math.min(1,Math.pow((combined-6)/220,1.3));
+  // Плавное движение: быстрый подъём, более медленное падение.
+  const target=normalized*100;
+  const prev=spectrumDisplayedLevels[i];
+  const level=target>prev?prev+(target-prev)*Math.min(1,elapsed/35):Math.max(target,prev-(elapsed*.22));
+  spectrumDisplayedLevels[i]=level<.5?0:level;
   const bar=spectrumLevels[i];
-  bar.level.style.height=level+'%';
-  spectrumPeakPositions[i]=Math.max(level,spectrumPeakPositions[i]-0.9);
-  bar.peak.style.bottom=Math.min(98,spectrumPeakPositions[i])+'%';
-  bar.peak.style.opacity=strongest>0||spectrumPeakPositions[i]>0?'1':'0';
+  bar.level.style.height=spectrumDisplayedLevels[i].toFixed(1)+'%';
+  spectrumPeakPositions[i]=Math.max(spectrumDisplayedLevels[i],spectrumPeakPositions[i]-elapsed*.08);
+  bar.peak.style.bottom=Math.min(98,spectrumPeakPositions[i]).toFixed(1)+'%';
+  bar.peak.style.opacity=spectrumPeakPositions[i]>.5?'1':'0';
  }
  spectrumFrame=requestAnimationFrame(renderSpectrum);
 }
@@ -1709,8 +1739,8 @@ function syncRadioUi(){
  radioMute.setAttribute('aria-label',muted?'Включить звук':'Выключить звук');
  radioMute.title=muted?'Включить звук':'Выключить звук';
  radioMute.classList.toggle('is-muted',muted);
- if(spectrumReady&&active&&!spectrumFrame)spectrumFrame=requestAnimationFrame(renderSpectrum);
- if(!active&&spectrumFrame)clearSpectrum();
+ if(canAnimateSpectrum()&&!spectrumFrame)spectrumFrame=requestAnimationFrame(renderSpectrum);
+ if(!canAnimateSpectrum())clearSpectrum();
  if(document.activeElement!==radioVolume)radioVolume.value=String(volume);
  radioVolume.style.setProperty('--radio-fill',volume+'%');
  if(radioVolumePercent)radioVolumePercent.textContent=muted?'Выкл.':volume+'%';
@@ -1851,7 +1881,7 @@ if(radioPlayer&&radioToggle&&radioMute&&radioVolume){
   saveRadioValue(RADIO_MUTED_KEY,radioPlayer.muted);
   syncRadioUi();
  });
- ['play','pause','playing','waiting','stalled','ended','volumechange','emptied','loadedmetadata','canplay','error'].forEach(evt=>radioPlayer.addEventListener(evt,syncRadioUi));
+ ['play','pause','playing','waiting','stalled','ended','volumechange','emptied','loadedmetadata','canplay','canplaythrough','suspend','error'].forEach(evt=>radioPlayer.addEventListener(evt,syncRadioUi));
  radioPlayer.addEventListener('playing',()=>{
   if(!radioWanted)return;
   clearRadioReconnect();
