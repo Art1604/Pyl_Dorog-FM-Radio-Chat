@@ -2045,20 +2045,28 @@ function renderUsers(){
   btn.textContent=safe(u.nick||u.name,100)||'Гость';btn.dataset.chatNick=btn.textContent;
   const role=roleFromType(u.type??u.utype);styleRole(btn,role);
   const icon=iconForRole(role);if(icon)e.append(icon);e.append(btn);
-  const id=localUserId(u);
-  if(id&&id!==localUserId(currentUser)){
+  const id=serverUserId(u);
+  const nickname=safe(u.nick||u.name,100)||'Гость';
+  const sameId=!!id&&id===serverUserId(currentUser);
+  const ownNick=!!currentUser&&comparableNick(nickname)===comparableNick(currentUser.nick||currentUser.name);
+  if(!sameId&&!ownNick){
+   // Не прячем Л/С только потому, что сервер не передал числовой ID.
    const tools=document.createElement('span');tools.className='person-tools';
    const privateBtn=document.createElement('button');privateBtn.type='button';
    privateBtn.className='person-private-btn';privateBtn.dataset.privateUserId=id;
-   privateBtn.dataset.privateNick=safe(u.nick||u.name,100)||'Гость';
+   privateBtn.dataset.privateNick=nickname;
    privateBtn.textContent='✉ Л/С';privateBtn.title='Личное сообщение';
    tools.append(privateBtn);
-   const blocked=isLocalBlockedUser(id);
-   e.classList.toggle('local-blocked',blocked);
-   const blockBtn=document.createElement('button');blockBtn.type='button';blockBtn.className='local-block-btn';
-   blockBtn.dataset.localBlockId=id;blockBtn.textContent=blocked?'Разблокировать':'Блокировать';
-   blockBtn.title=blocked?'Снова показывать сообщения этого пользователя':'Скрыть сообщения этого пользователя только у меня';
-   tools.append(blockBtn);e.append(tools);
+   // Локальная блокировка использует только надёжный числовой ID.
+   if(id){
+    const blocked=isLocalBlockedUser(id);
+    e.classList.toggle('local-blocked',blocked);
+    const blockBtn=document.createElement('button');blockBtn.type='button';blockBtn.className='local-block-btn';
+    blockBtn.dataset.localBlockId=id;blockBtn.textContent=blocked?'Разблокировать':'Блокировать';
+    blockBtn.title=blocked?'Снова показывать сообщения этого пользователя':'Скрыть сообщения этого пользователя только у меня';
+    tools.append(blockBtn);
+   }
+   e.append(tools);
   }
   E.users.append(e);
  }
