@@ -1960,6 +1960,11 @@ const PRIVATE_STORAGE_KEY='pylfm_private_dialogs_v2_'+GUEST_PROFILE_ID;
 const PRIVATE_BACKUP_KEY=PRIVATE_STORAGE_KEY+'_backup';
 let restoringPrivateDialogs=false;
 let lastPrivateStorageError='';
+const PRIVATE_DB_NAME='pylfm_private_history_v1';
+let privateDbPromise=null;
+let privateDbReady=null;
+let pendingDbSnapshot=null;
+let writingDbSnapshot=false;
 function readPrivateSnapshot(key){
  try{
   const raw=localStorage.getItem(key);
@@ -1972,31 +1977,118 @@ function readPrivateSnapshot(key){
 function privateSnapshotScore(data){
  return (data?.tabs||[]).reduce((total,entry)=>total+(Array.isArray(entry.messages)?entry.messages.length:0),0);
 }
+function isValidPrivateSnapshot(data){return !!(data&&data.version===1&&Array.isArray(data.tabs));}
+// IndexedDB — основное хранилище истории. localStorage остаётся резервной копией
+// и хранит гостевой профиль, признак непрочитанных и прежние данные для миграции.
+function openPrivateDb(){
+ if(privateDbPromise)return privateDbPromise;
+ privateDbPromise=new Promise(resolve=>{
+  if(!('indexedDB' in window)){resolve(null);return;}
+  try{
+   const req=indexedDB.open(PRIVATE_DB_NAME,1);
+   req.onupgradeneeded=()=>{
+    const db=req.result;
+    if(!db.objectStoreNames.contains('profiles'))db.createObjectStore('profiles',{keyPath:'id'});
+   };
+   req.onsuccess=()=>{
+    const db=req.result;
+    db.onversionchange=()=>db.close();
+    resolve(db);
+   };
+   req.onerror=()=>{console.warn('IndexedDB недоступна для истории Л/С',req.error);resolve(null);};
+   req.onblocked=()=>{console.warn('IndexedDB заблокирована другой вкладкой');resolve(null);};
+  }catch(err){console.warn('Не удалось открыть IndexedDB',err);resolve(null);}
+ });
+ return privateDbPromise;
+}
+async function readPrivateDbSnapshot(){
+ const db=await openPrivateDb();
+ if(!db)return null;
+ return new Promise(resolve=>{
+  try{
+   const tx=db.transaction('profiles','readonly');
+   const request=tx.objectStore('profiles').get(GUEST_PROFILE_ID);
+   request.onsuccess=()=>resolve(isValidPrivateSnapshot(request.result?.snapshot)?request.result.snapshot:null);
+   request.onerror=()=>{console.warn('Ошибка чтения истории из IndexedDB',request.error);resolve(null);};
+   tx.onabort=()=>resolve(null);
+  }catch(err){console.warn('Не удалось прочитать историю IndexedDB',err);resolve(null);}
+ });
+}
+function writePrivateDbSnapshot(snapshot){
+ pendingDbSnapshot=snapshot;
+ if(!privateDbReady||writingDbSnapshot)return;
+ const db=privateDbReady;
+ const flush=()=>{
+  if(!pendingDbSnapshot){writingDbSnapshot=false;return;}
+  writingDbSnapshot=true;
+  const latest=pendingDbSnapshot;
+  pendingDbSnapshot=null;
+  try{
+   const tx=db.transaction('profiles','readwrite');
+   tx.objectStore('profiles').put({id:GUEST_PROFILE_ID,snapshot:latest});
+   tx.oncomplete=flush;
+   tx.onerror=()=>{console.warn('Не удалось записать историю Л/С в IndexedDB',tx.error);flush();};
+   tx.onabort=()=>{console.warn('Запись истории Л/С в IndexedDB прервана');flush();};
+  }catch(err){console.warn('Ошибка записи IndexedDB',err);writingDbSnapshot=false;}
+ };
+ flush();
+}
+// Резервная копия: если IndexedDB не открылась, Л/С всё равно восстанавливаются.
 function writePrivateSnapshot(data){
+ let saved=false;
  try{
   const serialized=JSON.stringify(data);
   localStorage.setItem(PRIVATE_STORAGE_KEY,serialized);
   if(localStorage.getItem(PRIVATE_STORAGE_KEY)!==serialized)throw new Error('Браузер не подтвердил запись');
-  // Резервная копия не должна влиять на основное сохранение.
   try{localStorage.setItem(PRIVATE_BACKUP_KEY,serialized);}catch{}
-  lastPrivateStorageError='';
-  return true;
+  lastPrivateStorageError='';saved=true;
  }catch(err){
   lastPrivateStorageError=String(err?.message||err);
-  console.warn('Ошибка сохранения Л/С',err);
-  return false;
+  console.warn('Ошибка резервного сохранения Л/С',err);
  }
+ writePrivateDbSnapshot(data);
+ return saved||!!privateDbReady;
 }
-// Перенос истории прежней версии; существующую историю не удаляем.
+// Объединяем историю двух хранилищ по подтверждённым ID собеседников,
+// а прочитанность берём из самой свежей записи, чтобы не возрождать прочитанные вкладки.
+function mergePrivateSnapshots(snapshots){
+ const valid=snapshots.filter(isValidPrivateSnapshot);
+ if(!valid.length)return null;
+ valid.sort((a,b)=>Number(a.updatedAt||0)-Number(b.updatedAt||0));
+ const byId=new Map();
+ for(const snapshot of valid){
+  for(const entry of snapshot.tabs.slice(0,50)){
+   const storedKey=String(entry?.id??'');
+   const rawId=String(entry?.userId??'');
+   const id=serverIdentifier(rawId&&!rawId.startsWith('pending:')?rawId:(!storedKey.startsWith('pending:')?storedKey:''));
+   if(!id)continue;
+   let contact=byId.get(id);
+   if(!contact){contact={id,userId:id,nick:String(entry.nick||'Слушатель'),unread:0,messages:[]};byId.set(id,contact);}
+   contact.nick=String(entry.nick||contact.nick);
+   contact.unread=Math.max(0,Math.min(999,Number(entry.unread)||0));
+   const seen=new Set(contact.messages.map(m=>privateMessageKey(m,id)));
+   for(const m of Array.isArray(entry.messages)?entry.messages.slice(-200):[]){
+    if(!m||typeof m!=='object'||typeof (m.text??'')!=='string')continue;
+    const key=privateMessageKey(m,id);
+    if(!seen.has(key)){seen.add(key);contact.messages.push(m);}
+   }
+   contact.messages.sort((a,b)=>Number(a.time||a.timestamp||0)-Number(b.time||b.timestamp||0));
+   contact.messages=contact.messages.slice(-200);
+  }
+ }
+ const freshest=valid[valid.length-1];
+ return {version:1,active:'common',updatedAt:Math.max(Date.now(),Number(freshest.updatedAt)||0),tabs:[...byId.values()].slice(-50)};
+}
+// Перенос истории прежней версии: существующие записи не удаляем.
 function migratePrivateDialogHistory(){
  if(GUEST_PROFILE_ID==='guest-temporary')return;
  const existing=readPrivateSnapshot(PRIVATE_STORAGE_KEY);
  const previous=readPrivateSnapshot(LEGACY_PRIVATE_STORAGE_KEY);
  if(!existing&&previous)writePrivateSnapshot(previous);
 }
-migratePrivateDialogHistory();
 function privateDialogSnapshot(){
- const tabs=[...privateDialogs.entries()].filter(([key,c])=>c&&typeof c.nick==='string').slice(-50).map(([key,c])=>({
+ // Сохраняем в историю только диалоги с подтверждённым ID собеседника.
+ const tabs=[...privateDialogs.entries()].filter(([key,c])=>c&&typeof c.nick==='string'&&!!serverIdentifier(c.userId)&&!String(c.userId).startsWith('pending:')).slice(-50).map(([key,c])=>({
   id:key,userId:c.userId||'',nick:c.nick,unread:Math.max(0,Number(c.unread)||0),
   messages:c.messages.slice(-200).map(m=>({
    id:m.id,local_id:m.local_id,uid:m.uid,nick:m.nick,
@@ -2010,41 +2102,60 @@ function privateDialogSnapshot(){
 function savePrivateDialogs(){
  if(restoringPrivateDialogs)return;
  const next=privateDialogSnapshot();
- // Не допускаем перезаписывания всей истории пустыми вкладками при инициализации/сбое.
  const previous=readPrivateSnapshot(PRIVATE_STORAGE_KEY)||readPrivateSnapshot(PRIVATE_BACKUP_KEY);
  if(previous&&privateSnapshotScore(previous)>0&&privateSnapshotScore(next)===0&&next.tabs.length===0)return;
- if(!writePrivateSnapshot(next)){
-  // Сообщаем в журнале только о реальной ошибке записи.
+ if(!writePrivateSnapshot(next)&&!privateDbReady){
   const logger=document.getElementById('log');
   if(logger)logger.textContent+='\nНе удалось сохранить Л/С в браузере: '+lastPrivateStorageError;
  }
+}
+function applyPrivateSnapshot(data){
+ if(!isValidPrivateSnapshot(data))return;
+ restoringPrivateDialogs=true;
+ try{
+  for(const entry of data.tabs.slice(0,50)){
+   const storedKey=String(entry?.id??'');
+   const storedId=String(entry?.userId??'');
+   const id=serverIdentifier(storedId&&!storedId.startsWith('pending:')?storedId:(!storedKey.startsWith('pending:')?storedKey:''));
+   if(!id)continue;
+   const nick=typeof entry?.nick==='string'?entry.nick:'Слушатель';
+   const unread=Math.max(0,Math.min(999,Number(entry.unread)||0));
+   const messages=Array.isArray(entry.messages)?entry.messages.filter(m=>m&&typeof m==='object'&&typeof (m.text??'')==='string').slice(-200):[];
+   privateDialogs.set(id,{nick,userId:id,messages,loading:false,loaded:false,unread});
+   if(unread>0)ensurePrivateTab(id,privateDialogs.get(id));
+  }
+  selectDialog('common');
+ }finally{restoringPrivateDialogs=false;}
 }
 function restorePrivateDialogs(){
  const primary=readPrivateSnapshot(PRIVATE_STORAGE_KEY);
  const backup=readPrivateSnapshot(PRIVATE_BACKUP_KEY);
  const legacy=readPrivateSnapshot(LEGACY_PRIVATE_STORAGE_KEY);
- const candidates=[primary,backup,legacy].filter(Boolean);
- if(!candidates.length)return;
- // При повреждении/случайном обнулении основного ключа берём копию с сообщениями.
- const data=candidates.sort((a,b)=>privateSnapshotScore(b)-privateSnapshotScore(a)||Number(b.updatedAt||0)-Number(a.updatedAt||0))[0];
- restoringPrivateDialogs=true;
- try{
-  for(const entry of data.tabs.slice(0,50)){
-   const id=serverIdentifier(entry?.userId||entry?.id);
-   const nick=typeof entry?.nick==='string'?entry.nick:'Слушатель';
-   const key=id||('pending:'+comparableNick(nick));
-   if(!key||key==='pending:')continue;
-   const unread=Math.max(0,Math.min(999,Number(entry.unread)||0));
-   // Все сообщения храним, но после F5 показываем лишь непрочитанные вкладки.
-   const contact={nick,userId:id||'',messages:Array.isArray(entry.messages)?entry.messages.filter(m=>m&&typeof m==='object'&&typeof (m.text??'')==='string').slice(-200):[],loading:false,loaded:false,unread};
-   privateDialogs.set(key,contact);
-   if(unread>0)ensurePrivateTab(key,contact);
+ const data=mergePrivateSnapshots([legacy,backup,primary]);
+ if(!data)return;
+ applyPrivateSnapshot(data);
+ // Окончательная запись откладывается до сравнения с IndexedDB.
+}
+
+// Дожидаемся проверки IndexedDB ДО подключения к чату, чтобы свежая история
+// с сервера не была перезаписана устаревшей копией из браузера.
+async function restorePrivateDialogsFromIndexedDB(){
+ const db=await openPrivateDb();
+ privateDbReady=db;
+ const stored=await readPrivateDbSnapshot();
+ const primary=readPrivateSnapshot(PRIVATE_STORAGE_KEY);
+ const backup=readPrivateSnapshot(PRIVATE_BACKUP_KEY);
+ const legacy=readPrivateSnapshot(LEGACY_PRIVATE_STORAGE_KEY);
+ const merged=mergePrivateSnapshots([legacy,backup,primary,stored]);
+ if(merged){
+  // Удаляем открытые ранее вкладки только из памяти интерфейса, не из истории.
+  for(const tab of dialogTabs.querySelectorAll('.chat-dialog-tab[data-dialog-id]')){
+   if(tab.dataset.dialogId!=='common')tab.remove();
   }
-  // Не открываем Л/С автоматически: наличие непрочитанного видно по вкладке.
-  selectDialog('common');
- }finally{restoringPrivateDialogs=false;}
- // Восстанавливаем основной файл хранилища, если пришлось взять резервную копию.
- if(data!==primary)writePrivateSnapshot(privateDialogSnapshot());
+  privateDialogs.clear();
+  applyPrivateSnapshot(merged);
+  writePrivateSnapshot(privateDialogSnapshot());
+ }
 }
 window.addEventListener('pagehide',savePrivateDialogs);
 
@@ -2148,8 +2259,10 @@ function selectDialog(id){
 }
 function openPrivateDialog(uid,nick,load=true){
  nick=safe(nick||'Слушатель',100)||'Слушатель';
- const knownId=findPrivateUserId(uid,nick);
- // Вкладку можно открыть и без ID, но не отправлять по одному лишь нику.
+ // Л/С открываем по идентификатору из списка участников/сервера.
+ // Даже уникальное совпадение ника не доказывает, что это тот же человек.
+ const knownId=serverIdentifier(uid);
+ // Без ID оставляем отдельную неподтверждённую вкладку, не связывая её с историей другого гостя.
  const key=knownId||'pending:'+comparableNick(nick);
  if(!knownId&&!comparableNick(nick)){
   note('Не удалось определить собеседника.','send-error');return;
@@ -2169,29 +2282,9 @@ function openPrivateDialog(uid,nick,load=true){
  savePrivateDialogs();
 }
 function reconcilePendingPrivateTabs(){
- for(const [oldKey,contact] of [...privateDialogs.entries()]){
-  if(contact.userId)continue;
-  const id=findPrivateUserId('',contact.nick);
-  if(!id)continue;
-  const existing=privateDialogs.get(id);
-  if(existing){
-   existing.messages.push(...contact.messages);existing.unread=Math.max(Number(existing.unread)||0,Number(contact.unread)||0);if(existing.unread>0)ensurePrivateTab(id,existing);
-   privateDialogs.delete(oldKey);
-   dialogTabs.querySelectorAll('.chat-dialog-tab').forEach(tab=>{if(tab.dataset.dialogId===oldKey)tab.remove();});
-   if(activeDialog===oldKey)activeDialog=id;
-  }else{
-   privateDialogs.delete(oldKey);contact.userId=id;privateDialogs.set(id,contact);
-   dialogTabs.querySelectorAll('.chat-dialog-tab').forEach(tab=>{
-    if(tab.dataset.dialogId===oldKey){tab.dataset.dialogId=id;const close=tab.querySelector('[data-dialog-close]');if(close)close.dataset.dialogClose=id;}
-   });
-   if(activeDialog===oldKey)activeDialog=id;
-  }
- }
- if(activeDialog!=='common'&&privateDialogs.has(activeDialog)){
-  selectDialog(activeDialog);
-  const contact=privateDialogs.get(activeDialog);
-  if(contact.userId&&!contact.loaded&&authorized)openPrivateDialog(contact.userId,contact.nick,true);
- }
+ // Не объединяем «pending:НИК» с подтверждёнными ID по одному совпадению ника.
+ // Два разных гостя Волнореза могут использовать одинаковое имя.
+ // Если ID станет известен, новый диалог открывается отдельно через список участников.
 }
 function privateMessageKey(m,id){
  if(m.id!=null&&String(m.id)!=='')return 'id:'+String(m.id);
@@ -3158,9 +3251,13 @@ connectLiveMeta();
 setInterval(()=>{if(!document.hidden)refreshAir();},60000);
 
 restorePrivateDialogs();
-stopped=false;
-updateButtons();
-connect(true);
-log('Автоподключение и автоматический гостевой вход запущены.');
+restorePrivateDialogsFromIndexedDB().catch(err=>{
+ console.warn('Восстановление IndexedDB не удалось, используем localStorage',err);
+}).finally(()=>{
+ stopped=false;
+ updateButtons();
+ connect(true);
+ log('Автоподключение и автоматический гостевой вход запущены.');
+});
 })();
 </script></body></html>
