@@ -1512,6 +1512,30 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
   .people .person .person-tools button{padding:3px 4px}
 }
 </style>
+<style>
+/* ПК-версия: согласованные компактные размеры 1200 × 450, без изменения логики чата. */
+@media(min-width:681px){
+  .wrap{max-width:1200px;padding:14px 18px}
+  .chat-grid,#sendForm{width:100%;max-width:100%;margin-left:auto;margin-right:auto}
+  .chat-grid{grid-template-columns:minmax(0,1fr) 320px;height:450px;min-height:0;grid-template-rows:minmax(0,1fr)}
+  .chat-grid>div{min-width:0;min-height:0;overflow:hidden}
+  .chat-grid .chatsurface,.chat-grid .people,.chat-grid .private-dialog-view{height:auto;min-height:0;max-height:none;flex:1 1 auto;overflow-y:auto}
+  .chat-grid .chat-dialog-tabs,.chat-grid .column-title{flex:0 0 auto}
+}
+</style>
+<style>
+/* ПК: длинные ники плавно прокручиваются только при наведении или фокусе. */
+@media(min-width:681px){
+ .people .person .person-action{position:relative;text-overflow:clip!important;display:block}
+ .people .person .person-action .nick-marquee-track{display:inline-block;width:max-content;max-width:none;white-space:nowrap;vertical-align:middle;transform:translateX(0)}
+ .people .person .person-action.nick-overflows:hover .nick-marquee-track,
+ .people .person .person-action.nick-overflows:focus-visible .nick-marquee-track{
+  animation:nick-scroll-sideways var(--nick-scroll-time,5s) ease-in-out .35s infinite alternate;
+ }
+ @keyframes nick-scroll-sideways{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(calc(-1 * var(--nick-scroll-distance,0px)))}}
+}
+@media(prefers-reduced-motion:reduce){.people .person .person-action .nick-marquee-track{animation:none!important}}
+</style>
 </head>
 <body><div class="wrap">
 <header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — радио и чат</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
@@ -2138,6 +2162,17 @@ function compareChatUsers(a,b){
  if(difference)return difference;
  return userNickCollator.compare(String(a?.nick??a?.name??''),String(b?.nick??b?.name??''));
 }
+// Визуальная прокрутка только длинных имён; сам ник и его символы не меняются.
+function updateNickMarquees(){
+ for(const btn of E.users.querySelectorAll('.person-action')){
+  const track=btn.querySelector('.nick-marquee-track');if(!track)continue;
+  const overflow=Math.max(0,Math.ceil(track.getBoundingClientRect().width-btn.clientWidth+3));
+  btn.classList.toggle('nick-overflows',overflow>3);
+  btn.style.setProperty('--nick-scroll-distance',overflow+'px');
+  btn.style.setProperty('--nick-scroll-time',(Math.max(4,overflow/24+2)).toFixed(2)+'s');
+ }
+}
+window.addEventListener('resize',updateNickMarquees);
 function renderUsers(){
  reconcilePendingPrivateTabs();
  // Earlier messages may contain only a nickname; upgrade their IDs once the roster arrives.
@@ -2153,7 +2188,7 @@ function renderUsers(){
  for(const u of [...roster.values()].sort(compareChatUsers).slice(0,250)){
   const e=document.createElement('div');e.className='person';
   const btn=document.createElement('button');btn.type='button';btn.className='person-action';
-  btn.textContent=safe(u.nick||u.name,100)||'Гость';btn.dataset.chatNick=btn.textContent;
+  const shownNick=safe(u.nick||u.name,100)||'Гость';btn.dataset.chatNick=shownNick;btn.title=shownNick;const movingNick=document.createElement('span');movingNick.className='nick-marquee-track';movingNick.textContent=shownNick;btn.append(movingNick);
   const role=roleFromType(u.type??u.utype);styleRole(btn,role);
   const icon=iconForRole(role);if(icon)e.append(icon);e.append(btn);
   const id=serverUserId(u);
@@ -2181,6 +2216,7 @@ function renderUsers(){
   }
   E.users.append(e);
  }
+ requestAnimationFrame(updateNickMarquees);
 }
 function failSend(t){pending=false;updateButtons();note(t,'send-error');log(t);}
 function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получено событие не в JSON.');return;}if(!obj||typeof obj!=='object')return;const cmd=String(obj.cmd||'неизвестно');
