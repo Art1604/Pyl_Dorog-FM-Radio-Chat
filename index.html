@@ -1289,6 +1289,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .chatsurface .msg.msg-first{padding-top:9px!important}
 .chatsurface .msg-head{display:flex;align-items:center;gap:3px;min-height:21px}
 .chatsurface .msg-head .nick-action{text-decoration:none;text-align:left;font-size:13px}
+.chatsurface .msg-head .nick-colon{font-size:13px;margin-left:-3px;flex:none}
 .chatsurface .msg-body{display:flex;align-items:flex-start;gap:8px;min-width:0;padding-left:22px}
 .chatsurface .msg:not(.msg-first) .msg-body{padding-left:22px}
 .chatsurface .textbody{display:inline;min-width:0;flex:1;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -1456,10 +1457,17 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .private-dialog-view[hidden],#messages[hidden]{display:none!important}
 .person{display:flex;align-items:center;gap:3px;min-width:0}
 .person .person-action{min-width:0;flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.person .person-tools{display:inline-flex;gap:3px;flex:none}
-.person .person-tools button{font:12px Arial,sans-serif;padding:3px 4px;border:1px solid #999;background:#e2e2e2;box-shadow:none;border-radius:0}
-.person .person-tools button:hover{background:#c7c7c7}
-.person .person-tools .local-block-btn{float:none;margin:0;font-size:11px}
+.person .person-tools{display:inline-flex;align-items:center;gap:7px;flex:none;padding-left:2px}
+.person .person-tools button{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;background:transparent;box-shadow:none;border-radius:0;cursor:pointer;color:transparent;font-size:0;line-height:0;overflow:hidden;opacity:.82;transition:opacity .15s ease,transform .15s ease}
+.person .person-tools button:hover{opacity:1;transform:translateY(-1px)}
+.person .person-tools button:focus-visible{outline:2px solid #8f8f8f;outline-offset:2px;opacity:1}
+.person .person-tools button::before{content:'';display:block;width:18px;height:18px;background-repeat:no-repeat;background-position:center;background-size:18px 18px}
+.person .person-tools .person-private-btn::before{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><ellipse cx='7' cy='6.25' rx='5.6' ry='4.6' fill='%23929292' stroke='%23868686' stroke-width='1'/><path d='M4.6 10.15 4.1 13l2.55-1.76' fill='%23929292' stroke='%23868686' stroke-width='1' stroke-linejoin='round'/><path d='M4.55 5.95h4.9M4.55 7.75h3.9' stroke='%23ffffff' stroke-width='1.2' stroke-linecap='round'/></svg>")}
+.person .person-tools .local-block-btn::before{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='6.2' fill='%23929292' stroke='%23868686' stroke-width='1'/><path d='M5.2 5.2 10.8 10.8M10.8 5.2 5.2 10.8' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round'/></svg>")}
+.person .person-tools .local-block-btn.is-blocked{opacity:1}
+.person .person-tools .local-block-btn.is-blocked::before{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='6.2' fill='%23777777' stroke='%23666666' stroke-width='1'/><path d='M5.2 5.2 10.8 10.8M10.8 5.2 5.2 10.8' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round'/></svg>")}
+.person .person-tools .local-block-btn{float:none;margin:0}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 .chatsurface .msg-body{position:relative}
 .chatsurface .msg-delete-actions{visibility:hidden}
 .chatsurface .msg:hover .msg-delete-actions,.chatsurface .msg:focus-within .msg-delete-actions{visibility:visible}
@@ -1503,13 +1511,13 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .people .person .chat-role-icon{flex:0 0 19px;margin-right:0}
 .people .person .person-action{flex:1 1 auto;min-width:0;max-width:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-wrap:normal;text-align:left}
 .people .person .person-tools{flex:0 0 auto;width:auto;display:inline-flex;justify-content:flex-end;gap:3px;padding-left:0}
-.people .person .person-tools button{white-space:nowrap;padding:3px 4px;font-size:11px}
+.people .person .person-tools button{white-space:nowrap}
 /* На узком экране оставляем управление доступным, не сжимая ник до нуля. */
 @media(max-width:680px){
   .people .person{flex-wrap:wrap;padding:6px 4px!important}
   .people .person .person-action{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
   .people .person .person-tools{flex:0 0 100%;width:100%;justify-content:flex-start;flex-wrap:wrap;padding-left:0}
-  .people .person .person-tools button{padding:3px 4px}
+  .people .person .person-tools button{}
 }
 </style>
 <style>
@@ -1633,7 +1641,7 @@ function renderPrivateDialog(){
  }
  for(const msg of contact.messages){
   const row=document.createElement('div');row.className='private-message';
-  const author=document.createElement('b');author.textContent=safe(msg.nick||msg.user?.nick||'Слушатель',100)+': ';
+  const author=document.createElement('b');const authorNick=safe(msg.nick||msg.user?.nick||'Слушатель',100);author.textContent=authorNick+(authorNick.trimEnd().endsWith(':')?' ':': ');
   const body=document.createElement('span');appendRich(body,msg.text??msg.message??msg.msg??'');
   row.append(author,body);
   const when=messageDate(msg.time??msg.timestamp);
@@ -2113,7 +2121,9 @@ function showMessage(m){
   if(roleIcon)head.append(roleIcon);
   else {const spacer=document.createElement('span');spacer.className='msg-head-spacer';spacer.setAttribute('aria-hidden','true');head.append(spacer);}
   const n=document.createElement('button');n.type='button';n.className='nick nick-action';
-  n.textContent=nick;n.dataset.chatNick=nick;styleRole(n,role);head.append(n);d.append(head);
+  n.textContent=nick;n.dataset.chatNick=nick;styleRole(n,role);head.append(n);
+  if(!nick.trimEnd().endsWith(':')){const colon=document.createElement('span');colon.className='nick-colon';colon.textContent=':';head.append(colon);}
+  d.append(head);
  }
  const body=document.createElement('div');body.className='msg-body';
  const content=document.createElement('span');content.className='textbody';
@@ -2207,14 +2217,18 @@ function renderUsers(){
    const privateBtn=document.createElement('button');privateBtn.type='button';
    privateBtn.className='person-private-btn';privateBtn.dataset.privateUserId=id;
    privateBtn.dataset.privateNick=nickname;
-   privateBtn.textContent='✉ Л/С';privateBtn.title=id?'Личное сообщение':'Волнорез не передал ID: откройте Л/С на оригинальном сайте';
+   privateBtn.setAttribute('aria-label','Личное сообщение');
+   privateBtn.innerHTML='<span class="sr-only">Личное сообщение</span>';
+   privateBtn.title=id?'Личное сообщение':'Волнорез не передал ID: откройте Л/С на оригинальном сайте';
    tools.append(privateBtn);
    // Локальная блокировка использует только ID, переданный сервером.
    if(id){
     const blocked=isLocalBlockedUser(id);
     e.classList.toggle('local-blocked',blocked);
-    const blockBtn=document.createElement('button');blockBtn.type='button';blockBtn.className='local-block-btn';
-    blockBtn.dataset.localBlockId=id;blockBtn.textContent=blocked?'Разблокировать':'Блокировать';
+    const blockBtn=document.createElement('button');blockBtn.type='button';blockBtn.className='local-block-btn'+(blocked?' is-blocked':'');
+    blockBtn.dataset.localBlockId=id;
+    blockBtn.setAttribute('aria-label',blocked?'Разблокировать':'Блокировать');
+    blockBtn.innerHTML='<span class="sr-only">'+(blocked?'Разблокировать':'Блокировать')+'</span>';
     blockBtn.title=blocked?'Снова показывать сообщения этого пользователя':'Скрыть сообщения этого пользователя только у меня';
     tools.append(blockBtn);
    }
