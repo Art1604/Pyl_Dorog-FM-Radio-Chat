@@ -1598,13 +1598,15 @@ function addPrivateMessage(msg,id,{historical=false}={}){
 function incomingPrivateId(msg){
  if(!msg||typeof msg!=='object')return null;
  // Оригинальный chat_client.add_message: target_uid определяет вкладку Л/С.
- const explicit=msg.private===true||msg.target_uid!=null||msg.chat_type==='private'||msg.is_private===true;
+ const explicit=msg.private===true||msg.is_private===true||msg.isPrivate===true||
+  msg.chat_type==='private'||msg.scope==='private'||msg.target_uid!=null||msg.target_id!=null;
  if(!explicit)return null;
  const myId=String(currentUser?.id??currentUser?.uid??'');
- const sender=String(msg.uid??msg.user?.id??'');
- const recipient=String(msg.target_uid??msg.target_id??'');
+ const sender=String(msg.uid??msg.from_id??msg.sender_id??msg.user?.id??'');
+ const recipient=String(msg.target_uid??msg.target_id??msg.to_id??msg.recipient_id??'');
+ // Incoming: peer is the sender; outgoing: peer is the recipient.
  const peer=recipient&&recipient!==myId?recipient:sender;
- return /^\d+$/.test(peer)?peer:null;
+ return /^\d+$/.test(peer)&&peer!=='0'?peer:null;
 }
 dialogTabs.addEventListener('click',event=>{
  const close=event.target.closest('[data-dialog-close]');
@@ -1990,7 +1992,13 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  case 'add_msg':{const msg=obj.msg;const peer=incomingPrivateId(msg);const isOwn=ownMessageArrived(msg);if(peer){addPrivateMessage(msg,peer);}else{showMessage(msg);}if(isOwn)finishPendingMessage('add_msg');log(peer?'Новое Л/С':'Новое общее сообщение');break;}
  case 'add_private_history':{const peer=String(obj.target_id??'');if(/^\d+$/.test(peer)){if(!privateDialogs.has(peer)){const previous=activeDialog;openPrivateDialog(peer,resolvePrivateNick(peer),false);selectDialog(previous);}const contact=privateDialogs.get(peer);contact.loading=false;for(const m of Array.isArray(obj.messages)?obj.messages:[])addPrivateMessage({...m,private:true,target_id:peer},peer,{historical:true});if(activeDialog===peer)renderPrivateDialog();log('История Л/С получена.');}break;}
  case 'delete_message':removeConfirmedMessage(obj.id);break;
- case 'private_message':case 'add_private_msg':case 'add_private_message':case 'new_private_message':case 'add_pm':{const m=obj.msg||obj.message;const peer=incomingPrivateId(m);if(peer)addPrivateMessage(m,peer);break;}
+ case 'private_message':case 'add_private_msg':case 'add_private_message':case 'new_private_message':case 'add_pm':{
+  const m=obj.msg||obj.message;
+  const peer=m&&typeof m==='object'?(incomingPrivateId(m)||incomingPrivateId({...m,private:true,target_id:obj.target_id??m.target_id})):null;
+  if(peer)addPrivateMessage(m,peer);
+  else log('Получено Л/С, но не удалось определить ID собеседника');
+  break;
+ }
  case 'set_users_list':{const arr=Array.isArray(obj.users)?obj.users:[];roster.clear();arr.forEach(u=>{if(u&&typeof u==='object')roster.set(userKey(u),u);});renderUsers();log('Участники: '+roster.size);break;}
  case 'add_user':case 'update_user':{const u=obj.user;if(u&&typeof u==='object'){roster.set(userKey(u),u);renderUsers();}break;}
  case 'remove_user':{const u=obj.user;if(u&&typeof u==='object'){roster.delete(userKey(u));renderUsers();}break;}
