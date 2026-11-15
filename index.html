@@ -1470,6 +1470,12 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .private-heading{font-weight:bold;padding:4px 5px 10px;border-bottom:1px solid #aaa}.private-message{padding:6px;border-bottom:1px solid #ddd;overflow-wrap:anywhere}.private-message time{float:right;font-size:10px;color:#666;margin-left:8px}.pm-unread{background:#777;color:white;border-radius:7px;padding:1px 4px;font-size:10px}
 </style>
 <style>
+/* GIF из вкладки «Наши»: изображение в редакторе и ленте. */
+.gallery-tile.our-gif-tile img{display:block;max-width:70px;max-height:65px;width:auto;height:auto;object-fit:contain}
+.chat-own-gif{display:inline-flex;align-items:center;vertical-align:middle;margin:2px 3px}
+.chat-own-gif img{display:block;max-width:100px;max-height:100px;width:auto;height:auto;object-fit:contain}
+#sendForm .rich-smile.rich-own-gif{width:31px;height:29px;overflow:hidden}
+#sendForm .rich-smile.rich-own-gif img{display:block;width:27px;height:27px;object-fit:contain}
 /* v4.6: настоящий редактируемый текст со смайлами, без наложения слоёв. */
 #sendForm .composer-input-wrap{height:38px;min-height:38px;max-height:38px;background:#fff}
 #sendForm .composer-input-wrap #messageInput{display:none!important}
@@ -1510,7 +1516,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 <div><div class="column-title">Сообщения <span class="count" id="msgCount" hidden></span></div><div class="chat-dialog-tabs" id="dialogTabs" role="tablist" aria-label="Чаты"><button type="button" class="chat-dialog-tab selected" data-dialog-id="common" aria-selected="true">Общий</button></div><div class="private-dialog-view" id="privateDialogView" hidden aria-live="polite"></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">Загружаем сообщения из чата Волнореза…</div></div></div>
 <div><div class="column-title">👥 Участники <span class="count" id="userCount" hidden></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
-<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><div class="composer-input-wrap" id="composerInputWrap"><div id="richMessageInput" class="rich-message-input" contenteditable="false" role="textbox" aria-label="Сообщение" aria-multiline="false" data-placeholder="Автоматический вход в чат…" aria-disabled="true"></div><textarea id="messageInput" rows="1" maxlength="1000" hidden aria-hidden="true" tabindex="-1" disabled></textarea></div><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button><button type="button" data-category="ours">Наши</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. GIF и анимашки загружаются из папок assets/volnorez-gifs и assets/volnorez-lottie.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
+<form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><div class="composer-input-wrap" id="composerInputWrap"><div id="richMessageInput" class="rich-message-input" contenteditable="false" role="textbox" aria-label="Сообщение" aria-multiline="false" data-placeholder="Автоматический вход в чат…" aria-disabled="true"></div><textarea id="messageInput" rows="1" maxlength="1000" hidden aria-hidden="true" tabindex="-1" disabled></textarea></div><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button><button type="button" data-category="ours">Наши GIF</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. GIF и анимашки загружаются из папок assets/volnorez-gifs и assets/volnorez-lottie.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
 <p class="muted" id="technicalExplanation">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
 <div class="notice" id="outdatedWarning"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
@@ -1830,6 +1836,7 @@ function composerText(){
   if(node.nodeType===Node.TEXT_NODE){result+=node.nodeValue||'';return;}
   if(node.nodeType!==Node.ELEMENT_NODE)return;
   if(node.dataset?.smileId){result+='%'+node.dataset.smileId+'%';return;}
+  if(node.dataset?.ourGifId){result+='pylgif:'+node.dataset.ourGifId;return;}
   if(node.tagName==='BR'){result+=' ';return;}
   for(const child of node.childNodes)walk(child);
  }
@@ -1869,6 +1876,21 @@ function composerInsertText(text){
  if(pos<usable.length)nodes.push(document.createTextNode(usable.slice(pos)));
  insertComposerNodes(nodes);
 }
+function ownGifNode(id){
+ const gif=OUR_GIFS[id];if(!gif)return document.createTextNode('pylgif:'+id);
+ const img=document.createElement('img');img.src=gif.file;img.alt=gif.name;img.loading='lazy';img.decoding='async';
+ img.addEventListener('error',()=>img.replaceWith(document.createTextNode('pylgif:'+id)));
+ return img;
+}
+function composerInsertOurGif(id){
+ if(!OUR_GIFS[id])return;
+ const code='pylgif:'+id;
+ if(composerText().length+code.length>1000){note('Максимум 1000 символов.','send-error');return;}
+ const atom=document.createElement('span');atom.className='rich-smile rich-own-gif';
+ atom.contentEditable='false';atom.dataset.ourGifId=id;atom.title=OUR_GIFS[id].name;
+ atom.append(ownGifNode(id));insertComposerNodes([atom]);
+ note('Наша GIF добавлена в сообщение.');
+}
 function composerInsertSmile(id){
  const code='%'+id+'%';if(composerText().length+code.length>1000){note('Максимум 1000 символов.','send-error');return;}
  insertComposerNodes([makeComposerSmile(id)]);
@@ -1888,7 +1910,23 @@ richEditor.addEventListener('input',()=>{
  refreshComposerSmilePreview();
  if(E.input.value.length>1000)note('Максимум 1000 символов. Удали лишнее перед отправкой.','send-error');
 });
-function appendRich(target,value){const str=safe(value,3500);const regex=/%(\d{1,4})%/g;let p=0,m;while((m=regex.exec(str))){if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));const b=document.createElement('button');b.type='button';b.className='chat-smile-action';b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';b.append(smileNode(m[1]));target.append(b);p=m.index+m[0].length;}if(p<str.length)target.append(document.createTextNode(str.slice(p)));}
+function appendRich(target,value){
+ const str=safe(value,3500),regex=/%(\d{1,4})%|pylgif:(\d{3,6})(?![\w])/g;
+ let p=0,m;
+ while((m=regex.exec(str))){
+  if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));
+  if(m[1]){
+   const b=document.createElement('button');b.type='button';b.className='chat-smile-action';
+   b.dataset.smileId=m[1];b.title='Смайл %'+m[1]+'% — нажми, чтобы вставить';
+   b.append(smileNode(m[1]));target.append(b);
+  }else if(OUR_GIFS[m[2]]){
+   const span=document.createElement('span');span.className='chat-own-gif';
+   span.title=OUR_GIFS[m[2]].name;span.append(ownGifNode(m[2]));target.append(span);
+  }else{const text=document.createElement('span');text.dataset.pylgifPending=m[2];text.textContent=m[0];target.append(text);}
+  p=regex.lastIndex;
+ }
+ if(p<str.length)target.append(document.createTextNode(str.slice(p)));
+}
 let currentAirHost='';
 function comparableNick(v){return String(v||'').normalize('NFKC').trim().replace(/^@/,'').replace(/\s+/g,' ').toLocaleLowerCase('ru-RU');}
 function isCurrentDJ(nick){return !!currentAirHost&&comparableNick(nick)===comparableNick(currentAirHost);}
@@ -2297,45 +2335,86 @@ for(const [id,s] of Object.entries(SMILES)){
 }
 let activeCat='classic';let tabToken=0;
 const gallery=$('galleryGrid'),galleryTabs=$('galleryTabs'),galleryHint=$('galleryHint');
-/* Файлы для раздела «Наши» берутся из GitHub Pages. Безопасный показ,
-   не отправляем собственные GIF в сервер Волнореза и не вмешиваемся в send_message. */
+/* Наши GIF отправляются обычным текстом pylgif:ID: Волнорез передаёт строку,
+   а наш клиент отображает изображение. В оригинальном чате будет виден текстовый маркер. */
 const OUR_GIFS_DIR='./assets/our-gifs/';
 const OUR_GIFS_API='https://api.github.com/repos/Art1604/Pyl_Dorog-FM-Radio-Chat/contents/assets/our-gifs?ref=main';
 const OUR_DEFAULT_GIF='dance-dancing.gif';
+const OUR_GIFS=Object.create(null);
 function validOurGifName(name){return typeof name==='string'&&name.length<180&&/^[^/\\?#<>]+\.gif$/i.test(name);}
 function ourGifUrl(name){return new URL(OUR_GIFS_DIR+encodeURIComponent(name),document.baseURI).href;}
 let ourGifsCache=null;
+function registerOurGif(id,file,name){
+ id=String(id);
+ if(!/^\d{3,6}$/.test(id)||!validOurGifName(file))return;
+ OUR_GIFS[id]={file:ourGifUrl(file),name:String(name||file).slice(0,80)};
+}
 async function loadOurGifs(){
  if(ourGifsCache)return ourGifsCache;
- let names=[];
+ let explicit=false,names=[];
  try{
   const res=await fetch(new URL(OUR_GIFS_DIR+'list.json',document.baseURI),{cache:'no-store'});
-  if(!res.ok)throw Error('list.json not found');
+  if(!res.ok)throw Error('HTTP '+res.status);
   const data=await res.json();
-  names=(Array.isArray(data)?data:(Array.isArray(data?.files)?data.files:[])).filter(validOurGifName);
- }catch(_){/* резервный список GitHub API */}
- if(!names.length){
+  if(Array.isArray(data)){
+   for(const item of data){
+    if(typeof item==='string')names.push(item);
+    else if(item&&item.id!=null){
+     if(item.code&&item.code!=='pylgif:'+item.id)continue;
+     registerOurGif(item.id,item.file,item.title||item.name);explicit=true;
+    }else if(item?.file)names.push(item.file);
+   }
+  }else if(Array.isArray(data?.files)){
+   for(const item of data.files){
+    if(typeof item==='string')names.push(item);
+    else if(item?.id!=null){registerOurGif(item.id,item.file,item.title||item.name);explicit=true;}
+   }
+  }else if(data&&typeof data==='object'){
+   for(const [id,item] of Object.entries(data)){
+    if(!item||item.code&&item.code!=='pylgif:'+id)continue;
+    registerOurGif(id,item.file,item.title||item.name);explicit=true;
+   }
+  }
+ }catch(err){log('Локальный список наших GIF недоступен: '+err.message);}
+ if(!names.length&&!explicit){
   try{
    const res=await fetch(OUR_GIFS_API,{headers:{Accept:'application/vnd.github+json'}});
    if(res.ok){const data=await res.json();if(Array.isArray(data))names=data.filter(x=>x?.type==='file'&&validOurGifName(x.name)).map(x=>x.name);}
-  }catch(_){}
+  }catch(err){log('GitHub API недоступен: '+err.message);}
  }
- if(!names.length)names=[OUR_DEFAULT_GIF];
- ourGifsCache=[...new Set(names)];
+ if(!names.length&&!explicit)names=[OUR_DEFAULT_GIF];
+ // Для списка только из имён формируем стабильный порядок. Для файлов с ID сохраняем исходные ID.
+ names=[...new Set(names.filter(validOurGifName))].sort((a,b)=>a.localeCompare(b,'ru'));
+ let count=1;
+ for(const filename of names){
+  while(OUR_GIFS[String(count).padStart(3,'0')])count++;
+  registerOurGif(String(count++).padStart(3,'0'),filename,filename);
+ }
+ ourGifsCache=Object.entries(OUR_GIFS);
+ // Если история успела загрузиться раньше каталога, отрисуем её GIF после загрузки списка.
+ document.querySelectorAll('[data-pylgif-pending]').forEach(node=>{
+  const id=node.dataset.pylgifPending;
+  if(!OUR_GIFS[id])return;
+  const span=document.createElement('span');span.className='chat-own-gif';span.title=OUR_GIFS[id].name;
+  span.append(ownGifNode(id));node.replaceWith(span);
+ });
  return ourGifsCache;
 }
 async function showOurGifs(){
  const token=++tabToken;
- gallery.replaceChildren();galleryHint.textContent='Загружаем наши GIF из GitHub…';
- const names=await loadOurGifs();
+ gallery.replaceChildren();galleryHint.textContent='Загружаем наши GIF…';
+ const items=await loadOurGifs();
  if(activeCat!=='ours'||token!==tabToken)return;
- galleryHint.textContent='Наши GIF доступны для просмотра в каталоге. Они не отправляются в чат Волнореза.';
+ galleryHint.textContent=items.length+' наших GIF · В нашем чате отображаются картинками, на оригинальном Волнорезе — как текстовые маркеры.';
+ if(!items.length){gallery.textContent='Нет GIF в каталоге assets/our-gifs/.';return;}
  const tiles=document.createDocumentFragment();
- for(const name of names){
-  const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title='GIF: '+name;tile.disabled=true;
-  const img=document.createElement('img');img.src=ourGifUrl(name);img.alt=name;img.loading='lazy';
-  img.addEventListener('error',()=>{tile.disabled=true;tile.title='Файл недоступен';});
-  tile.append(img);
+ for(const [id,gif] of items){
+  const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title=gif.name;
+  tile.append(ownGifNode(id));
+  tile.addEventListener('click',()=>{
+   if(!authorized){note('Для отправки GIF нужно подключение к чату.','send-error');return;}
+   composerInsertOurGif(id);
+  });
   tiles.append(tile);
  }
  gallery.append(tiles);gallery.scrollTop=0;
@@ -2371,6 +2450,8 @@ function showTab(category){
 galleryTabs.addEventListener('click',e=>{const btn=e.target.closest('button[data-category]');if(btn)showTab(btn.dataset.category);});
 E.emotes.addEventListener('click',()=>{E.picker.hidden=!E.picker.hidden;if(!E.picker.hidden)showTab(activeCat);});
 showTab('classic');
+// Загружаем коды наших GIF заранее, чтобы входящие pylgif:ID отображались картинками.
+loadOurGifs().catch(err=>log('Ошибка каталога наших GIF: '+err.message));
 $('copy').addEventListener('click',async()=>{const txt=E.log.textContent;try{await navigator.clipboard.writeText(txt);$('copy').textContent='Скопировано';}catch{window.prompt('Скопируй журнал:',txt);}});
 window.addEventListener('pagehide',()=>{stopped=true;clearTimeout(retryTimer);if(socket)socket.close(1000);});
 
