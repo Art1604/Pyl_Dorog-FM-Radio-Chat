@@ -1528,7 +1528,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 @media(min-width:681px){
  .people .person .person-action{position:relative;text-overflow:clip!important;display:block}
  .people .person .person-action .nick-marquee-track{display:inline-block;width:max-content;max-width:none;white-space:nowrap;vertical-align:middle;transform:translateX(0)}
- .people .person .person-action.nick-overflows:hover .nick-marquee-track,
+ .people .person:hover .person-action.nick-overflows .nick-marquee-track,
  .people .person .person-action.nick-overflows:focus-visible .nick-marquee-track{
   animation:nick-scroll-sideways var(--nick-scroll-time,5s) ease-in-out .35s infinite alternate;
  }
@@ -2166,13 +2166,19 @@ function compareChatUsers(a,b){
 function updateNickMarquees(){
  for(const btn of E.users.querySelectorAll('.person-action')){
   const track=btn.querySelector('.nick-marquee-track');if(!track)continue;
-  const overflow=Math.max(0,Math.ceil(track.getBoundingClientRect().width-btn.clientWidth+3));
-  btn.classList.toggle('nick-overflows',overflow>3);
+  const fullWidth=Math.max(track.scrollWidth,track.getBoundingClientRect().width);
+  const availableWidth=btn.clientWidth;
+  const overflow=Math.max(0,Math.ceil(fullWidth-availableWidth+2));
+  btn.classList.toggle('nick-overflows',overflow>2);
   btn.style.setProperty('--nick-scroll-distance',overflow+'px');
   btn.style.setProperty('--nick-scroll-time',(Math.max(4,overflow/24+2)).toFixed(2)+'s');
  }
 }
 window.addEventListener('resize',updateNickMarquees);
+E.users.addEventListener('pointerover',event=>{
+ const row=event.target.closest('.person');
+ if(row&&E.users.contains(row))updateNickMarquees();
+});
 function renderUsers(){
  reconcilePendingPrivateTabs();
  // Earlier messages may contain only a nickname; upgrade their IDs once the roster arrives.
