@@ -1524,9 +1524,27 @@ const dialogTabs=$('dialogTabs'),privateDialogView=$('privateDialogView');
 const privateDialogs=new Map();
 let activeDialog='common';
 const privateSeen=new Set();
+function numericUserId(value){
+ if(value==null)return '';
+ const id=String(value).trim();
+ return /^\d+$/.test(id)?id:'';
+}
+function serverUserId(user){
+ if(!user||typeof user!=='object')return '';
+ return numericUserId(user.uid??user.id??user.user_id??user.user?.uid??user.user?.id);
+}
+function findPrivateUserId(id,nick=''){
+ const direct=numericUserId(id);
+ if(direct)return direct;
+ const wanted=comparableNick(nick||id);
+ if(!wanted)return '';
+ const matches=[...roster.values()].filter(u=>comparableNick(u.nick??u.name)===wanted);
+ const ids=[...new Set(matches.map(serverUserId).filter(Boolean))];
+ return ids.length===1?ids[0]:'';
+}
 function resolvePrivateNick(id, fallback='Слушатель'){
- const user=[...roster.values()].find(u=>String(u.id??u.uid)===String(id));
- return safe(user?.nick||fallback,100)||'Слушатель';
+ const user=[...roster.values()].find(u=>serverUserId(u)===String(id));
+ return safe(user?.nick||user?.name||fallback,100)||'Слушатель';
 }
 function renderPrivateDialog(){
  const contact=privateDialogs.get(activeDialog);
@@ -1565,7 +1583,8 @@ function selectDialog(id){
  updateButtons();
 }
 function openPrivateDialog(uid,nick,load=true){
- uid=String(uid||'');if(!/^\d+$/.test(uid)){note('Неизвестен ID пользователя. Л/С открыть нельзя.','send-error');return;}
+ uid=findPrivateUserId(uid,nick);
+ if(!uid){note('Не удалось получить ID собеседника из списка участников. Л/С пока недоступны.','send-error');log('Л/С: числовой ID не найден для «'+safe(nick,50)+'»');return;}
  nick=resolvePrivateNick(uid,String(nick||'Слушатель'));
  if(!privateDialogs.has(uid)){
   privateDialogs.set(uid,{nick,messages:[],loading:false,loaded:false});
@@ -1925,7 +1944,7 @@ const LOCAL_BLOCK_KEY='pylfm_local_blocked_ids_v1';
 const locallyBlocked=new Set();
 try{const saved=JSON.parse(localStorage.getItem(LOCAL_BLOCK_KEY)||'[]');if(Array.isArray(saved))saved.filter(v=>/^\d+$/.test(String(v))).forEach(v=>locallyBlocked.add(String(v)));}catch{}
 function saveLocalBlocks(){try{localStorage.setItem(LOCAL_BLOCK_KEY,JSON.stringify([...locallyBlocked]));}catch{}}
-function localUserId(u){const v=u?.id??u?.uid;return v==null?'':String(v);}
+function localUserId(u){return serverUserId(u);}
 function isLocalBlockedUser(id){return !!id&&locallyBlocked.has(String(id));}
 function refreshLocalBlockedMessages(){
  E.messages.querySelectorAll('.msg[data-local-author]').forEach(row=>{row.hidden=isLocalBlockedUser(row.dataset.localAuthor);});
@@ -1933,9 +1952,9 @@ function refreshLocalBlockedMessages(){
 function showMessage(m){
  if(!m||typeof m!=='object'||incomingPrivateId(m))return;
  const first=E.messages.querySelector('.muted');
- if(first&&(E.messages.children.length===1||(E.messages.children.length===2&&E.messages.firstElementChild===pinned)))first.remove();
+ if(first&&E.messages.children.length===1)first.remove();
  const nick=safe(m.nick||m.user?.nick||m.username||m.user_name,100)||'Слушатель';
- const uid=String(m.uid??m.user?.id??m.user_id??nick);
+ const uid=findPrivateUserId(m.uid??m.user?.uid??m.user?.id??m.user_id,nick)||nick;
  const locallyBlockedMessage=isLocalBlockedUser(uid);
  const when=messageDate(m.time??m.timestamp??m.created_at);
  const dateKey=localDayKey(when);
@@ -2010,6 +2029,14 @@ function compareChatUsers(a,b){
  return userNickCollator.compare(String(a?.nick??a?.name??''),String(b?.nick??b?.name??''));
 }
 function renderUsers(){
+ // Earlier messages may contain only a nickname; upgrade their IDs once the roster arrives.
+ E.messages.querySelectorAll('.msg[data-local-author]').forEach(row=>{
+  const oldId=row.dataset.localAuthor;
+  if(numericUserId(oldId))return;
+  const nick=row.dataset.senderNick||oldId;
+  const resolved=findPrivateUserId('',nick);
+  if(resolved){row.dataset.localAuthor=resolved;row.dataset.msgUid=resolved;}
+ });
  E.users.replaceChildren();E.userCount.textContent='('+roster.size+')';
  if(!roster.size){placeholder(E.users,'Список пока пуст.');return;}
  for(const u of [...roster.values()].sort(compareChatUsers).slice(0,250)){
