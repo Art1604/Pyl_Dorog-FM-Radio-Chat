@@ -1957,55 +1957,96 @@ function localGuestProfileId(){
 }
 const GUEST_PROFILE_ID=localGuestProfileId();
 const PRIVATE_STORAGE_KEY='pylfm_private_dialogs_v2_'+GUEST_PROFILE_ID;
-// Одна безопасная миграция из прежнего общего хранилища (если новая история отсутствует).
+const PRIVATE_BACKUP_KEY=PRIVATE_STORAGE_KEY+'_backup';
+let restoringPrivateDialogs=false;
+let lastPrivateStorageError='';
+function readPrivateSnapshot(key){
+ try{
+  const raw=localStorage.getItem(key);
+  if(!raw)return null;
+  const data=JSON.parse(raw);
+  if(data&&data.version===1&&Array.isArray(data.tabs))return data;
+ }catch(err){console.warn('Нельзя прочитать историю Л/С',key,err);}
+ return null;
+}
+function privateSnapshotScore(data){
+ return (data?.tabs||[]).reduce((total,entry)=>total+(Array.isArray(entry.messages)?entry.messages.length:0),0);
+}
+function writePrivateSnapshot(data){
+ try{
+  const serialized=JSON.stringify(data);
+  localStorage.setItem(PRIVATE_STORAGE_KEY,serialized);
+  if(localStorage.getItem(PRIVATE_STORAGE_KEY)!==serialized)throw new Error('Браузер не подтвердил запись');
+  // Резервная копия не должна влиять на основное сохранение.
+  try{localStorage.setItem(PRIVATE_BACKUP_KEY,serialized);}catch{}
+  lastPrivateStorageError='';
+  return true;
+ }catch(err){
+  lastPrivateStorageError=String(err?.message||err);
+  console.warn('Ошибка сохранения Л/С',err);
+  return false;
+ }
+}
+// Перенос истории прежней версии; существующую историю не удаляем.
 function migratePrivateDialogHistory(){
  if(GUEST_PROFILE_ID==='guest-temporary')return;
- try{
-  if(localStorage.getItem(PRIVATE_STORAGE_KEY)!==null)return;
-  const previous=localStorage.getItem(LEGACY_PRIVATE_STORAGE_KEY);
-  if(previous===null)return;
-  const data=JSON.parse(previous);
-  if(!data||data.version!==1||!Array.isArray(data.tabs))return;
-  localStorage.setItem(PRIVATE_STORAGE_KEY,previous);
-  // Удаляем общий ключ, чтобы новая локальная переписка не смешивалась с ним.
-  localStorage.removeItem(LEGACY_PRIVATE_STORAGE_KEY);
- }catch(err){console.warn('Не удалось перенести старую историю Л/С',err);}
+ const existing=readPrivateSnapshot(PRIVATE_STORAGE_KEY);
+ const previous=readPrivateSnapshot(LEGACY_PRIVATE_STORAGE_KEY);
+ if(!existing&&previous)writePrivateSnapshot(previous);
 }
 migratePrivateDialogHistory();
-let restoringPrivateDialogs=false;
+function privateDialogSnapshot(){
+ const tabs=[...privateDialogs.entries()].filter(([key,c])=>c&&typeof c.nick==='string').slice(-50).map(([key,c])=>({
+  id:key,userId:c.userId||'',nick:c.nick,unread:Math.max(0,Number(c.unread)||0),
+  messages:c.messages.slice(-200).map(m=>({
+   id:m.id,local_id:m.local_id,uid:m.uid,nick:m.nick,
+   user:m.user&&typeof m.user==='object'?{nick:m.user.nick}:undefined,
+   text:String(m.text??m.message??m.msg??''),time:m.time,timestamp:m.timestamp,
+   target_id:m.target_id,private:true
+  }))
+ }));
+ return {version:1,active:activeDialog,updatedAt:Date.now(),tabs};
+}
 function savePrivateDialogs(){
  if(restoringPrivateDialogs)return;
- try{
-  const tabs=[...privateDialogs.entries()].filter(([id,c])=>c&&c.userId&&serverIdentifier(id)).slice(-30).map(([id,c])=>({
-   id,nick:c.nick,messages:c.messages.slice(-150).map(m=>({
-    id:m.id,local_id:m.local_id,uid:m.uid,nick:m.nick,user:m.user&&typeof m.user==='object'?{nick:m.user.nick}:undefined,
-    text:m.text??m.message??m.msg??'',time:m.time,timestamp:m.timestamp,target_id:m.target_id,private:true
-   }))
-  }));
-  localStorage.setItem(PRIVATE_STORAGE_KEY,JSON.stringify({version:1,active:activeDialog,tabs}));
- }catch(err){console.warn('Не удалось сохранить локальную историю Л/С',err);}
+ const next=privateDialogSnapshot();
+ // Не допускаем перезаписывания всей истории пустыми вкладками при инициализации/сбое.
+ const previous=readPrivateSnapshot(PRIVATE_STORAGE_KEY)||readPrivateSnapshot(PRIVATE_BACKUP_KEY);
+ if(previous&&privateSnapshotScore(previous)>0&&privateSnapshotScore(next)===0&&next.tabs.length===0)return;
+ if(!writePrivateSnapshot(next)){
+  // Сообщаем в журнале только о реальной ошибке записи.
+  const logger=document.getElementById('log');
+  if(logger)logger.textContent+='\nНе удалось сохранить Л/С в браузере: '+lastPrivateStorageError;
+ }
 }
 function restorePrivateDialogs(){
- let data;
- try{data=JSON.parse(localStorage.getItem(PRIVATE_STORAGE_KEY)||'null');}catch{return;}
- if(!data||data.version!==1||!Array.isArray(data.tabs))return;
+ const primary=readPrivateSnapshot(PRIVATE_STORAGE_KEY);
+ const backup=readPrivateSnapshot(PRIVATE_BACKUP_KEY);
+ const legacy=readPrivateSnapshot(LEGACY_PRIVATE_STORAGE_KEY);
+ const candidates=[primary,backup,legacy].filter(Boolean);
+ if(!candidates.length)return;
+ // При повреждении/случайном обнулении основного ключа берём копию с сообщениями.
+ const data=candidates.sort((a,b)=>privateSnapshotScore(b)-privateSnapshotScore(a)||Number(b.updatedAt||0)-Number(a.updatedAt||0))[0];
  restoringPrivateDialogs=true;
  try{
-  for(const entry of data.tabs.slice(0,30)){
-   const id=serverIdentifier(entry?.id);
-   if(!id)continue;
-   const nick=typeof entry.nick==='string'?entry.nick:'Слушатель';
-   openPrivateDialog(id,nick,false);
-   const contact=privateDialogs.get(id);
-   if(!contact)continue;
-   contact.nick=nick;
-   contact.messages=Array.isArray(entry.messages)?entry.messages.filter(m=>m&&typeof m==='object'&&typeof (m.text??'')==='string').slice(-150):[];
-   contact.loaded=false;
-   contact.loading=false;
+  for(const entry of data.tabs.slice(0,50)){
+   const id=serverIdentifier(entry?.userId||entry?.id);
+   const nick=typeof entry?.nick==='string'?entry.nick:'Слушатель';
+   const key=id||('pending:'+comparableNick(nick));
+   if(!key||key==='pending:')continue;
+   const unread=Math.max(0,Math.min(999,Number(entry.unread)||0));
+   // Все сообщения храним, но после F5 показываем лишь непрочитанные вкладки.
+   const contact={nick,userId:id||'',messages:Array.isArray(entry.messages)?entry.messages.filter(m=>m&&typeof m==='object'&&typeof (m.text??'')==='string').slice(-200):[],loading:false,loaded:false,unread};
+   privateDialogs.set(key,contact);
+   if(unread>0)ensurePrivateTab(key,contact);
   }
-  selectDialog(data.active==='common'||privateDialogs.has(data.active)?data.active:'common');
+  // Не открываем Л/С автоматически: наличие непрочитанного видно по вкладке.
+  selectDialog('common');
  }finally{restoringPrivateDialogs=false;}
+ // Восстанавливаем основной файл хранилища, если пришлось взять резервную копию.
+ if(data!==primary)writePrivateSnapshot(privateDialogSnapshot());
 }
+window.addEventListener('pagehide',savePrivateDialogs);
 
 // ID берём только из полей идентификатора, которые действительно прислал сервер.
 // Волнорез может передавать ID числом или непробельной строкой; ник НЕ является ID.
@@ -2070,8 +2111,28 @@ function renderPrivateDialog(){
  }
  privateDialogView.scrollTop=privateDialogView.scrollHeight;
 }
+function ensurePrivateTab(id,contact){
+ let tab=[...dialogTabs.querySelectorAll('.chat-dialog-tab')].find(t=>t.dataset.dialogId===id);
+ if(!tab){
+  tab=document.createElement('button');tab.type='button';tab.className='chat-dialog-tab';tab.dataset.dialogId=id;
+  const title=document.createElement('span');title.className='pm-tab-title';title.textContent='✉ '+contact.nick;
+  const close=document.createElement('span');close.className='chat-dialog-close';close.textContent='×';close.title='Закрыть диалог';close.dataset.dialogClose=id;
+  tab.append(title,close);dialogTabs.append(tab);
+ }
+ const old=tab.querySelector('.pm-unread');if(old)old.remove();
+ if(contact.unread>0){
+  const count=document.createElement('span');count.className='pm-unread';count.textContent=String(contact.unread);
+  tab.insertBefore(count,tab.querySelector('.chat-dialog-close'));
+ }
+ return tab;
+}
 function selectDialog(id){
  activeDialog=(id==='common'||privateDialogs.has(id))?id:'common';
+ if(activeDialog!=='common'){
+  const contact=privateDialogs.get(activeDialog);
+  ensurePrivateTab(activeDialog,contact);
+  contact.unread=0;
+ }
  for(const btn of dialogTabs.querySelectorAll('.chat-dialog-tab')){
   const chosen=btn.dataset.dialogId===activeDialog;
   btn.classList.toggle('selected',chosen);btn.setAttribute('aria-selected',String(chosen));
@@ -2094,12 +2155,9 @@ function openPrivateDialog(uid,nick,load=true){
   note('Не удалось определить собеседника.','send-error');return;
  }
  if(!privateDialogs.has(key)){
-  privateDialogs.set(key,{nick:knownId?resolvePrivateNick(knownId,nick):nick,userId:knownId||'',messages:[],loading:false,loaded:false});
-  const tab=document.createElement('button');tab.type='button';tab.className='chat-dialog-tab';tab.dataset.dialogId=key;
-  const title=document.createElement('span');title.className='pm-tab-title';title.textContent='✉ '+nick;
-  const close=document.createElement('span');close.className='chat-dialog-close';close.textContent='×';close.title='Закрыть диалог';close.dataset.dialogClose=key;
-  tab.append(title,close);dialogTabs.append(tab);
+  privateDialogs.set(key,{nick:knownId?resolvePrivateNick(knownId,nick):nick,userId:knownId||'',messages:[],loading:false,loaded:false,unread:0});
  }
+ ensurePrivateTab(key,privateDialogs.get(key));
  selectDialog(key);
  const contact=privateDialogs.get(key);
  if(load&&contact.userId&&!contact.loaded&&authorized){
@@ -2117,7 +2175,7 @@ function reconcilePendingPrivateTabs(){
   if(!id)continue;
   const existing=privateDialogs.get(id);
   if(existing){
-   existing.messages.push(...contact.messages);
+   existing.messages.push(...contact.messages);existing.unread=Math.max(Number(existing.unread)||0,Number(contact.unread)||0);if(existing.unread>0)ensurePrivateTab(id,existing);
    privateDialogs.delete(oldKey);
    dialogTabs.querySelectorAll('.chat-dialog-tab').forEach(tab=>{if(tab.dataset.dialogId===oldKey)tab.remove();});
    if(activeDialog===oldKey)activeDialog=id;
@@ -2144,19 +2202,21 @@ function addPrivateMessage(msg,id,{historical=false}={}){
  if(!msg||typeof msg!=='object'||!serverIdentifier(id))return;
  id=String(id);
  if(isLocalBlockedUser(id)||isLocalBlockedUser(String(msg.uid??'')))return;
- if(!privateDialogs.has(id)){const previous=activeDialog;openPrivateDialog(id,resolvePrivateNick(id,msg.nick||'Слушатель'),false);selectDialog(previous);}
+ if(!privateDialogs.has(id))privateDialogs.set(id,{nick:resolvePrivateNick(id,msg.nick||'Слушатель'),userId:id,messages:[],loading:false,loaded:false,unread:0});
  const contact=privateDialogs.get(id);if(!contact)return;
  const key=privateMessageKey(msg,id);
  if(contact.messages.some(m=>privateMessageKey(m,id)===key))return;
  contact.messages.push(msg);contact.messages.sort((a,b)=>Number(a.time||0)-Number(b.time||0));
  contact.loading=false;
+ // Не отмечаем свои исходящие сообщения и серверную историю как непрочитанные.
+ const incoming=!historical&&!ownMessageArrived(msg);
+ if(incoming&&activeDialog!==id){
+  contact.unread=Math.min(999,(Number(contact.unread)||0)+1);
+  ensurePrivateTab(id,contact);
+ }
  savePrivateDialogs();
  if(activeDialog===id)renderPrivateDialog();
- else if(!historical){
-  const tab=[...dialogTabs.querySelectorAll('.chat-dialog-tab')].find(t=>t.dataset.dialogId===id);
-  if(tab){let count=tab.querySelector('.pm-unread');if(!count){count=document.createElement('span');count.className='pm-unread';tab.insertBefore(count,tab.querySelector('.chat-dialog-close'));}count.textContent=String((Number(count.textContent)||0)+1);}
- }
- if(!historical&&String(msg.uid??'')!==String(currentUser?.id??currentUser?.uid??''))playPersonalSound();
+ if(incoming)playPersonalSound();
 }
 function incomingPrivateId(msg){
  if(!msg||typeof msg!=='object')return null;
@@ -2173,7 +2233,7 @@ function incomingPrivateId(msg){
 }
 dialogTabs.addEventListener('click',event=>{
  const close=event.target.closest('[data-dialog-close]');
- if(close){const id=close.dataset.dialogClose;privateDialogs.delete(id);close.closest('.chat-dialog-tab')?.remove();if(activeDialog===id)selectDialog('common');savePrivateDialogs();return;}
+ if(close){const id=close.dataset.dialogClose;const contact=privateDialogs.get(id);if(contact)contact.unread=0;close.closest('.chat-dialog-tab')?.remove();if(activeDialog===id)selectDialog('common');savePrivateDialogs();return;}
  const tab=event.target.closest('[data-dialog-id]');if(tab)selectDialog(tab.dataset.dialogId);
 });
 let socket=null,authorized=false,currentUser=null,salt='',attempts=0,historySize=0,roster=new Map(),pending=false,initDone=false,initTimer=null;
@@ -2669,7 +2729,7 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  case 'initialize':salt=typeof obj.salt==='string'?obj.salt:'';initDone=true;retryCount=0;clearTimeout(initTimer);initTimer=null;info('✅ Чат подключён. Выполняется гостевой вход…','ok');updateButtons();requestGuestLogin();break;
  case 'set_history':{const arr=Array.isArray(obj.messages)?obj.messages:[];historySize=0;lastShownMessage=null;placeholder(E.messages,'История пуста.');arr.filter(m=>!incomingPrivateId(m)).slice(-180).forEach(showMessage);log('История: '+arr.length+' сообщений');break;}
  case 'add_msg':{const msg=obj.msg;const peer=incomingPrivateId(msg);const isOwn=ownMessageArrived(msg);if(peer){addPrivateMessage(msg,peer);}else{showMessage(msg);}if(isOwn)finishPendingMessage('add_msg');log(peer?'Новое Л/С':'Новое общее сообщение');break;}
- case 'add_private_history':{const peer=String(obj.target_id??'');if(serverIdentifier(peer)){if(!privateDialogs.has(peer)){const previous=activeDialog;openPrivateDialog(peer,resolvePrivateNick(peer),false);selectDialog(previous);}const contact=privateDialogs.get(peer);contact.loading=false;for(const m of Array.isArray(obj.messages)?obj.messages:[])addPrivateMessage({...m,private:true,target_id:peer},peer,{historical:true});if(activeDialog===peer)renderPrivateDialog();log('История Л/С получена.');}break;}
+ case 'add_private_history':{const peer=String(obj.target_id??'');if(serverIdentifier(peer)){if(!privateDialogs.has(peer))privateDialogs.set(peer,{nick:resolvePrivateNick(peer),userId:peer,messages:[],loading:false,loaded:false,unread:0});const contact=privateDialogs.get(peer);contact.loading=false;for(const m of Array.isArray(obj.messages)?obj.messages:[])addPrivateMessage({...m,private:true,target_id:peer},peer,{historical:true});if(activeDialog===peer)renderPrivateDialog();log('История Л/С получена.');}break;}
  case 'delete_message':removeConfirmedMessage(obj.id);break;
  case 'private_message':case 'add_private_msg':case 'add_private_message':case 'new_private_message':case 'add_pm':{
   const m=obj.msg||obj.message;
@@ -2681,7 +2741,7 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  case 'set_users_list':{const arr=Array.isArray(obj.users)?obj.users:[];roster.clear();arr.forEach(u=>{if(u&&typeof u==='object')roster.set(userKey(u),u);});renderUsers();log('Участники: '+roster.size);break;}
  case 'add_user':case 'update_user':{const u=obj.user;if(u&&typeof u==='object'){roster.set(userKey(u),u);renderUsers();}break;}
  case 'remove_user':{const u=obj.user;if(u&&typeof u==='object'){roster.delete(userKey(u));renderUsers();}break;}
- case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;renderUsers();{const previouslyActive=activeDialog;for(const contact of privateDialogs.values()){if(contact.userId){contact.loaded=false;openPrivateDialog(contact.userId,contact.nick,true);}}selectDialog(previouslyActive);}if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
+ case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;renderUsers();{for(const [id,contact] of privateDialogs){if(contact.userId&&dialogTabs.querySelectorAll('.chat-dialog-tab').length){const visible=[...dialogTabs.querySelectorAll('.chat-dialog-tab')].some(tab=>tab.dataset.dialogId===id);if(visible&&!contact.loaded&&socketSend({cmd:'load_private_history',target_id:contact.userId,last_msg_id:0}))contact.loaded=true;}}}if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||''))socketSend({cmd:'set_nick',nick:desiredGuestNick});break;}
  case 'logout':clearTimeout(loginTimer);loginTimer=null;if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;authorized=false;currentUser=null;pending=false;refreshDeleteControls();E.identity.textContent='Не авторизован';note('Сервер завершил гостевой вход.','send-error');updateButtons();break;
  case 'set_nick':nickRequestInFlight=false;E.nick.value=safe(obj.nick,30);E.identity.textContent='В чате: '+safe(obj.nick,50);if(currentUser)currentUser.nick=safe(obj.nick,30);desiredGuestNick=safe(obj.nick,30);try{localStorage.setItem('pylfm_guest_nick',desiredGuestNick);}catch{}nickChangeStatus.className='';nickChangeStatus.textContent='Ник сохранён';log('Ник подтверждён сервером');break;
  case 'accept_msg':{
@@ -2776,6 +2836,9 @@ function requestNicknameChange(){
  if(!nick){nickChangeStatus.textContent='Введите ник';nickChangeStatus.className='nick-error';E.nick.focus();return;}
  if(nick===currentUser?.nick){nickChangeStatus.textContent='';nickChangeStatus.className='';return;}
  if(socketSend({cmd:'set_nick',nick})){
+  // Сохраняем выбор гостя сразу: некоторые версии сервера не присылают отдельный set_nick.
+  desiredGuestNick=nick;
+  try{localStorage.setItem('pylfm_guest_nick',nick);}catch(err){console.warn('Не удалось сохранить гостевой ник',err);}
   nickChangeStatus.textContent='Запрос отправлен…';nickChangeStatus.className='';log('Запрошена смена ника');
  }else{nickChangeStatus.textContent='Не удалось отправить запрос';nickChangeStatus.className='nick-error';}
 }
