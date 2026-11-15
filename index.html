@@ -1635,6 +1635,23 @@ const RADIO_MUTED_KEY='pyl_dorog_fm_radio_muted_v1';
 const RADIO_STREAM_URL='https://stream.volnorez.com/live-app/869683';
 const RADIO_SPECTRUM_BARS=24;
 let spectrumCtx=null,spectrumAnalyser=null,spectrumData=null,spectrumFrame=0;
+let spectrumOutputGain=null;
+// Громкость и mute регулируются ПОСЛЕ анализатора через GainNode.
+// Это позволяет видеть настоящий спектр, даже когда слушатель отключил звук.
+let radioSoundLevel=0.65,radioSoundMuted=false;
+function applyRadioSound(){
+ const effective=radioSoundMuted?0:radioSoundLevel;
+ if(spectrumOutputGain&&spectrumCtx){
+  // Не используем HTMLMediaElement.muted в режиме Web Audio:
+  // на некоторых браузерах он обнуляет и данные анализатора.
+  radioPlayer.muted=false;radioPlayer.volume=1;
+  spectrumOutputGain.gain.setValueAtTime(effective,spectrumCtx.currentTime);
+ }else if(radioPlayer){
+  // Если доступ к Web Audio отсутствует — обычный браузерный регулятор.
+  radioPlayer.volume=radioSoundLevel;
+  radioPlayer.muted=radioSoundMuted;
+ }
+}
 let spectrumProbeDone=false,spectrumReady=false,spectrumPeakPositions=[];
 let spectrumLastFrameTime=0;
 const spectrumLevels=[];
@@ -1720,8 +1737,8 @@ function clearRadioReconnect(){
 }
 function syncRadioUi(){
  if(!radioPlayer||!radioToggle||!radioMute||!radioVolume)return;
- const muted=radioPlayer.muted||radioPlayer.volume===0;
- const volume=Math.round(radioPlayer.volume*100);
+ const muted=radioSoundMuted||radioSoundLevel===0;
+ const volume=Math.round(radioSoundLevel*100);
  const active=(!radioPlayer.paused&&!radioPlayer.ended&&radioPlayer.readyState>=2);
  if(radioBeacon){
   const offline=radioWanted&&!active&&navigator.onLine===false;
@@ -1833,7 +1850,10 @@ async function setupRealSpectrum(){
   spectrumAnalyser.smoothingTimeConstant=.7;
   spectrumData=new Uint8Array(spectrumAnalyser.frequencyBinCount);
   source.connect(spectrumAnalyser);
-  spectrumAnalyser.connect(spectrumCtx.destination);
+  spectrumOutputGain=spectrumCtx.createGain();
+  spectrumAnalyser.connect(spectrumOutputGain);
+  spectrumOutputGain.connect(spectrumCtx.destination);
+  applyRadioSound();
   spectrumReady=true;
   spectrumStatus('Живой спектр');
   return true;
@@ -1841,15 +1861,16 @@ async function setupRealSpectrum(){
   console.warn('Анализ спектра не поддерживается:',error);
   spectrumStatus('Спектр недоступен');
   // No MediaElementSource attached: revert CORS setting for ordinary playback.
-  if(!spectrumAnalyser)radioPlayer.removeAttribute('crossorigin');
+  if(!spectrumAnalyser){radioPlayer.removeAttribute('crossorigin');spectrumOutputGain=null;applyRadioSound();}
   return false;
  }
 }
 createSpectrumDisplay();
 if(radioPlayer&&radioToggle&&radioMute&&radioVolume){
  const savedVolume=Number(storedRadioValue(RADIO_VOLUME_KEY));
- radioPlayer.volume=Number.isFinite(savedVolume)&&storedRadioValue(RADIO_VOLUME_KEY)!==null?Math.max(0,Math.min(1,savedVolume)):0.65;
- radioPlayer.muted=storedRadioValue(RADIO_MUTED_KEY)==='true';
+ radioSoundLevel=Number.isFinite(savedVolume)&&storedRadioValue(RADIO_VOLUME_KEY)!==null?Math.max(0,Math.min(1,savedVolume)):0.65;
+ radioSoundMuted=storedRadioValue(RADIO_MUTED_KEY)==='true';
+ applyRadioSound();
  radioToggle.addEventListener('click',()=>{
   if(radioWanted){
    // Явная пауза: никогда не перезапускаем эфир сами.
@@ -1868,18 +1889,18 @@ if(radioPlayer&&radioToggle&&radioMute&&radioVolume){
   attemptRadioStart(false);
  });
  radioMute.addEventListener('click',()=>{
-  if(radioPlayer.volume===0){radioPlayer.volume=0.65;saveRadioValue(RADIO_VOLUME_KEY,0.65);radioPlayer.muted=false;}
-  else radioPlayer.muted=!radioPlayer.muted;
-  saveRadioValue(RADIO_MUTED_KEY,radioPlayer.muted);
-  syncRadioUi();
+  if(radioSoundLevel===0){radioSoundLevel=0.65;saveRadioValue(RADIO_VOLUME_KEY,radioSoundLevel);radioSoundMuted=false;}
+  else radioSoundMuted=!radioSoundMuted;
+  saveRadioValue(RADIO_MUTED_KEY,radioSoundMuted);
+  applyRadioSound();syncRadioUi();
  });
  radioVolume.addEventListener('input',()=>{
   const value=Math.max(0,Math.min(100,Number(radioVolume.value)||0));
-  radioPlayer.volume=value/100;
-  if(value>0)radioPlayer.muted=false;
-  saveRadioValue(RADIO_VOLUME_KEY,radioPlayer.volume);
-  saveRadioValue(RADIO_MUTED_KEY,radioPlayer.muted);
-  syncRadioUi();
+  radioSoundLevel=value/100;
+  if(value>0)radioSoundMuted=false;
+  saveRadioValue(RADIO_VOLUME_KEY,radioSoundLevel);
+  saveRadioValue(RADIO_MUTED_KEY,radioSoundMuted);
+  applyRadioSound();syncRadioUi();
  });
  ['play','pause','playing','waiting','stalled','ended','volumechange','emptied','loadedmetadata','canplay','canplaythrough','suspend','error'].forEach(evt=>radioPlayer.addEventListener(evt,syncRadioUi));
  radioPlayer.addEventListener('playing',()=>{
