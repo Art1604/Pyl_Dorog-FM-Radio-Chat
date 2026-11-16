@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="playing" viewBox="0 0 600 280" role="img" aria-labelledby="horseTitle horseDesc">
+  <title id="horseTitle">Чёрный мустанг в галопе — ПыЛь_ДоРоГ FM</title>
+  <desc id="horseDesc">Анимированный силуэт мустанга, скачущего вправо, с движением ног, гривы и хвоста. Анимация управляется классом playing.</desc>
+  <style>
+    :root { --horse: #191919; }
+    .horse { fill: var(--horse); stroke: var(--horse); stroke-linejoin: round; stroke-linecap: round; }
+    .leg { transform-box: view-box; }
+    .hind-far { transform-origin: 255px 155px; }
+    .hind-near { transform-origin: 277px 158px; }
+    .front-far { transform-origin: 413px 151px; }
+    .front-near { transform-origin: 430px 151px; }
+    .lower { transform-box: fill-box; transform-origin: 50% 10%; }
+    .tail { transform-origin: 247px 106px; }
+    .mane { transform-origin: 439px 68px; }
+    .body-motion { transform-origin: 345px 115px; }
+    .playing .body-motion { animation: gallop-body 0.68s ease-in-out infinite; }
+    .playing .hind-far { animation: rear-leg 0.68s ease-in-out infinite -0.27s; }
+    .playing .hind-near { animation: rear-leg 0.68s ease-in-out infinite -0.06s; }
+    .playing .front-far { animation: front-leg 0.68s ease-in-out infinite -0.29s; }
+    .playing .front-near { animation: front-leg 0.68s ease-in-out infinite -0.05s; }
+    .playing .hind-far .lower, .playing .hind-near .lower { animation: rear-knee 0.68s ease-in-out infinite; }
+    .playing .front-far .lower, .playing .front-near .lower { animation: front-knee 0.68s ease-in-out infinite; }
+    .playing .tail { animation: tail-flick 0.68s ease-in-out infinite; }
+    .playing .mane { animation: mane-wave 0.68s ease-in-out infinite; }
+    @keyframes gallop-body { 0%,100%{transform:translateY(1px) rotate(-1deg)} 40%{transform:translateY(-6px) rotate(1.5deg)} 75%{transform:translateY(3px) rotate(-1deg)} }
+    @keyframes rear-leg { 0%,100%{transform:rotate(34deg)} 37%{transform:rotate(-25deg)} 70%{transform:rotate(12deg)} }
+    @keyframes front-leg { 0%,100%{transform:rotate(-38deg)} 43%{transform:rotate(30deg)} 73%{transform:rotate(-12deg)} }
+    @keyframes rear-knee { 0%,100%{transform:rotate(17deg)} 46%{transform:rotate(-38deg)} 77%{transform:rotate(-7deg)} }
+    @keyframes front-knee { 0%,100%{transform:rotate(-22deg)} 40%{transform:rotate(22deg)} 72%{transform:rotate(-38deg)} }
+    @keyframes tail-flick { 0%,100%{transform:rotate(3deg)} 50%{transform:rotate(-12deg)} }
+    @keyframes mane-wave { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(7deg)} }
+    @media (prefers-reduced-motion: reduce) { .playing * { animation: none !important; } }
+  </style>
+
+  <!-- Дальние ноги чуть светлее для читаемости движения на небольшом размере. -->
+  <g class="body-motion">
+    <g class="leg hind-far" style="fill:#333;stroke:#333">
+      <path d="M249 151 Q237 166 220 186 L195 209 Q187 218 185 232 L196 236 Q209 222 222 216 L257 190 Q266 180 269 164Z"/>
+      <g class="lower"><path d="M194 207 Q182 218 177 238 L167 248 Q163 252 169 256 L189 255 L196 235 L206 215Z"/></g>
+    </g>
+    <g class="leg front-far" style="fill:#333;stroke:#333">
+      <path d="M399 149 Q396 174 414 193 L444 213 L456 205 Q439 186 434 174 Q433 164 428 149Z"/>
+      <g class="lower"><path d="M442 207 L469 226 Q479 234 484 251 L493 253 L496 246 Q489 222 475 209 L455 195Z"/></g>
+    </g>
+
+    <!-- Длинный объёмный хвост. -->
+    <g class="tail horse">
+      <path d="M254 105 C231 98 217 83 202 80 C184 76 173 83 165 91 C183 86 194 96 204 107 C179 103 158 109 145 124 C171 114 186 122 201 135 C177 133 156 145 150 159 C181 144 214 158 232 143 C247 134 255 119 263 111Z"/>
+      <path d="M206 84 Q177 71 159 83 Q180 81 193 92Z"/>
+    </g>
+
+    <!-- Бёдра и грудь с плавной линией спины. -->
+    <path class="horse" d="M242 103 Q259 82 294 83 Q332 88 368 92 Q391 89 412 78 Q423 65 437 65 Q452 71 456 91 L444 119 Q442 143 429 158 Q412 171 395 169 Q351 174 320 165 Q297 179 274 168 Q247 157 239 136 Q231 118 242 103Z"/>
+    <!-- Шея, голова, вытянутая морда. -->
+    <path class="horse" d="M402 102 Q419 82 427 62 Q435 48 448 44 L457 49 Q472 52 480 63 Q489 75 510 82 Q520 88 520 99 Q511 107 497 104 L484 103 Q471 109 462 104 L450 94 L441 123Z"/>
+    <!-- Уши и лоб. -->
+    <path class="horse" d="M449 49 L447 28 Q449 21 453 27 L465 46Z"/>
+    <path class="horse" d="M462 52 L469 34 Q474 30 475 39 L474 61Z"/>
+    <!-- Грива из отдельных прядей. -->
+    <g class="mane horse">
+      <path d="M440 57 Q425 63 417 81 L399 95 Q413 94 419 89 L403 108 Q420 103 427 96 L414 116 Q437 109 445 90 L451 67Z"/>
+      <path d="M442 47 Q427 45 420 35 Q421 53 434 65Z"/>
+    </g>
+    <!-- Нижний контур морды, ноздря и глаз — помогают узнаваемости. -->
+    <path d="M494 100 Q504 103 514 100" fill="none" stroke="#565656" stroke-width="1.6" stroke-linecap="round"/>
+    <ellipse cx="482" cy="77" rx="3.3" ry="2.7" fill="#e6e6e6"/>
+    <circle cx="483" cy="77" r="1.5" fill="#111"/>
+    <ellipse cx="509" cy="91" rx="3.3" ry="2" fill="#777" transform="rotate(-20 509 91)"/>
+
+    <!-- Ближние ноги, отделены от корпуса ради натурального цикла галопа. -->
+    <g class="leg hind-near horse">
+      <path d="M269 150 Q280 153 287 171 Q283 184 268 196 Q248 206 232 213 L222 201 Q250 182 253 164Z"/>
+      <g class="lower"><path d="M232 206 Q219 214 206 234 L199 252 Q202 257 209 255 L220 251 Q229 232 244 220Z"/></g>
+    </g>
+    <g class="leg front-near horse">
+      <path d="M420 145 Q432 144 438 157 L446 189 Q455 198 468 206 L458 220 Q431 206 421 189 Q414 170 420 145Z"/>
+      <g class="lower"><path d="M463 205 Q480 213 492 226 L505 247 L516 249 L519 256 L498 256 Q485 243 476 236 L452 218Z"/></g>
+    </g>
+  </g>
+</svg>
