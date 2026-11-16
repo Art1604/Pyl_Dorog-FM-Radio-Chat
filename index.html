@@ -2063,9 +2063,12 @@ function mergePrivateSnapshots(snapshots){
    const id=serverIdentifier(rawId&&!rawId.startsWith('pending:')?rawId:(!storedKey.startsWith('pending:')?storedKey:''));
    if(!id)continue;
    let contact=byId.get(id);
-   if(!contact){contact={id,userId:id,nick:String(entry.nick||'Слушатель'),unread:0,messages:[]};byId.set(id,contact);}
+   if(!contact){contact={id,userId:id,nick:String(entry.nick||'Слушатель'),unread:0,open:false,messages:[]};byId.set(id,contact);}
    contact.nick=String(entry.nick||contact.nick);
    contact.unread=Math.max(0,Math.min(999,Number(entry.unread)||0));
+   // Новая версия хранит открытые вкладки независимо от прочитанности.
+   // Для старых снимков сохраняем прежнее восстановление непрочитанных.
+   contact.open=typeof entry.open==='boolean'?entry.open:contact.unread>0;
    const seen=new Set(contact.messages.map(m=>privateMessageKey(m,id)));
    for(const m of Array.isArray(entry.messages)?entry.messages.slice(-200):[]){
     if(!m||typeof m!=='object'||typeof (m.text??'')!=='string')continue;
@@ -2090,6 +2093,7 @@ function privateDialogSnapshot(){
  // Сохраняем в историю только диалоги с подтверждённым ID собеседника.
  const tabs=[...privateDialogs.entries()].filter(([key,c])=>c&&typeof c.nick==='string'&&!!serverIdentifier(c.userId)&&!String(c.userId).startsWith('pending:')).slice(-50).map(([key,c])=>({
   id:key,userId:c.userId||'',nick:c.nick,unread:Math.max(0,Number(c.unread)||0),
+  open:[...dialogTabs.querySelectorAll('.chat-dialog-tab[data-dialog-id]')].some(tab=>tab.dataset.dialogId===key),
   messages:c.messages.slice(-200).map(m=>({
    id:m.id,local_id:m.local_id,uid:m.uid,nick:m.nick,
    user:m.user&&typeof m.user==='object'?{nick:m.user.nick}:undefined,
@@ -2122,7 +2126,9 @@ function applyPrivateSnapshot(data){
    const unread=Math.max(0,Math.min(999,Number(entry.unread)||0));
    const messages=Array.isArray(entry.messages)?entry.messages.filter(m=>m&&typeof m==='object'&&typeof (m.text??'')==='string').slice(-200):[];
    privateDialogs.set(id,{nick,userId:id,messages,loading:false,loaded:false,unread});
-   if(unread>0)ensurePrivateTab(id,privateDialogs.get(id));
+   // Не закрываем вручную открытые Л/С после F5, даже если они прочитаны.
+   // Для истории старого формата восстанавливаем только непрочитанные вкладки.
+   if(entry.open===true||(entry.open==null&&unread>0))ensurePrivateTab(id,privateDialogs.get(id));
   }
   selectDialog('common');
  }finally{restoringPrivateDialogs=false;}
