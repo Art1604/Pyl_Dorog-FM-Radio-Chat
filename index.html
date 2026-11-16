@@ -1588,6 +1588,16 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 @media(max-width:800px){.radio-player-shell .radio-live-note{margin-left:0}}
 @media(prefers-reduced-motion:reduce){.radio-spectrum .radio-spectrum-level,.radio-spectrum .radio-spectrum-peak{transition:none}}
 
+/* Два вида спектра: привычный Winamp и фирменный Мустанг. */
+.radio-spectrum-switch{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+.radio-spectrum-mode-btn{min-width:101px;height:32px;padding:0 7px;background:#ededed;border:1px solid #aaa;color:#434343;font:600 11px Arial,sans-serif;cursor:pointer;border-radius:0;white-space:nowrap}
+.radio-spectrum-mode-btn:hover{background:#d1d1d1}
+.radio-spectrum-mode-btn:focus-visible{outline:2px solid #555;outline-offset:2px}
+.radio-mustang-spectrum{position:relative;width:260px;height:78px;flex:0 0 260px;overflow:hidden;border:1px solid #a5a5a5;background:#d4d4d4;border-radius:0;isolation:isolate}
+.radio-mustang-spectrum[hidden],.radio-spectrum[hidden]{display:none!important}
+.radio-mustang-dust{position:absolute;inset:0;width:100%;height:100%;display:block}
+.radio-mustang-horse{position:absolute;right:0;top:0;width:62%;height:100%;border:0;pointer-events:none}
+@media(max-width:520px){.radio-mustang-spectrum{width:min(260px,100%);flex:0 1 260px}}
 /* Миниатюрный маяк эфира: прямые углы, без декоративной имитации спектра. */
 .radio-beacon{position:relative;display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;flex:0 0 21px;margin-left:auto;border:1px solid #9b9b9b;background:#dedede;border-radius:0}
 .radio-beacon::before{content:"";width:9px;height:9px;background:#a7a7a7;border:1px solid #969696;border-radius:0;opacity:.75}
@@ -1616,7 +1626,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
     <a href="https://vk.com/club227352123" target="_blank" rel="noopener noreferrer">Группа ВК</a>
   </nav>
 </header>
-<section class="bevel"><audio id="radioPlayer" preload="none"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Аудио не поддерживается.</audio><div class="radio-player-shell" aria-label="Радиоплеер"><button type="button" id="radioToggle" class="radio-play-btn" aria-pressed="false">▶ Слушать</button><div id="radioSpectrum" class="radio-spectrum" aria-label="Спектроанализатор радио" role="img"></div><span id="radioSpectrumStatus" class="radio-spectrum-status" role="status">Спектр: ожидание</span><button type="button" id="radioMute" class="radio-mute-btn" title="Выключить звук" aria-label="Выключить звук" aria-pressed="false"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="radio-sound-wave" d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/><path class="radio-sound-cross" d="m16 9 5 6m0-6-5 6" style="display:none"/></svg></button><div class="radio-volume-wrap"><label class="sr-only" for="radioVolume">Громкость</label><input id="radioVolume" class="radio-volume" type="range" min="0" max="100" step="1" value="65" aria-label="Громкость"><output id="radioVolumePercent" class="radio-volume-percent" for="radioVolume">65%</output></div><span id="radioBeacon" class="radio-beacon" role="img" aria-label="Плеер остановлен" title="Плеер остановлен"></span><span id="radioConnectionStatus" class="radio-live-note" role="status" aria-live="polite" hidden></span></div><div class="airmeta" aria-label="Сведения о текущем эфире">
+<section class="bevel"><audio id="radioPlayer" preload="none"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Аудио не поддерживается.</audio><div class="radio-player-shell" aria-label="Радиоплеер"><button type="button" id="radioToggle" class="radio-play-btn" aria-pressed="false">▶ Слушать</button><div class="radio-spectrum-switch"><div id="radioSpectrum" class="radio-spectrum" aria-label="Классический спектроанализатор" role="img"></div><div id="radioMustangSpectrum" class="radio-mustang-spectrum" aria-label="Мустанг и музыкальная пыль, реагирующая на эфир" role="img" hidden><canvas id="radioMustangDust" class="radio-mustang-dust" aria-hidden="true"></canvas><object id="radioMustangHorse" class="radio-mustang-horse" data="./assets/mustang.svg" type="image/svg+xml" aria-label="Чёрный мустанг в галопе" tabindex="-1"></object></div><button id="radioSpectrumMode" class="radio-spectrum-mode-btn" type="button" aria-label="Переключить вид спектроанализатора" title="Переключить вид спектроанализатора">Классический ▾</button></div><span id="radioSpectrumStatus" class="radio-spectrum-status" role="status">Спектр: ожидание</span><button type="button" id="radioMute" class="radio-mute-btn" title="Выключить звук" aria-label="Выключить звук" aria-pressed="false"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="radio-sound-wave" d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/><path class="radio-sound-cross" d="m16 9 5 6m0-6-5 6" style="display:none"/></svg></button><div class="radio-volume-wrap"><label class="sr-only" for="radioVolume">Громкость</label><input id="radioVolume" class="radio-volume" type="range" min="0" max="100" step="1" value="65" aria-label="Громкость"><output id="radioVolumePercent" class="radio-volume-percent" for="radioVolume">65%</output></div><span id="radioBeacon" class="radio-beacon" role="img" aria-label="Плеер остановлен" title="Плеер остановлен"></span><span id="radioConnectionStatus" class="radio-live-note" role="status" aria-live="polite" hidden></span></div><div class="airmeta" aria-label="Сведения о текущем эфире">
   <div class="airitem" id="airHostBox" hidden><span class="airlabel">🎙️ Ведущий в эфире</span><span id="airHost" class="airvalue"></span></div>
   <div class="airitem" id="airTopicBox" hidden><span class="airlabel">📢 Тема эфира</span><span id="airTopic" class="airvalue"></span></div>
   <div class="airitem" id="airTrackBox" hidden><span class="airlabel">🎵 Сейчас играет</span><span id="airTrack" class="airvalue"></span></div>
@@ -1657,6 +1667,13 @@ const radioSpectrum=$('radioSpectrum'),radioSpectrumStatus=$('radioSpectrumStatu
 const RADIO_VOLUME_KEY='pyl_dorog_fm_radio_volume_v1';
 const RADIO_MUTED_KEY='pyl_dorog_fm_radio_muted_v1';
 const RADIO_STREAM_URL='https://stream.volnorez.com/live-app/869683';
+const RADIO_SPECTRUM_MODE_KEY='pyl_dorog_fm_spectrum_mode_v1';
+const radioSpectrumModeButton=$('radioSpectrumMode');
+const radioMustangSpectrum=$('radioMustangSpectrum');
+const radioMustangDust=$('radioMustangDust');
+const radioMustangHorse=$('radioMustangHorse');
+let radioSpectrumMode='classic';
+let horseAnimationState=null;
 const RADIO_SPECTRUM_BARS=24;
 let spectrumCtx=null,spectrumAnalyser=null,spectrumData=null,spectrumFrame=0;
 let spectrumOutputGain=null;
@@ -1683,6 +1700,68 @@ const spectrumDisplayedLevels=Array(RADIO_SPECTRUM_BARS).fill(0);
 function storedRadioValue(key){try{return window.localStorage.getItem(key);}catch{return null;}}
 function saveRadioValue(key,value){try{window.localStorage.setItem(key,String(value));}catch{/* Private mode or disabled storage */}}
 function spectrumStatus(message){if(radioSpectrumStatus)radioSpectrumStatus.textContent=message;}
+// SVG загружается как локальный object: можно ставить галоп на паузу.
+// Если внешний SVG недоступен, классический вид спектра остаётся работоспособным.
+function syncMustangHorse(){
+ if(!radioMustangHorse)return;
+ let svg;
+ try{svg=radioMustangHorse.contentDocument?.documentElement;}catch{return;}
+ if(!svg)return;
+ const playing=radioSpectrumMode==='mustang'&&canAnimateSpectrum()&&
+  !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ if(horseAnimationState===playing)return;
+ svg.classList.toggle('playing',playing);
+ horseAnimationState=playing;
+}
+function drawMustangDust(){
+ if(!radioMustangDust||radioSpectrumMode!=='mustang')return;
+ const rect=radioMustangDust.getBoundingClientRect();
+ const w=rect.width,h=rect.height;
+ if(w<1||h<1)return;
+ const dpr=Math.min(2,window.devicePixelRatio||1);
+ const pw=Math.round(w*dpr),ph=Math.round(h*dpr);
+ if(radioMustangDust.width!==pw||radioMustangDust.height!==ph){radioMustangDust.width=pw;radioMustangDust.height=ph;}
+ const ctx=radioMustangDust.getContext('2d');
+ if(!ctx)return;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ ctx.clearRect(0,0,w,h);
+ const usableWidth=w*.53,barCount=24,step=usableWidth/barCount;
+ for(let i=0;i<barCount;i++){
+  // Частотные полосы настоящего анализатора: никаких случайных высот.
+  const freqIndex=Math.min(RADIO_SPECTRUM_BARS-1,Math.floor(i*RADIO_SPECTRUM_BARS/barCount));
+  const energy=spectrumDisplayedLevels[freqIndex]/100;
+  if(energy<.01)continue;
+  const x=4+i*step;
+  const height=(7+energy*(h*.76))*(.55+.45*i/(barCount-1));
+  const y=h-8-height;
+  ctx.fillStyle=i%3===0?'#686868':i%3===1?'#929292':'#7a7a7a';
+  ctx.fillRect(x,y,Math.max(2,step-2),height);
+  // Пылевые частицы — только при наличии энергии, тоже зависят от неё.
+  if(energy>.15){
+   ctx.globalAlpha=Math.min(.8,energy*.85);
+   const scatter=Math.sin(i*12.9898+energy*17.25)*7;
+   ctx.fillRect(x-3,y-4+scatter,2.5,2.5);
+   ctx.globalAlpha=1;
+  }
+ }
+}
+function resetMustangDust(){
+ if(radioMustangDust){const ctx=radioMustangDust.getContext('2d');if(ctx)ctx.clearRect(0,0,radioMustangDust.width,radioMustangDust.height);}
+ syncMustangHorse();
+}
+function setSpectrumMode(mode){
+ radioSpectrumMode=mode==='mustang'?'mustang':'classic';
+ radioSpectrum.hidden=radioSpectrumMode!=='classic';
+ radioMustangSpectrum.hidden=radioSpectrumMode!=='mustang';
+ if(radioSpectrumModeButton){
+  radioSpectrumModeButton.textContent=radioSpectrumMode==='mustang'?'Мустанг ▾':'Классический ▾';
+  radioSpectrumModeButton.setAttribute('aria-label',radioSpectrumMode==='mustang'?'Вид спектра: Мустанг. Переключить на классический':'Вид спектра: Классический. Переключить на Мустанг');
+ }
+ saveRadioValue(RADIO_SPECTRUM_MODE_KEY,radioSpectrumMode);
+ horseAnimationState=null;
+ syncMustangHorse();
+ if(radioSpectrumMode==='mustang')drawMustangDust();
+}
 function createSpectrumDisplay(){
  if(!radioSpectrum)return;
  const fragment=document.createDocumentFragment();
@@ -1701,6 +1780,7 @@ function clearSpectrum(){
  spectrumPeakPositions.fill(0);
  spectrumDisplayedLevels.fill(0);
  spectrumLastFrameTime=0;
+ resetMustangDust();
 }
 // Спектр анализирует входящий аудиопоток независимо от громкости динамиков.
 // При mute или громкости 0% аудио продолжает проигрываться, поэтому визуализация
@@ -1746,6 +1826,7 @@ function renderSpectrum(now=performance.now()){
   bar.peak.style.bottom=Math.min(98,spectrumPeakPositions[i]).toFixed(1)+'%';
   bar.peak.style.opacity=spectrumPeakPositions[i]>.5?'1':'0';
  }
+ drawMustangDust();
  spectrumFrame=requestAnimationFrame(renderSpectrum);
 }
 // Переподключение относится только к плееру; работа чата не зависит от него.
@@ -1782,6 +1863,7 @@ function syncRadioUi(){
  radioMute.classList.toggle('is-muted',muted);
  if(canAnimateSpectrum()&&!spectrumFrame)spectrumFrame=requestAnimationFrame(renderSpectrum);
  if(!canAnimateSpectrum())clearSpectrum();
+ syncMustangHorse();
  if(document.activeElement!==radioVolume)radioVolume.value=String(volume);
  radioVolume.style.setProperty('--radio-fill',volume+'%');
  if(radioVolumePercent)radioVolumePercent.textContent=muted?'Выкл.':volume+'%';
@@ -1890,6 +1972,9 @@ async function setupRealSpectrum(){
  }
 }
 createSpectrumDisplay();
+if(radioMustangHorse)radioMustangHorse.addEventListener('load',()=>{horseAnimationState=null;syncMustangHorse();});
+if(radioSpectrumModeButton)radioSpectrumModeButton.addEventListener('click',()=>setSpectrumMode(radioSpectrumMode==='classic'?'mustang':'classic'));
+setSpectrumMode(storedRadioValue(RADIO_SPECTRUM_MODE_KEY));
 if(radioPlayer&&radioToggle&&radioMute&&radioVolume){
  const savedVolume=Number(storedRadioValue(RADIO_VOLUME_KEY));
  radioSoundLevel=Number.isFinite(savedVolume)&&storedRadioValue(RADIO_VOLUME_KEY)!==null?Math.max(0,Math.min(1,savedVolume)):0.65;
