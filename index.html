@@ -1612,7 +1612,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 <div><div class="column-title">👥 Участники <span class="count" id="userCount" hidden></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
 <form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><div class="composer-input-wrap" id="composerInputWrap"><div id="richMessageInput" class="rich-message-input" contenteditable="false" role="textbox" aria-label="Сообщение" aria-multiline="false" data-placeholder="Автоматический вход в чат…" aria-disabled="true"></div><textarea id="messageInput" rows="1" maxlength="1000" hidden aria-hidden="true" tabindex="-1" disabled></textarea></div><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button><button type="button" data-category="ours">Наши GIF</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. GIF и анимашки загружаются из папок assets/volnorez-gifs и assets/volnorez-lottie.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
-<p class="muted" id="technicalExplanation">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Никаких чужих паролей, cookie или служебных токенов. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
+<p class="muted" id="technicalExplanation">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Пароли и данные авторизации оригинального аккаунта не используются. Гостевой GUID, выданный этому клиенту, хранится локально для попытки восстановления гостевого входа. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
 <div class="notice" id="outdatedWarning"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
 <section class="bevel" id="diagnosticsSection"><div class="head"><h2>🔎 Диагностика соединения</h2><button id="copy">Скопировать журнал</button></div><div class="log" id="log" aria-live="polite"></div></section>
@@ -2381,6 +2381,21 @@ function scheduleGuestAutoLogin(){
  // Дадим серверу возможность сначала прислать set_unauth_login.
  guestAutoLoginTimer=setTimeout(()=>{guestAutoLoginTimer=null;requestGuestLogin();},800);
 }
+// Сохраняем только гостевой GUID, полученный непосредственно от сервера
+// в ответ на вход нашего собственного гостя. GUID оригинального аккаунта
+// Волнореза не читаем и не используем.
+const GUEST_SESSION_GUID_KEY='pylfm_guest_ws_guid_v1';
+function validOwnGuestGuid(value){
+ return typeof value==='string'&&value.length>=16&&value.length<=128&&/^[a-zA-Z0-9-]+$/.test(value);
+}
+function readOwnGuestGuid(){
+ try{const value=localStorage.getItem(GUEST_SESSION_GUID_KEY);return validOwnGuestGuid(value)?value:'';}catch{return '';}
+}
+function saveOwnGuestGuid(value){
+ if(!validOwnGuestGuid(value))return;
+ try{localStorage.setItem(GUEST_SESSION_GUID_KEY,value);}catch(err){console.warn('Не удалось сохранить гостевой идентификатор',err);}
+}
+let attemptedGuestGuidOnConnection=false;
 try{desiredGuestNick=(localStorage.getItem('pylfm_guest_nick')||'').trim().slice(0,30);}catch{}
 if(desiredGuestNick)E.nick.value=desiredGuestNick;
 // Настройка хранится только в браузере; никаких служебных данных на сервер не отправляется.
@@ -2463,7 +2478,9 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
   return video;
  }
  if(s.cls){const el=document.createElement('span');el.className='smiley msg-smile '+s.cls;el.title='Смайл '+id;el.setAttribute('role','img');el.setAttribute('aria-label','Смайл '+id);return el;}
- const img=document.createElement('img');img.className='smiley-media';img.src=s.file;img.loading='lazy';img.alt='Смайл '+id;img.addEventListener('error',()=>{img.replaceWith(document.createTextNode(inGallery?'Смайл недоступен':'%'+id+'%'));});return img;
+ const img=document.createElement('img');img.className='smiley-media';img.loading='lazy';img.decoding='async';img.alt='Смайл '+id;
+ if(inGallery)prepareGalleryImage(img,s.file);else img.src=s.file;
+ img.addEventListener('error',()=>{img.replaceWith(document.createTextNode(inGallery?'Смайл недоступен':'%'+id+'%'));});return img;
 }
 /* Реальный contenteditable: сериализация смайлов в %id% для протокола. */
 const richEditor=$('richMessageInput');
@@ -2513,9 +2530,10 @@ function composerInsertText(text){
  if(pos<usable.length)nodes.push(document.createTextNode(usable.slice(pos)));
  insertComposerNodes(nodes);
 }
-function ownGifNode(id){
+function ownGifNode(id,inGallery=false){
  const gif=OUR_GIFS[id];if(!gif)return document.createTextNode('pylgif:'+id);
- const img=document.createElement('img');img.src=gif.file;img.alt=gif.name;img.loading='lazy';img.decoding='async';
+ const img=document.createElement('img');img.alt=gif.name;img.loading='lazy';img.decoding='async';
+ if(inGallery)prepareGalleryImage(img,gif.file);else img.src=gif.file;
  img.addEventListener('error',()=>img.replaceWith(document.createTextNode('pylgif:'+id)));
  return img;
 }
@@ -2843,7 +2861,14 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
  case 'set_users_list':{const arr=Array.isArray(obj.users)?obj.users:[];roster.clear();arr.forEach(u=>{if(u&&typeof u==='object')roster.set(userKey(u),u);});renderUsers();log('Участники: '+roster.size);break;}
  case 'add_user':case 'update_user':{const u=obj.user;if(u&&typeof u==='object'){roster.set(userKey(u),u);renderUsers();}break;}
  case 'remove_user':{const u=obj.user;if(u&&typeof u==='object'){roster.delete(userKey(u));renderUsers();}break;}
- case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;renderUsers();{for(const [id,contact] of privateDialogs){if(contact.userId&&dialogTabs.querySelectorAll('.chat-dialog-tab').length){const visible=[...dialogTabs.querySelectorAll('.chat-dialog-tab')].some(tab=>tab.dataset.dialogId===id);if(visible&&!contact.loaded&&socketSend({cmd:'load_private_history',target_id:contact.userId,last_msg_id:0}))contact.loaded=true;}}}if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||'')&&!guestNickRestoredOnConnection){
+ case 'login':{if(!obj.user||typeof obj.user!=='object'){log('Некорректный ответ на гостевой вход');break;}
+ // Идентификатор сохраняем только для собственного гостя (тип simple),
+ // не для зарегистрированного аккаунта. Значение GUID не пишем в журнал.
+ if(String(obj.user.type||'')==='simple'&&validOwnGuestGuid(obj.guid)){
+  saveOwnGuestGuid(obj.guid);
+  log('Гостевой GUID подтверждён сервером и сохранён в браузере.');
+ }
+ clearTimeout(loginTimer);loginTimer=null;currentUser=obj.user;authorized=true;renderUsers();{for(const [id,contact] of privateDialogs){if(contact.userId&&dialogTabs.querySelectorAll('.chat-dialog-tab').length){const visible=[...dialogTabs.querySelectorAll('.chat-dialog-tab')].some(tab=>tab.dataset.dialogId===id);if(visible&&!contact.loaded&&socketSend({cmd:'load_private_history',target_id:contact.userId,last_msg_id:0}))contact.loaded=true;}}}if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;pending=false;nickChangeStatus.textContent='';refreshDeleteControls();E.identity.textContent='В чате: '+safe(obj.user.nick,60)+' ('+safe(obj.user.type,30)+')';E.nick.value=safe(obj.user.nick,30);info('✅ Сервер подтвердил гостевой вход: '+safe(obj.user.nick,50),'ok');note('Можно отправлять сообщения в настоящий чат.');updateButtons();if(desiredGuestNick&&desiredGuestNick!==String(obj.user.nick||'')&&!guestNickRestoredOnConnection){
  guestNickRestoredOnConnection=true;
  if(socketSend({cmd:'set_nick',nick:desiredGuestNick}))log('SEND set_nick: восстановление сохранённого ника (однократно)');
  }break;}
@@ -2872,7 +2897,7 @@ function handle(raw){let obj;try{obj=JSON.parse(raw);}catch{log('Получен�
 }
 function resetAccess(){
  lastShownMessage=null;
- authorized=false;currentUser=null;initDone=false;pending=false;if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;nickChangeStatus.textContent='';guestLoginAttempted=false;guestNickRestoredOnConnection=false;clearGuestAutoLoginTimer();pendingDeletionId=null;refreshDeleteControls();clearTimeout(initTimer);initTimer=null;
+ authorized=false;currentUser=null;initDone=false;pending=false;if(pendingMessage)clearTimeout(pendingMessage.timeout);pendingMessage=null;nickChangeStatus.textContent='';guestLoginAttempted=false;guestNickRestoredOnConnection=false;attemptedGuestGuidOnConnection=false;clearGuestAutoLoginTimer();pendingDeletionId=null;refreshDeleteControls();clearTimeout(initTimer);initTimer=null;
  clearTimeout(loginTimer);loginTimer=null;E.identity.textContent='Не авторизован';updateButtons();
 }
 function scheduleReconnect(code){
@@ -2925,9 +2950,17 @@ function requestGuestLogin(manual=false){
  if(guestLoginAttempted&&!manual)return;
  clearGuestAutoLoginTimer();
  guestLoginAttempted=true;
- note('Входим гостем…');log('SEND login: один гостевой вход на соединение');
+ note('Входим гостем…');
+ // На основании HAR: официальный клиент включает guid и nick в login.
+ // Используем только собственный ранее выданный сервером гостевой GUID.
+ // Первый гостевой вход без GUID по-прежнему возможен.
+ const savedGuestGuid=readOwnGuestGuid();
+ const guestLoginPayload={cmd:'login',login:'',password:''};
+ if(savedGuestGuid){guestLoginPayload.guid=savedGuestGuid;attemptedGuestGuidOnConnection=true;}
+ if(desiredGuestNick)guestLoginPayload.nick=desiredGuestNick;
+ log('SEND login: гостевой вход'+(savedGuestGuid?' с собственным сохранённым GUID':' без сохранённого GUID')+' (один на соединение)');
  E.login.disabled=true;
- if(!socketSend({cmd:'login',login:'',password:''})){
+ if(!socketSend(guestLoginPayload)){
   guestLoginAttempted=false;
   note('Нет соединения.','send-error');updateButtons();return;
  }
@@ -3008,6 +3041,28 @@ for(const [id,s] of Object.entries(SMILES)){
 }
 let activeCat='classic';let tabToken=0;
 const gallery=$('galleryGrid'),galleryTabs=$('galleryTabs'),galleryHint=$('galleryHint');
+// Не запускаем загрузку всех GIF при создании каталога. Сначала видимые и соседние
+// изображения; прокрученные ниже элементы начнут загружаться при приближении.
+// URL сохраняется неизменным — браузер вправе использовать HTTP-кэш при повторном открытии.
+const galleryImageObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
+ for(const entry of entries){
+  if(!entry.isIntersecting)continue;
+  const img=entry.target;
+  galleryImageObserver.unobserve(img);
+  if(img.dataset.gallerySrc){img.src=img.dataset.gallerySrc;delete img.dataset.gallerySrc;}
+ }
+},{root:gallery,rootMargin:'240px 0px',threshold:0}):null;
+function prepareGalleryImage(img,url){
+ if(!galleryImageObserver){img.src=url;return;}
+ img.dataset.gallerySrc=url;
+ // Сам URL ставится только когда элемент приблизится к видимой области каталога.
+ galleryImageObserver.observe(img);
+}
+function clearGallery(){
+ if(galleryImageObserver){for(const img of gallery.querySelectorAll('img[data-gallery-src]'))galleryImageObserver.unobserve(img);}
+ gallery.replaceChildren();
+}
+
 /* Наши GIF отправляются обычным текстом pylgif:ID: Волнорез передаёт строку,
    а наш клиент отображает изображение. В оригинальном чате будет виден текстовый маркер. */
 const OUR_GIFS_DIR='./assets/our-gifs/';
@@ -3026,7 +3081,7 @@ async function loadOurGifs(){
  if(ourGifsCache)return ourGifsCache;
  let explicit=false,names=[];
  try{
-  const res=await fetch(new URL(OUR_GIFS_DIR+'list.json',document.baseURI),{cache:'no-store'});
+  const res=await fetch(new URL(OUR_GIFS_DIR+'list.json',document.baseURI),{cache:'no-cache'});
   if(!res.ok)throw Error('HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data)){
@@ -3075,7 +3130,7 @@ async function loadOurGifs(){
 }
 async function showOurGifs(){
  const token=++tabToken;
- gallery.replaceChildren();galleryHint.textContent='Загружаем наши GIF…';
+ clearGallery();galleryHint.textContent='Загружаем наши GIF…';
  const items=await loadOurGifs();
  if(activeCat!=='ours'||token!==tabToken)return;
  galleryHint.textContent=items.length+' наших GIF · В нашем чате отображаются картинками, на оригинальном Волнорезе — как текстовые маркеры.';
@@ -3083,7 +3138,7 @@ async function showOurGifs(){
  const tiles=document.createDocumentFragment();
  for(const [id,gif] of items){
   const tile=document.createElement('button');tile.type='button';tile.className='gallery-tile our-gif-tile';tile.title=gif.name;
-  tile.append(ownGifNode(id));
+  tile.append(ownGifNode(id,true));
   tile.addEventListener('click',()=>{
    if(!authorized){note('Для отправки GIF нужно подключение к чату.','send-error');return;}
    composerInsertOurGif(id);
@@ -3096,7 +3151,7 @@ function showTab(category){
  if(!cats[category])return;activeCat=category;
  for(const button of galleryTabs.querySelectorAll('button')){const active=button.dataset.category===category;button.classList.toggle('selected',active);button.setAttribute('aria-selected',String(active));}
  if(category==='ours'){showOurGifs();return;}
- gallery.replaceChildren();const ids=cats[category];galleryHint.textContent=ids.length+' элементов · Просмотр доступен всем. Для отправки нужен гостевой вход и разрешение сервера.';
+ clearGallery();const ids=cats[category];galleryHint.textContent=ids.length+' элементов · Просмотр доступен всем. Для отправки нужен гостевой вход и разрешение сервера.';
  if(category==='animashki'){
   customElements.whenDefined('dotlottie-wc').then(()=>{if(activeCat==='animashki')galleryHint.textContent=ids.length+' анимашек · Файлы .lottie загружаются из assets/volnorez-lottie/ на GitHub Pages.';});
   setTimeout(()=>{if(activeCat==='animashki'&&!customElements.get('dotlottie-wc'))galleryHint.textContent='Проигрыватель анимашек не загрузился с CDN. Проверь интернет, блокировщики и консоль браузера.';},7000);
@@ -3104,7 +3159,7 @@ function showTab(category){
 
  // Все смайлы выбранной вкладки доступны сразу, без кнопки «Ещё смайлы».
  // При этом видео загружаются и воспроизводятся только рядом с видимой областью
- // благодаря videoObserver, а изображения используют loading="lazy".
+ // благодаря videoObserver, а GIF — galleryImageObserver и кэшу браузера.
  ++tabToken;
  const tiles=document.createDocumentFragment();
  for(const id of ids){
