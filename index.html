@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ПыЛь_ДоРоГ FM — радио и чат</title>
+<title>ПыЛь_ДоРоГ FM</title>
 <meta name="description" content="ПыЛь_ДоРоГ FM — прямой эфир, настоящий чат Волнореза, GIF и анимашки.">
-<meta property="og:type" content="website"><meta property="og:title" content="ПыЛь_ДоРоГ FM — радио и чат"><meta property="og:description" content="Слушай эфир и общайся в чате Волнореза.">
+<meta property="og:type" content="website"><meta property="og:title" content="ПыЛь_ДоРоГ FM"><meta property="og:description" content="Слушай эфир и общайся в чате Волнореза.">
 <meta property="og:url" content="https://art1604.github.io/Pyl_Dorog-FM-Radio-Chat/">
 <style>
 :root{font:14px Arial,Helvetica,sans-serif;color:#252525;background:#c8c8c8;--panel:#dedede;--line:#929292;--inset:#f0f0f0}
@@ -1381,6 +1381,18 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .person.local-blocked .local-block-btn{background:#d6d6d6}
 
 .radio-player-shell{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 10px}.radio-play-btn{min-width:110px}.radio-volume-wrap{display:inline-flex;align-items:center;gap:6px}.radio-volume{width:120px}.radio-live-note{font-size:12px;color:#555;font-weight:600}
+
+/* Фирменная ПК-шапка: прямые углы, исходный логотип и текстовые ссылки. */
+.radio-header{gap:16px;min-height:72px}
+.radio-brand{display:flex;align-items:center;min-width:0;gap:12px}
+.radio-brand-logo{display:block;width:auto;height:45px;max-width:100%;object-fit:contain;flex:none;border-radius:0}
+.radio-brand h1{font-size:19px;line-height:1.15;margin:0;white-space:nowrap}
+.radio-header-links{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap;margin-left:auto;font-size:13px}
+.radio-header-links a{color:#345c84;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
+.radio-header-links a:hover{color:#222}
+.radio-header-links a:focus-visible{outline:2px solid #666;outline-offset:3px}
+.radio-header-divider{color:#858585;user-select:none}
+@media(max-width:760px){.radio-header{align-items:flex-start}.radio-brand h1{font-size:17px}.radio-header-links{margin-left:0;justify-content:flex-start}}
 </style>
 <style>
 /* v2.2 — поле → смайлы → Отправить, крайний элемент справа */
@@ -1591,7 +1603,19 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 </style>
 </head>
 <body><div class="wrap">
-<header class="bevel head"><h1>🎙️ ПыЛь_ДоРоГ FM — радио и чат</h1><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">Оригинальный чат Волнореза ↗</a></header>
+<header class="bevel head radio-header">
+  <div class="radio-brand">
+    <img src="./assets/radio-logo.jpg" class="radio-brand-logo" width="81" height="45" alt="Логотип ПыЛь_ДоРоГ FM" decoding="async">
+    <h1>ПыЛь_ДоРоГ FM</h1>
+  </div>
+  <nav class="radio-header-links" aria-label="Ссылки радиостанции">
+    <a href="https://m.volnorez.com/pyl_dorog-fm" target="_blank" rel="noopener noreferrer">Мобильная</a>
+    <span aria-hidden="true" class="radio-header-divider">|</span>
+    <a href="https://www.volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">ПК-версия</a>
+    <span aria-hidden="true" class="radio-header-divider">|</span>
+    <a href="https://vk.com/club227352123" target="_blank" rel="noopener noreferrer">Группа ВК</a>
+  </nav>
+</header>
 <section class="bevel"><audio id="radioPlayer" preload="none"><source src="https://stream.volnorez.com/live-app/869683" type="audio/mpeg">Аудио не поддерживается.</audio><div class="radio-player-shell" aria-label="Радиоплеер"><button type="button" id="radioToggle" class="radio-play-btn" aria-pressed="false">▶ Слушать</button><div id="radioSpectrum" class="radio-spectrum" aria-label="Спектроанализатор радио" role="img"></div><span id="radioSpectrumStatus" class="radio-spectrum-status" role="status">Спектр: ожидание</span><button type="button" id="radioMute" class="radio-mute-btn" title="Выключить звук" aria-label="Выключить звук" aria-pressed="false"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="radio-sound-wave" d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/><path class="radio-sound-cross" d="m16 9 5 6m0-6-5 6" style="display:none"/></svg></button><div class="radio-volume-wrap"><label class="sr-only" for="radioVolume">Громкость</label><input id="radioVolume" class="radio-volume" type="range" min="0" max="100" step="1" value="65" aria-label="Громкость"><output id="radioVolumePercent" class="radio-volume-percent" for="radioVolume">65%</output></div><span id="radioBeacon" class="radio-beacon" role="img" aria-label="Плеер остановлен" title="Плеер остановлен"></span><span id="radioConnectionStatus" class="radio-live-note" role="status" aria-live="polite" hidden></span></div><div class="airmeta" aria-label="Сведения о текущем эфире">
   <div class="airitem" id="airHostBox" hidden><span class="airlabel">🎙️ Ведущий в эфире</span><span id="airHost" class="airvalue"></span></div>
   <div class="airitem" id="airTopicBox" hidden><span class="airlabel">📢 Тема эфира</span><span id="airTopic" class="airvalue"></span></div>
