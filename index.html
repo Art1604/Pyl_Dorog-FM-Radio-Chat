@@ -2650,22 +2650,60 @@ function showGifFrame(video){
 }
 function gifFrameArrived(video){
  if(!video.isConnected)return;
+ // Некоторые браузеры задерживают requestVideoFrameCallback в фоне или при
+ // большом числе MP4. Не оставляем миниатюру невидимой из-за этой задержки.
+ if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA)showGifFrame(video);
  if('requestVideoFrameCallback' in video){
-  try{video.requestVideoFrameCallback(()=>showGifFrame(video));return;}catch{}
+  try{video.requestVideoFrameCallback(()=>showGifFrame(video));}catch{}
  }
- showGifFrame(video);
 }
+
 const GIF_VIDEO_LIMIT=5;
 let gifVideoLoading=0;
 const gifVideoQueue=[];
 const gifVideoCancels=new Map();
 const gifVideoTimeouts=new Map();
+// Медленный MP4 может зависнуть без события error. Проверяем его аккуратно:
+// не сбрасываем медиа, пока браузер ещё загружает данные, и никогда в фоне.
+const gifSlowWatches=new Map();
+function stopGifSlowWatch(v){
+ const timer=gifSlowWatches.get(v);
+ if(timer!==undefined){clearTimeout(timer);gifSlowWatches.delete(v);}
+}
+function watchSlowGif(v){
+ stopGifSlowWatch(v);
+ if(!v.isConnected||v.dataset.gifReady||v.dataset.gifFailed)return;
+ const check=()=>{
+  gifSlowWatches.delete(v);
+  if(!v.isConnected||v.dataset.gifReady||v.dataset.gifFailed)return;
+  if(v.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){
+   delete v.dataset.gifSlow;v.dataset.gifReady='1';gifFrameArrived(v);v.play().catch(()=>{});return;
+  }
+  // В фоне таймеры браузера ненадёжны; дождёмся возвращения.
+  if(document.hidden||!v.dataset.gifVisible){gifSlowWatches.set(v,setTimeout(check,15000));return;}
+  const start=Number(v.dataset.gifSlowSince)||Date.now();
+  if(Date.now()-start<90000){gifSlowWatches.set(v,setTimeout(check,15000));return;}
+  const count=Number(v.dataset.gifStallRestarts||0);
+  if(count>=2){
+   v.dataset.gifFailed='1';delete v.dataset.gifSlow;
+   const wrap=v.closest('.gallery-video-wrap');
+   if(wrap&&!wrap.querySelector('.gallery-video-poster img'))wrap.querySelector('.gallery-video-poster').textContent='GIF недоступен';
+   return;
+  }
+  // Лишь после длительного отсутствия кадров допускаем перезапуск запроса.
+  v.dataset.gifStallRestarts=String(count+1);
+  delete v.dataset.gifSlow;delete v.dataset.gifSlowSince;
+  v.removeAttribute('src');v.load();
+  gifVideoEnqueue(v);
+ };
+ gifSlowWatches.set(v,setTimeout(check,15000));
+}
 function gifVideoPump(){
  // Фоновая вкладка не должна расходовать время на загрузку и декодирование.
  if(document.hidden)return;
  while(gifVideoLoading<GIF_VIDEO_LIMIT&&gifVideoQueue.length){
   const v=gifVideoQueue.shift();
-  if(!v.isConnected||!v.dataset.gifVisible||v.dataset.gifReady||v.dataset.gifLoading||v.dataset.gifFailed)continue;
+  if(!v.isConnected||!v.dataset.gifVisible||v.dataset.gifReady||v.dataset.gifLoading||v.dataset.gifFailed||v.dataset.gifSlow)continue;
   gifVideoLoading++;v.dataset.gifLoading='1';
   let timeout,finished=false;
   const listeners=new AbortController();
@@ -2683,8 +2721,9 @@ function gifVideoPump(){
   });
   const ready=()=>{
    if(!finish())return;
+   stopGifSlowWatch(v);delete v.dataset.gifSlowSince;delete v.dataset.gifSlow;
    v.dataset.gifReady='1';
-   captureGifPoster(v);
+   gifFrameArrived(v);
    if(!document.hidden&&v.isConnected)v.play().catch(()=>{});
   };
   const fail=()=>{
@@ -2693,7 +2732,11 @@ function gifVideoPump(){
    if(count<2){
     v.dataset.gifRetries=String(count+1);
     v.removeAttribute('src');v.load();
-    setTimeout(()=>{if(v.isConnected&&v.dataset.gifVisible&&!document.hidden)gifVideoEnqueue(v);},800*(count+1));
+    // Не теряем повторную попытку, если во время ожидания открыли другую вкладку.
+    setTimeout(()=>{if(v.isConnected&&v.dataset.gifVisible){
+      if(document.hidden)v.dataset.gifRetryPending='1';
+      else gifVideoEnqueue(v);
+    }},800*(count+1));
    }else{
     v.dataset.gifFailed='1';
     const wrap=v.closest('.gallery-video-wrap');
@@ -2703,27 +2746,40 @@ function gifVideoPump(){
   };
   v.addEventListener('loadeddata',ready,{once:true,signal:listeners.signal});
   v.addEventListener('error',fail,{once:true,signal:listeners.signal});
-  // В фоновой вкладке таймер не считает задержку браузера ошибкой загрузки.
+  // Медленная загрузка MP4 не является ошибкой. Не сбрасываем src из-за
+  // таймера: иначе при каждом возвращении на вкладку браузер качает файл вновь.
+  // Через 25 секунд освобождаем место в очереди, но сам запрос продолжается;
+  // постоянный обработчик loadeddata ниже завершит отображение кадра.
   const armTimeout=()=>{
    clearTimeout(timeout);
    if(finished||document.hidden)return;
-   timeout=setTimeout(()=>{if(!finished&&!document.hidden&&!v.dataset.gifReady)fail();},16000);
+   timeout=setTimeout(()=>{
+    if(finished||document.hidden)return;
+    if(v.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){ready();return;}
+    v.dataset.gifSlow='1';v.dataset.gifSlowSince=String(Date.now());
+    finish();watchSlowGif(v);
+   },25000);
   };
   gifVideoTimeouts.set(v,armTimeout);
   armTimeout();
-  v.src=v.dataset.src;v.load();
+  // Если браузер сохранил media resource, не переназначаем src и не вызываем load().
+  if(!v.getAttribute('src')){v.src=v.dataset.src;v.load();}
+  else if(v.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA)ready();
  }
 }
 function gifVideoEnqueue(v){
- if(!v.isConnected||v.dataset.gifReady||v.dataset.gifLoading||v.dataset.gifFailed||gifVideoQueue.includes(v))return;
+ if(!v.isConnected||v.dataset.gifReady||v.dataset.gifLoading||v.dataset.gifFailed||v.dataset.gifSlow||gifVideoQueue.includes(v))return;
  gifVideoQueue.push(v);gifVideoPump();
 }
 const galleryVideoObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
  for(const entry of entries){const v=entry.target;
   if(entry.isIntersecting){
    v.dataset.gifVisible='1';
-   if(v.dataset.gifReady)v.play().catch(()=>{});
-   else if(!document.hidden)gifVideoEnqueue(v);
+   if(v.dataset.gifReady){gifFrameArrived(v);v.play().catch(()=>{});}
+   else if(!document.hidden){
+    if(v.dataset.gifRetryPending)delete v.dataset.gifRetryPending;
+    gifVideoEnqueue(v);
+   }
   }else {delete v.dataset.gifVisible;/* Уже загруженные GIF продолжают воспроизведение. */}
  }
 },{root:document.getElementById('galleryGrid'),rootMargin:'130px 0px',threshold:0}):null;
@@ -2733,7 +2789,8 @@ const galleryVideoObserver=('IntersectionObserver' in window)?new IntersectionOb
 document.addEventListener('visibilitychange',()=>{
  const grid=document.getElementById('galleryGrid');
  if(document.hidden){
-  for(const wrap of grid.querySelectorAll('.gallery-video-wrap'))wrap.classList.add('background-hidden');
+  // Сохраняем уже показанные кадры: скрытие страницы не должно делать их пустыми.
+  for(const wrap of grid.querySelectorAll('.gallery-video-wrap:not(.has-frame)'))wrap.classList.add('background-hidden');
   // Оставляем текущие запросы активными, останавливаем только таймеры ошибок.
   for(const video of gifVideoTimeouts.keys()){
    const cancelTimer=gifVideoTimeouts.get(video);
@@ -2752,10 +2809,12 @@ document.addEventListener('visibilitychange',()=>{
    rect.right>=area.left&&rect.left<=area.right;
   if(!visible){delete video.dataset.gifVisible;continue;}
   video.dataset.gifVisible='1';
-  if(video.dataset.gifReady){video.play().catch(()=>{});gifFrameArrived(video);}
+  if(video.dataset.gifReady||video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){video.dataset.gifReady='1';delete video.dataset.gifSlow;gifFrameArrived(video);video.play().catch(()=>{});}
   else if(!video.dataset.gifLoading){
-   if(video.dataset.gifFailed){delete video.dataset.gifFailed;video.dataset.gifRetries='0';}
-   gifVideoEnqueue(video);
+   delete video.dataset.gifRetryPending;
+   // Не повторяем загрузку «медленных» роликов — их src остаётся прежним.
+   // Повтор после реальной ошибки разрешаем лишь по новому открытию галереи.
+   if(!video.dataset.gifFailed&&!video.dataset.gifSlow)gifVideoEnqueue(video);
   }
  }
  gifVideoPump();
@@ -2801,7 +2860,13 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
    // Постер лежит под видео, поэтому даже при остановке кадров остаётся картинка.
    wrap.append(poster,video);
    getGifPoster(s.file).then(data=>{if(data&&wrap.isConnected&&!video.dataset.posterCaptured)setGifPoster(wrap,data);});
-   video.addEventListener('loadeddata',()=>captureGifPoster(video));
+   video.addEventListener('loadeddata',()=>{
+    // Может сработать уже после освобождения слота медленного видео.
+    stopGifSlowWatch(video);delete video.dataset.gifSlowSince;
+    video.dataset.gifReady='1';delete video.dataset.gifSlow;
+    gifFrameArrived(video);
+    if(!document.hidden&&video.isConnected)video.play().catch(()=>{});
+   });
    video.addEventListener('playing',()=>gifFrameArrived(video));
    if(galleryVideoObserver)galleryVideoObserver.observe(video);
    else {video.dataset.gifVisible='1';setTimeout(()=>gifVideoEnqueue(video),0);}
@@ -3377,6 +3442,40 @@ for(const [id,s] of Object.entries(SMILES)){
 }
 let activeCat='classic';let tabToken=0;
 const gallery=$('galleryGrid'),galleryTabs=$('galleryTabs'),galleryHint=$('galleryHint');
+// Держим готовую GIF-галерею в памяти при переходе в соседние разделы:
+// повторно не создаём 138 <video> и не присваиваем src заново.
+let cachedGifGallery=null;
+function saveGifGallery(){
+ if(activeCat!=='gif'||!gallery.childNodes.length)return;
+ const fragment=document.createDocumentFragment();
+ const scroll=gallery.scrollTop;
+ while(gallery.firstChild)fragment.appendChild(gallery.firstChild);
+ cachedGifGallery={fragment,scroll};
+}
+function restoreGifGallery(){
+ if(!cachedGifGallery)return false;
+ gallery.appendChild(cachedGifGallery.fragment);
+ gallery.scrollTop=cachedGifGallery.scroll;
+ cachedGifGallery=null;
+ for(const v of gallery.querySelectorAll('video[data-src]')){
+  if(galleryVideoObserver)galleryVideoObserver.observe(v);
+  if(v.dataset.gifSlow&&!gifSlowWatches.has(v))watchSlowGif(v);
+  if(v.dataset.gifReady){gifFrameArrived(v);v.play().catch(()=>{});}
+ }
+ // При возврате к сохранённым узлам запускаем очередь только для видимых.
+ requestAnimationFrame(()=>{
+  if(activeCat!=='gif')return;
+  const area=gallery.getBoundingClientRect();
+  for(const v of gallery.querySelectorAll('video[data-src]')){
+   const r=v.getBoundingClientRect();
+   if(r.bottom<area.top-130||r.top>area.bottom+130)continue;
+   v.dataset.gifVisible='1';
+   if(!v.dataset.gifReady&&!v.dataset.gifSlow)gifVideoEnqueue(v);
+  }
+  gifVideoPump();
+ });
+ return true;
+}
 // Не запускаем загрузку всех GIF при создании каталога. Сначала видимые и соседние
 // изображения; прокрученные ниже элементы начнут загружаться при приближении.
 // URL сохраняется неизменным — браузер вправе использовать HTTP-кэш при повторном открытии.
@@ -3394,9 +3493,19 @@ function prepareGalleryImage(img,url){
  // Сам URL ставится только когда элемент приблизится к видимой области каталога.
  galleryImageObserver.observe(img);
 }
-function clearGallery(){
+function clearGallery({preserveGif=false}={}){
+ if(preserveGif&&activeCat==='gif'){
+  // Наблюдатели больше не должны отслеживать временно отсоединённые элементы.
+  for(const v of gallery.querySelectorAll('video[data-src]')){
+   if(galleryVideoObserver)galleryVideoObserver.unobserve(v);
+   delete v.dataset.gifVisible;
+  }
+  saveGifGallery();
+  return;
+ }
  if(galleryImageObserver){for(const img of gallery.querySelectorAll('img[data-gallery-src]'))galleryImageObserver.unobserve(img);}
  for(const video of gallery.querySelectorAll('video')){
+  stopGifSlowWatch(video);
   const cancel=gifVideoCancels.get(video);if(cancel)cancel();
   if(galleryVideoObserver)galleryVideoObserver.unobserve(video);
   delete video.dataset.gifVisible;video.pause();
@@ -3491,10 +3600,20 @@ async function showOurGifs(){
  gallery.append(tiles);gallery.scrollTop=0;
 }
 function showTab(category){
- if(!cats[category])return;activeCat=category;
+ if(!cats[category])return;
+ const previousCat=activeCat;
+ if(previousCat==='gif'&&category!=='gif'){
+  clearGallery({preserveGif:true});
+ }
+ activeCat=category;
  for(const button of galleryTabs.querySelectorAll('button')){const active=button.dataset.category===category;button.classList.toggle('selected',active);button.setAttribute('aria-selected',String(active));}
  if(category==='ours'){showOurGifs();return;}
+ if(category==='gif'&&previousCat==='gif'&&gallery.childNodes.length){
+  // Повторное открытие уже активного раздела не должно пересоздавать ролики.
+  return;
+ }
  clearGallery();const ids=cats[category];galleryHint.textContent=ids.length+' элементов · Просмотр доступен всем. Для отправки нужен гостевой вход и разрешение сервера.';
+ if(category==='gif'&&restoreGifGallery())return;
  if(category==='animashki'){
   customElements.whenDefined('dotlottie-wc').then(()=>{if(activeCat==='animashki')galleryHint.textContent=ids.length+' анимашек · Файлы .lottie загружаются из assets/volnorez-lottie/ на GitHub Pages.';});
   setTimeout(()=>{if(activeCat==='animashki'&&!customElements.get('dotlottie-wc'))galleryHint.textContent='Проигрыватель анимашек не загрузился с CDN. Проверь интернет, блокировщики и консоль браузера.';},7000);
