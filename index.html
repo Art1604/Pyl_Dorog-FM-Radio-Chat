@@ -1650,6 +1650,20 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .chat-options-toggle:hover{background:#cacaca;border-color:#777}
 #emotesButton:active,#sendButton:not(:disabled):active,
 .chat-options-toggle:active{background:#bdbdbd}
+
+/* Навигация по вкладкам Л/С на ПК. Стрелки постоянно видны, при отсутствии переполнения неактивны. */
+@media(min-width:681px){
+ .pc-pm-nav{display:flex;align-items:stretch;flex:0 0 auto;width:100%;min-width:0;max-width:100%;background:#d3d3d3;border-bottom:1px solid #888}
+ .pc-pm-nav .chat-dialog-tabs{display:flex;flex:1 1 auto;min-width:0;width:auto;max-width:none;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;scroll-behavior:smooth;overscroll-behavior-x:contain;border:0;min-height:31px}
+ .pc-pm-nav .chat-dialog-tabs::-webkit-scrollbar{display:none}
+ .pc-pm-nav .chat-dialog-tab{flex:0 0 auto}
+ .pc-pm-nav .pc-pm-arrow{display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;min-height:31px;border:0;border-right:1px solid #aaa;border-radius:0!important;background:linear-gradient(#ededed,#c9c9c9);box-shadow:none;color:#333;font:700 22px/1 Arial,sans-serif;cursor:pointer;padding:0}
+ .pc-pm-nav .pc-pm-arrow:last-child{border-right:0;border-left:1px solid #aaa}
+ .pc-pm-nav .pc-pm-arrow:disabled{opacity:.38;cursor:default}
+ .pc-pm-nav .pc-pm-arrow:not(:disabled):hover{background:#bdbdbd}
+ .pc-pm-nav .pc-pm-arrow:focus-visible{outline:2px solid #355b7c;outline-offset:-3px}
+}
+@media(max-width:680px){.pc-pm-nav{display:contents}.pc-pm-arrow{display:none!important}}
 </style>
 </head>
 <body><div class="wrap">
@@ -1682,7 +1696,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 <div id="status" class="state" role="status">Подключение к чату…</div>
 <div class="login-strip" id="loginStrip"><div class="controls"><button id="guestLogin" disabled>Повторить гостевой вход</button><span class="muted" id="myIdentity">Не авторизован в чате</span></div></div>
 <div class="chat-grid">
-<div><div class="column-title">Сообщения <span class="count" id="msgCount" hidden></span></div><div class="chat-dialog-tabs" id="dialogTabs" role="tablist" aria-label="Чаты"><button type="button" class="chat-dialog-tab selected" data-dialog-id="common" aria-selected="true">Общий</button></div><div class="private-dialog-view" id="privateDialogView" hidden aria-live="polite"></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">Загружаем сообщения из чата Волнореза…</div></div></div>
+<div><div class="column-title">Сообщения <span class="count" id="msgCount" hidden></span></div><div class="pc-pm-nav" aria-label="Вкладки общего чата и личных сообщений"><button type="button" id="pcPmPrev" class="pc-pm-arrow" aria-label="Прокрутить вкладки влево" title="Предыдущие вкладки" disabled>‹</button><div class="chat-dialog-tabs" id="dialogTabs" role="tablist" aria-label="Общий чат и личные сообщения"><button type="button" class="chat-dialog-tab selected" data-dialog-id="common" aria-selected="true">Общий чат</button></div><button type="button" id="pcPmNext" class="pc-pm-arrow" aria-label="Прокрутить вкладки вправо" title="Следующие вкладки" disabled>›</button></div><div class="private-dialog-view" id="privateDialogView" hidden aria-live="polite"></div><div class="chatsurface" id="messages" aria-live="polite"><div class="muted">Загружаем сообщения из чата Волнореза…</div></div></div>
 <div><div class="column-title">👥 Участники <span class="count" id="userCount" hidden></span></div><div class="people" id="users"><div class="muted">Ожидание списка участников.</div></div></div>
 </div>
 <form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><div class="composer-input-wrap" id="composerInputWrap"><div id="richMessageInput" class="rich-message-input" contenteditable="false" role="textbox" aria-label="Сообщение" aria-multiline="false" data-placeholder="Автоматический вход в чат…" aria-disabled="true"></div><textarea id="messageInput" rows="1" maxlength="1000" hidden aria-hidden="true" tabindex="-1" disabled></textarea></div><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button><button type="button" data-category="ours">Наши GIF</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. GIF и анимашки загружаются из папок assets/volnorez-gifs и assets/volnorez-lottie.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
@@ -3829,4 +3843,40 @@ restorePrivateDialogsFromIndexedDB().catch(err=>{
  log('Автоподключение и автоматический гостевой вход запущены.');
 });
 })();
-</script></body></html>
+</script>
+<script id="pc-pm-arrows">
+(()=>{
+ 'use strict';
+ const tabs=document.getElementById('dialogTabs');
+ const prev=document.getElementById('pcPmPrev');
+ const next=document.getElementById('pcPmNext');
+ if(!tabs||!prev||!next)return;
+ const update=()=>{
+  const max=Math.max(0,tabs.scrollWidth-tabs.clientWidth);
+  prev.disabled=max<3||tabs.scrollLeft<=2;
+  next.disabled=max<3||tabs.scrollLeft>=max-2;
+ };
+ const scrollTabs=dir=>tabs.scrollBy({left:dir*Math.max(160,Math.round(tabs.clientWidth*.7)),behavior:'smooth'});
+ prev.addEventListener('click',()=>scrollTabs(-1));
+ next.addEventListener('click',()=>scrollTabs(1));
+ tabs.addEventListener('scroll',update,{passive:true});
+ let lastActive=null;
+ const refresh=()=>{
+  update();
+  const active=tabs.querySelector('.chat-dialog-tab[aria-selected="true"]');
+  if(active&&active!==lastActive){
+   lastActive=active;
+   const left=active.offsetLeft-tabs.offsetLeft;
+   const right=left+active.offsetWidth;
+   if(left<tabs.scrollLeft+3)tabs.scrollTo({left,behavior:'smooth'});
+   else if(right>tabs.scrollLeft+tabs.clientWidth-3)tabs.scrollTo({left:right-tabs.clientWidth,behavior:'smooth'});
+  }
+  requestAnimationFrame(update);
+ };
+ new MutationObserver(refresh).observe(tabs,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-selected']});
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(tabs);
+ else window.addEventListener('resize',update,{passive:true});
+ refresh();
+})();
+</script>
+</body></html>
