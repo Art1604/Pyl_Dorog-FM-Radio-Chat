@@ -1610,6 +1610,13 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 @media(prefers-reduced-motion:reduce){.radio-beacon::before{animation:none!important;opacity:.72}.radio-beacon.is-offline::before{opacity:.36}}
 .radio-player-shell .radio-live-note{margin-left:0}
 .radio-player-shell #radioConnectionStatus[hidden]{display:none!important}
+/* GIF v5: постер первого кадра под видео; никакого белого квадрата. */
+.gallery-video-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;width:70px;height:65px;flex:0 0 auto;overflow:hidden;background:#e4e4e4;border:1px solid #d0d0d0}
+.gallery-video-wrap .gallery-video-poster{position:absolute;inset:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;object-fit:contain;background:#e4e4e4;color:#858585;font:600 10px Arial,sans-serif;pointer-events:none}
+.gallery-video-wrap .gallery-video-poster img{width:100%;height:100%;object-fit:contain;display:block}
+.gallery-video-wrap video.smiley-media{position:relative;z-index:1;opacity:0;display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;background:transparent;transition:opacity .1s linear}
+.gallery-video-wrap.has-frame:not(.background-hidden) video.smiley-media{opacity:1}
+.gallery-video-wrap.failed .gallery-video-poster{color:#666;font-size:10px;text-align:center;padding:3px}
 </style>
 </head>
 <body><div class="wrap">
@@ -1632,7 +1639,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
   <div class="airitem" id="airTrackBox" hidden><span class="airlabel">🎵 Сейчас играет</span><span id="airTrack" class="airvalue"></span></div>
   <div class="airitem" id="airListenersBox" hidden><span class="airlabel">🎧 Слушают</span><span id="airListeners" class="airvalue"></span></div>
 </div>
-<div class="airfoot"><span id="airStatus" role="status">Информация об эфире: проверяем источник…</span><button type="button" id="refreshAir" title="Обновить сведения об эфире">Обновить сведения</button><a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener">Смотреть эфир на Волнорезе</a></div></section>
+<div class="airfoot"><span id="airStatus" role="status">Информация об эфире: проверяем источник…</span><button type="button" id="refreshAir" title="Обновить сведения об эфире">Обновить сведения</button><a href="https://volnorez.com/pyl_dorog-fm?lang=ru" target="_blank" rel="noopener">Смотреть эфир на Волнорезе</a></div></section>
 <section class="bevel"><div class="controls"><button id="connect">Подключить снова</button><button id="disconnect" disabled>Отключить</button></div>
 <div class="controls"><button id="chatOptionsToggle" type="button" class="chat-options-toggle" aria-controls="chatOptions" aria-expanded="false">⚙ Настройки чата</button></div>
 <div id="chatOptions" class="chat-options" hidden>
@@ -1647,7 +1654,7 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 </div>
 <form id="sendForm" class="send-box"><label class="muted" for="messageInput">Написать в настоящий чат Волнореза</label><div class="send-row"><div class="nick-inline" id="nickChangeRow"><label for="nickname" class="sr-only">Мой гостевой ник</label><input id="nickname" maxlength="30" placeholder="Гость…" autocomplete="nickname" title="Нажми, чтобы изменить ник. Enter или выход из поля сохраняют ник." aria-label="Мой гостевой ник" disabled><button type="button" id="saveNickname" hidden>Сохранить ник</button></div><div class="composer-input-wrap" id="composerInputWrap"><div id="richMessageInput" class="rich-message-input" contenteditable="false" role="textbox" aria-label="Сообщение" aria-multiline="false" data-placeholder="Автоматический вход в чат…" aria-disabled="true"></div><textarea id="messageInput" rows="1" maxlength="1000" hidden aria-hidden="true" tabindex="-1" disabled></textarea></div><button type="button" id="emotesButton">😊 Смайлы</button><button id="sendButton" type="submit" disabled>Отправить</button></div><div class="controls"><span class="muted" id="sendState">Автоматический вход: отправка станет доступна после подтверждения Волнореза.</span></div><section id="smilesPicker" class="gallery" hidden aria-label="Каталог смайлов Волнореза"><div class="gallery-tabs" id="galleryTabs" role="tablist" aria-label="Категория смайлов"><button type="button" data-category="classic" class="selected">Классика</button><button type="button" data-category="retro">Ретро</button><button type="button" data-category="emoji">Эмодзи</button><button type="button" data-category="stickers">Стикеры</button><button type="button" data-category="gif">GIF</button><button type="button" data-category="animashki">Анимашки</button><button type="button" data-category="ours">Наши GIF</button></div><p id="galleryHint" class="muted" aria-live="polite">Смайлы видны без входа. GIF и анимашки загружаются из папок assets/volnorez-gifs и assets/volnorez-lottie.</p><div class="gallery-grid" id="galleryGrid"></div></section><span id="nickChangeStatus" class="nick-inline-status" role="status" aria-live="polite"></span></form>
 <p class="muted" id="technicalExplanation">Неофициальный HTML5-клиент использует найденные в открытой странице станции гостевые команды <code>init_connection</code>, <code>login</code>, <code>set_nick</code> и <code>send_message</code>. Пароли и данные авторизации оригинального аккаунта не используются. Гостевой GUID, выданный этому клиенту, хранится локально для попытки восстановления гостевого входа. Отправка работает только если сервер разрешит гостевой вход и примет сообщения. Каталог доступен без входа; отправка зависит от разрешений Волнореза.</p>
-<div class="notice" id="outdatedWarning"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
+<div class="notice" id="outdatedWarning"><strong>Важно:</strong> доступ к чтению уже подтверждён тестом, но гостевая отправка ещё не проверена на живом сервере. При отказе сервера можно продолжить общение на <a href="https://volnorez.com/pyl_dorog-fm?lang=ru" target="_blank" rel="noopener noreferrer">оригинальной станции Волнореза</a>.</div>
 </section>
 <section class="bevel" id="diagnosticsSection"><div class="head"><h2>🔎 Диагностика соединения</h2><button id="copy">Скопировать журнал</button></div><div class="log" id="log" aria-live="polite"></div></section>
 <div class="footer">ПыЛь_ДоРоГ FM · HTML5-чат с гостевым входом · Неофициальный клиент</div>
@@ -2583,9 +2590,71 @@ const videoObserver=('IntersectionObserver' in window)?new IntersectionObserver(
  for(const entry of entries){const v=entry.target;
   if(entry.isIntersecting){if(!v.src)v.src=v.dataset.src||'';v.play().catch(()=>{});}
   // Не останавливаем сообщения с анимациями только из-за ухода браузера в фон.
-  else if(!document.hidden)v.pause();
+  // Не приостанавливаем уже запущенные видео при выходе из видимой области.
  }
 },{rootMargin:'100px'}):null;
+// Для GIF-видео создаём маленькие JPEG-постеры и сохраняем их в IndexedDB.
+// После первого успешного кадра превью показывается сразу при следующем визите.
+const GIF_POSTER_DB='pylfm_gif_posters_v1';
+let gifPosterDBPromise=null;
+function openGifPosterDB(){
+ if(!('indexedDB' in window))return Promise.resolve(null);
+ if(gifPosterDBPromise)return gifPosterDBPromise;
+ gifPosterDBPromise=new Promise(resolve=>{
+  try{
+   const req=indexedDB.open(GIF_POSTER_DB,1);
+   req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('posters'))req.result.createObjectStore('posters');};
+   req.onsuccess=()=>resolve(req.result);
+   req.onerror=()=>resolve(null);
+   req.onblocked=()=>resolve(null);
+  }catch{resolve(null);}
+ });
+ return gifPosterDBPromise;
+}
+async function getGifPoster(key){
+ try{
+  const db=await openGifPosterDB();if(!db)return null;
+  return await new Promise(resolve=>{const req=db.transaction('posters','readonly').objectStore('posters').get(key);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>resolve(null);});
+ }catch{return null;}
+}
+async function saveGifPoster(key,data){
+ try{const db=await openGifPosterDB();if(!db)return;
+  const tx=db.transaction('posters','readwrite');tx.objectStore('posters').put(data,key);
+ }catch{}
+}
+function setGifPoster(wrap,data){
+ if(!wrap?.isConnected||!data)return;
+ const host=wrap.querySelector('.gallery-video-poster');if(!host)return;
+ const img=document.createElement('img');img.alt='';img.decoding='async';img.src=data;
+ host.replaceChildren(img);
+}
+function captureGifPoster(video){
+ const wrap=video.closest('.gallery-video-wrap');
+ if(!wrap||video.dataset.posterCaptured||!video.videoWidth||!video.videoHeight)return;
+ try{
+  const canvas=document.createElement('canvas');canvas.width=96;canvas.height=90;
+  const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
+  ctx.fillStyle='#e4e4e4';ctx.fillRect(0,0,96,90);
+  const scale=Math.min(96/video.videoWidth,90/video.videoHeight);
+  const width=video.videoWidth*scale,height=video.videoHeight*scale;
+  ctx.drawImage(video,(96-width)/2,(90-height)/2,width,height);
+  const data=canvas.toDataURL('image/jpeg',.7);
+  video.dataset.posterCaptured='1';setGifPoster(wrap,data);
+  saveGifPoster(video.dataset.posterKey,data);
+ }catch{} // Неудача чтения Canvas не мешает воспроизведению MP4.
+}
+function showGifFrame(video){
+ const wrap=video.closest('.gallery-video-wrap');if(!wrap)return;
+ captureGifPoster(video);
+ if(!document.hidden){wrap.classList.add('has-frame');wrap.classList.remove('background-hidden');}
+}
+function gifFrameArrived(video){
+ if(!video.isConnected)return;
+ if('requestVideoFrameCallback' in video){
+  try{video.requestVideoFrameCallback(()=>showGifFrame(video));return;}catch{}
+ }
+ showGifFrame(video);
+}
 const GIF_VIDEO_LIMIT=5;
 let gifVideoLoading=0;
 const gifVideoQueue=[];
@@ -2615,7 +2684,8 @@ function gifVideoPump(){
   const ready=()=>{
    if(!finish())return;
    v.dataset.gifReady='1';
-   if(!document.hidden&&v.dataset.gifVisible&&v.isConnected)v.play().catch(()=>{});
+   captureGifPoster(v);
+   if(!document.hidden&&v.isConnected)v.play().catch(()=>{});
   };
   const fail=()=>{
    if(!finish()||!v.isConnected)return;
@@ -2626,6 +2696,8 @@ function gifVideoPump(){
     setTimeout(()=>{if(v.isConnected&&v.dataset.gifVisible&&!document.hidden)gifVideoEnqueue(v);},800*(count+1));
    }else{
     v.dataset.gifFailed='1';
+    const wrap=v.closest('.gallery-video-wrap');
+    if(wrap){wrap.classList.add('failed');if(!wrap.querySelector('.gallery-video-poster img'))wrap.querySelector('.gallery-video-poster').textContent='GIF недоступен';}
     v.title='Не удалось загрузить анимацию. Нажмите для выбора GIF';
    }
   };
@@ -2652,7 +2724,7 @@ const galleryVideoObserver=('IntersectionObserver' in window)?new IntersectionOb
    v.dataset.gifVisible='1';
    if(v.dataset.gifReady)v.play().catch(()=>{});
    else if(!document.hidden)gifVideoEnqueue(v);
-  }else if(!document.hidden){delete v.dataset.gifVisible;v.pause();}
+  }else {delete v.dataset.gifVisible;/* Уже загруженные GIF продолжают воспроизведение. */}
  }
 },{root:document.getElementById('galleryGrid'),rootMargin:'130px 0px',threshold:0}):null;
 // В фоне не сбрасываем src и не останавливаем анимацию принудительно.
@@ -2661,6 +2733,7 @@ const galleryVideoObserver=('IntersectionObserver' in window)?new IntersectionOb
 document.addEventListener('visibilitychange',()=>{
  const grid=document.getElementById('galleryGrid');
  if(document.hidden){
+  for(const wrap of grid.querySelectorAll('.gallery-video-wrap'))wrap.classList.add('background-hidden');
   // Оставляем текущие запросы активными, останавливаем только таймеры ошибок.
   for(const video of gifVideoTimeouts.keys()){
    const cancelTimer=gifVideoTimeouts.get(video);
@@ -2677,9 +2750,9 @@ document.addEventListener('visibilitychange',()=>{
   const visible=area.width>0&&area.height>0&&rect.width>0&&rect.height>0&&
    rect.bottom>=area.top-130&&rect.top<=area.bottom+130&&
    rect.right>=area.left&&rect.left<=area.right;
-  if(!visible){delete video.dataset.gifVisible;video.pause();continue;}
+  if(!visible){delete video.dataset.gifVisible;continue;}
   video.dataset.gifVisible='1';
-  if(video.dataset.gifReady){video.play().catch(()=>{});}
+  if(video.dataset.gifReady){video.play().catch(()=>{});gifFrameArrived(video);}
   else if(!video.dataset.gifLoading){
    if(video.dataset.gifFailed){delete video.dataset.gifFailed;video.dataset.gifRetries='0';}
    gifVideoEnqueue(video);
@@ -2722,8 +2795,17 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
   video.dataset.src=s.file;video.loop=true;video.preload=inGallery?'none':'metadata';video.muted=true;
   video.playsInline=true;video.setAttribute('playsinline','');video.setAttribute('aria-label','Анимация '+id);
   if(inGallery){
+   const wrap=document.createElement('span');wrap.className='gallery-video-wrap';
+   const poster=document.createElement('span');poster.className='gallery-video-poster';poster.textContent='GIF';
+   video.dataset.posterKey=s.file;
+   // Постер лежит под видео, поэтому даже при остановке кадров остаётся картинка.
+   wrap.append(poster,video);
+   getGifPoster(s.file).then(data=>{if(data&&wrap.isConnected&&!video.dataset.posterCaptured)setGifPoster(wrap,data);});
+   video.addEventListener('loadeddata',()=>captureGifPoster(video));
+   video.addEventListener('playing',()=>gifFrameArrived(video));
    if(galleryVideoObserver)galleryVideoObserver.observe(video);
    else {video.dataset.gifVisible='1';setTimeout(()=>gifVideoEnqueue(video),0);}
+   return wrap;
   }else{
    video.addEventListener('error',()=>{const fallback=document.createElement('span');fallback.className='gallery-fallback';fallback.textContent='Анимация %'+id+'% недоступна';video.replaceWith(fallback);});
    if(videoObserver)videoObserver.observe(video);
