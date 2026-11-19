@@ -1619,9 +1619,9 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
     <h1>ПыЛь_ДоРоГ FM</h1>
   </div>
   <nav class="radio-header-links" aria-label="Ссылки радиостанции">
-    <a href="https://m.volnorez.com/pyl_dorog-fm" target="_blank" rel="noopener noreferrer">Мобильная</a>
+    <a href="https://m.volnorez.com/pyl_dorog-fm?lang=ru" target="_blank" rel="noopener noreferrer">Мобильная</a>
     <span aria-hidden="true" class="radio-header-divider">|</span>
-    <a href="https://www.volnorez.com/pyl_dorog-fm/" target="_blank" rel="noopener noreferrer">ПК-версия</a>
+    <a href="https://volnorez.com/pyl_dorog-fm?lang=ru" target="_blank" rel="noopener noreferrer">ПК-версия</a>
     <span aria-hidden="true" class="radio-header-divider">|</span>
     <a href="https://vk.com/club227352123" target="_blank" rel="noopener noreferrer">Группа ВК</a>
   </nav>
@@ -2582,34 +2582,63 @@ const retryDelays=[2000,4000,8000,15000,30000];
 const videoObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
  for(const entry of entries){const v=entry.target;
   if(entry.isIntersecting){if(!v.src)v.src=v.dataset.src||'';v.play().catch(()=>{});}
-  else v.pause();
+  // Не останавливаем сообщения с анимациями только из-за ухода браузера в фон.
+  else if(!document.hidden)v.pause();
  }
 },{rootMargin:'100px'}):null;
 const GIF_VIDEO_LIMIT=5;
 let gifVideoLoading=0;
 const gifVideoQueue=[];
+const gifVideoCancels=new Map();
+const gifVideoTimeouts=new Map();
 function gifVideoPump(){
+ // Фоновая вкладка не должна расходовать время на загрузку и декодирование.
+ if(document.hidden)return;
  while(gifVideoLoading<GIF_VIDEO_LIMIT&&gifVideoQueue.length){
   const v=gifVideoQueue.shift();
-  if(!v.isConnected||!v.dataset.gifVisible||v.dataset.gifReady||v.dataset.gifLoading)continue;
+  if(!v.isConnected||!v.dataset.gifVisible||v.dataset.gifReady||v.dataset.gifLoading||v.dataset.gifFailed)continue;
   gifVideoLoading++;v.dataset.gifLoading='1';
-  const complete=()=>{if(!v.dataset.gifLoading)return;delete v.dataset.gifLoading;gifVideoLoading=Math.max(0,gifVideoLoading-1);gifVideoPump();};
-  let timeout;
+  let timeout,finished=false;
   const listeners=new AbortController();
-  const finish=()=>{clearTimeout(timeout);listeners.abort();complete();};
-  const ready=()=>{v.dataset.gifReady='1';finish();if(v.dataset.gifVisible&&v.isConnected)v.play().catch(()=>{});};
+  const finish=()=>{
+   if(finished)return false;
+   finished=true;clearTimeout(timeout);gifVideoTimeouts.delete(v);listeners.abort();gifVideoCancels.delete(v);
+   delete v.dataset.gifLoading;
+   gifVideoLoading=Math.max(0,gifVideoLoading-1);
+   gifVideoPump();return true;
+  };
+  // Отмена нужна при удалении элемента из каталога, но не при смене вкладки браузера.
+  gifVideoCancels.set(v,()=>{
+   if(!finish())return;
+   v.removeAttribute('src');v.load();
+  });
+  const ready=()=>{
+   if(!finish())return;
+   v.dataset.gifReady='1';
+   if(!document.hidden&&v.dataset.gifVisible&&v.isConnected)v.play().catch(()=>{});
+  };
   const fail=()=>{
-   finish();
-   if(!v.isConnected)return;
+   if(!finish()||!v.isConnected)return;
    const count=Number(v.dataset.gifRetries||0);
-   if(count<2){v.dataset.gifRetries=String(count+1);v.removeAttribute('src');v.load();
-    setTimeout(()=>{if(v.isConnected&&v.dataset.gifVisible)gifVideoEnqueue(v);},800*(count+1));
-   }else{v.dataset.gifFailed='1';v.title='Не удалось загрузить анимацию. Нажмите для выбора GIF';}
+   if(count<2){
+    v.dataset.gifRetries=String(count+1);
+    v.removeAttribute('src');v.load();
+    setTimeout(()=>{if(v.isConnected&&v.dataset.gifVisible&&!document.hidden)gifVideoEnqueue(v);},800*(count+1));
+   }else{
+    v.dataset.gifFailed='1';
+    v.title='Не удалось загрузить анимацию. Нажмите для выбора GIF';
+   }
   };
   v.addEventListener('loadeddata',ready,{once:true,signal:listeners.signal});
   v.addEventListener('error',fail,{once:true,signal:listeners.signal});
-  timeout=setTimeout(()=>{if(!v.dataset.gifReady)fail();},16000);
-  // Установка src только после получения слота предотвращает массовую загрузку.
+  // В фоновой вкладке таймер не считает задержку браузера ошибкой загрузки.
+  const armTimeout=()=>{
+   clearTimeout(timeout);
+   if(finished||document.hidden)return;
+   timeout=setTimeout(()=>{if(!finished&&!document.hidden&&!v.dataset.gifReady)fail();},16000);
+  };
+  gifVideoTimeouts.set(v,armTimeout);
+  armTimeout();
   v.src=v.dataset.src;v.load();
  }
 }
@@ -2619,10 +2648,53 @@ function gifVideoEnqueue(v){
 }
 const galleryVideoObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
  for(const entry of entries){const v=entry.target;
-  if(entry.isIntersecting){v.dataset.gifVisible='1';if(v.dataset.gifReady)v.play().catch(()=>{});else gifVideoEnqueue(v);}
-  else{delete v.dataset.gifVisible;v.pause();}
+  if(entry.isIntersecting){
+   v.dataset.gifVisible='1';
+   if(v.dataset.gifReady)v.play().catch(()=>{});
+   else if(!document.hidden)gifVideoEnqueue(v);
+  }else if(!document.hidden){delete v.dataset.gifVisible;v.pause();}
  }
 },{root:document.getElementById('galleryGrid'),rootMargin:'130px 0px',threshold:0}):null;
+// В фоне не сбрасываем src и не останавливаем анимацию принудительно.
+// Браузер может самостоятельно заморозить видео, поэтому при возврате
+// мягко возобновляем видимые ролики без повторного скачивания.
+document.addEventListener('visibilitychange',()=>{
+ const grid=document.getElementById('galleryGrid');
+ if(document.hidden){
+  // Оставляем текущие запросы активными, останавливаем только таймеры ошибок.
+  for(const video of gifVideoTimeouts.keys()){
+   const cancelTimer=gifVideoTimeouts.get(video);
+   // armTimeout при document.hidden снимает уже запущенный таймер.
+   if(cancelTimer)cancelTimer();
+  }
+  return;
+ }
+ // Перезапускаем ожидание первого кадра для незавершённых запросов.
+ for(const rearm of gifVideoTimeouts.values())rearm();
+ const area=grid.getBoundingClientRect();
+ for(const video of grid.querySelectorAll('video[data-src]')){
+  const rect=video.getBoundingClientRect();
+  const visible=area.width>0&&area.height>0&&rect.width>0&&rect.height>0&&
+   rect.bottom>=area.top-130&&rect.top<=area.bottom+130&&
+   rect.right>=area.left&&rect.left<=area.right;
+  if(!visible){delete video.dataset.gifVisible;video.pause();continue;}
+  video.dataset.gifVisible='1';
+  if(video.dataset.gifReady){video.play().catch(()=>{});}
+  else if(!video.dataset.gifLoading){
+   if(video.dataset.gifFailed){delete video.dataset.gifFailed;video.dataset.gifRetries='0';}
+   gifVideoEnqueue(video);
+  }
+ }
+ gifVideoPump();
+ // Видео в сообщениях тоже возобновляем без сброса src.
+ for(const video of document.querySelectorAll('#messages video[data-src], #privateDialogView video[data-src]')){
+  const rect=video.getBoundingClientRect();
+  if(rect.width&&rect.height&&rect.bottom>0&&rect.top<window.innerHeight){
+   if(!video.src)video.src=video.dataset.src;
+   video.play().catch(()=>{});
+  }
+ }
+});
 
 const clock=()=>new Date().toLocaleTimeString('ru-RU',{hour12:false});
 function log(t){E.log.textContent+=`[${clock()}] ${t}\n`;if(E.log.textContent.length>12000)E.log.textContent=E.log.textContent.slice(-9000);E.log.scrollTop=E.log.scrollHeight;}
@@ -3243,6 +3315,7 @@ function prepareGalleryImage(img,url){
 function clearGallery(){
  if(galleryImageObserver){for(const img of gallery.querySelectorAll('img[data-gallery-src]'))galleryImageObserver.unobserve(img);}
  for(const video of gallery.querySelectorAll('video')){
+  const cancel=gifVideoCancels.get(video);if(cancel)cancel();
   if(galleryVideoObserver)galleryVideoObserver.unobserve(video);
   delete video.dataset.gifVisible;video.pause();
   video.removeAttribute('src');video.load();
