@@ -2496,7 +2496,7 @@ function finishPendingMessage(ack){
  clearTimeout(pendingMessage.timeout);
  pendingMessage=null;pending=false;updateButtons();
  // Do not erase new edits typed while awaiting a reply.
- if(activeDialog===(pendingMessageDialog||'common')&&E.input.value===sentText){composerClear();}
+ if(activeDialog===(pendingMessageDialog||'common')&&composerText().trim()===sentText){composerClear();}
  pendingMessageDialog=null;
  note(ack==='add_msg'?'✅ Сообщение доставлено в чат Волнореза.':'✅ Сообщение принято Волнорезом.','send-good');
 }
@@ -2906,7 +2906,7 @@ function composerText(){
   if(node.nodeType===Node.TEXT_NODE){result+=node.nodeValue||'';return;}
   if(node.nodeType!==Node.ELEMENT_NODE)return;
   if(node.dataset?.smileId){result+='%'+node.dataset.smileId+'%';return;}
-  if(node.dataset?.ourGifId){result+='pylgif:'+node.dataset.ourGifId;return;}
+  if(node.dataset?.ourGifId){if(/pylgif:\d{3,6}$/.test(result))result+=' ';result+='pylgif:'+node.dataset.ourGifId;return;}
   if(node.tagName==='BR'){result+=' ';return;}
   for(const child of node.childNodes)walk(child);
  }
@@ -2982,7 +2982,7 @@ richEditor.addEventListener('input',()=>{
  if(E.input.value.length>1000)note('Максимум 1000 символов. Удали лишнее перед отправкой.','send-error');
 });
 function appendRich(target,value){
- const str=safe(value,3500),regex=/%(\d{1,4})%|pylgif:(\d{3,6})(?![\w])/g;
+ const str=safe(value,3500),regex=/%(\d{1,4})%|pylgif:(\d{3,6})(?=pylgif:|[^\w]|$)/g;
  let p=0,m;
  while((m=regex.exec(str))){
   if(m.index>p)target.append(document.createTextNode(str.slice(p,m.index)));
