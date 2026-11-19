@@ -2577,12 +2577,53 @@ function notifyIfPrivate(payload,cmd){
 }
 
 const retryDelays=[2000,4000,8000,15000,30000];
+// Медиа в чате используют прежний механизм. Галерея MP4 имеет свой
+// наблюдатель и ограниченную очередь загрузки, чтобы не декодировать 138 роликов сразу.
 const videoObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
  for(const entry of entries){const v=entry.target;
   if(entry.isIntersecting){if(!v.src)v.src=v.dataset.src||'';v.play().catch(()=>{});}
   else v.pause();
  }
 },{rootMargin:'100px'}):null;
+const GIF_VIDEO_LIMIT=5;
+let gifVideoLoading=0;
+const gifVideoQueue=[];
+function gifVideoPump(){
+ while(gifVideoLoading<GIF_VIDEO_LIMIT&&gifVideoQueue.length){
+  const v=gifVideoQueue.shift();
+  if(!v.isConnected||!v.dataset.gifVisible||v.dataset.gifReady||v.dataset.gifLoading)continue;
+  gifVideoLoading++;v.dataset.gifLoading='1';
+  const complete=()=>{if(!v.dataset.gifLoading)return;delete v.dataset.gifLoading;gifVideoLoading=Math.max(0,gifVideoLoading-1);gifVideoPump();};
+  let timeout;
+  const listeners=new AbortController();
+  const finish=()=>{clearTimeout(timeout);listeners.abort();complete();};
+  const ready=()=>{v.dataset.gifReady='1';finish();if(v.dataset.gifVisible&&v.isConnected)v.play().catch(()=>{});};
+  const fail=()=>{
+   finish();
+   if(!v.isConnected)return;
+   const count=Number(v.dataset.gifRetries||0);
+   if(count<2){v.dataset.gifRetries=String(count+1);v.removeAttribute('src');v.load();
+    setTimeout(()=>{if(v.isConnected&&v.dataset.gifVisible)gifVideoEnqueue(v);},800*(count+1));
+   }else{v.dataset.gifFailed='1';v.title='Не удалось загрузить анимацию. Нажмите для выбора GIF';}
+  };
+  v.addEventListener('loadeddata',ready,{once:true,signal:listeners.signal});
+  v.addEventListener('error',fail,{once:true,signal:listeners.signal});
+  timeout=setTimeout(()=>{if(!v.dataset.gifReady)fail();},16000);
+  // Установка src только после получения слота предотвращает массовую загрузку.
+  v.src=v.dataset.src;v.load();
+ }
+}
+function gifVideoEnqueue(v){
+ if(!v.isConnected||v.dataset.gifReady||v.dataset.gifLoading||v.dataset.gifFailed||gifVideoQueue.includes(v))return;
+ gifVideoQueue.push(v);gifVideoPump();
+}
+const galleryVideoObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
+ for(const entry of entries){const v=entry.target;
+  if(entry.isIntersecting){v.dataset.gifVisible='1';if(v.dataset.gifReady)v.play().catch(()=>{});else gifVideoEnqueue(v);}
+  else{delete v.dataset.gifVisible;v.pause();}
+ }
+},{root:document.getElementById('galleryGrid'),rootMargin:'130px 0px',threshold:0}):null;
+
 const clock=()=>new Date().toLocaleTimeString('ru-RU',{hour12:false});
 function log(t){E.log.textContent+=`[${clock()}] ${t}\n`;if(E.log.textContent.length>12000)E.log.textContent=E.log.textContent.slice(-9000);E.log.scrollTop=E.log.scrollHeight;}
 function info(t,cls=''){E.status.className='state'+(cls?' '+cls:'');E.status.textContent=t;log(t);}
@@ -2606,11 +2647,16 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
  }
  if(s.kind==='mp4'){
   const video=document.createElement('video');video.className='smiley-media';
-  video.dataset.src=s.file;video.loop=true;video.preload='metadata';video.muted=true;
+  video.dataset.src=s.file;video.loop=true;video.preload=inGallery?'none':'metadata';video.muted=true;
   video.playsInline=true;video.setAttribute('playsinline','');video.setAttribute('aria-label','Анимация '+id);
-  video.addEventListener('error',()=>{const fallback=document.createElement('span');fallback.className='gallery-fallback';fallback.textContent=inGallery?'Анимация недоступна':'Анимация %'+id+'% недоступна';video.replaceWith(fallback);});
-  if(videoObserver)videoObserver.observe(video);
-  else {video.src=s.file;video.play().catch(()=>{});}
+  if(inGallery){
+   if(galleryVideoObserver)galleryVideoObserver.observe(video);
+   else {video.dataset.gifVisible='1';setTimeout(()=>gifVideoEnqueue(video),0);}
+  }else{
+   video.addEventListener('error',()=>{const fallback=document.createElement('span');fallback.className='gallery-fallback';fallback.textContent='Анимация %'+id+'% недоступна';video.replaceWith(fallback);});
+   if(videoObserver)videoObserver.observe(video);
+   else {video.src=s.file;video.play().catch(()=>{});}
+  }
   return video;
  }
  if(s.cls){const el=document.createElement('span');el.className='smiley msg-smile '+s.cls;el.title='Смайл '+id;el.setAttribute('role','img');el.setAttribute('aria-label','Смайл '+id);return el;}
@@ -3196,6 +3242,12 @@ function prepareGalleryImage(img,url){
 }
 function clearGallery(){
  if(galleryImageObserver){for(const img of gallery.querySelectorAll('img[data-gallery-src]'))galleryImageObserver.unobserve(img);}
+ for(const video of gallery.querySelectorAll('video')){
+  if(galleryVideoObserver)galleryVideoObserver.unobserve(video);
+  delete video.dataset.gifVisible;video.pause();
+  video.removeAttribute('src');video.load();
+ }
+ gifVideoQueue.length=0;
  gallery.replaceChildren();
 }
 
