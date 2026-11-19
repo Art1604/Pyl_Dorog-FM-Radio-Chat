@@ -1618,6 +1618,39 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .gallery-video-wrap.has-frame:not(.background-hidden) video.smiley-media{opacity:1}
 .gallery-video-wrap.failed .gallery-video-poster{color:#666;font-size:10px;text-align:center;padding:3px}
 </style>
+<style id="radio-chat-polish-v1">
+/* ПыЛь_ДоРоГ FM: согласованная палитра ников и минимальная полировка чата.
+   Роли берём из существующих классов, присвоенных по ответу сервера. */
+:root{--nick-listener:#444444;--nick-dj:#56704A;--nick-owner:#355B7C;--nick-moderator:#784C68}
+/* И в ленте, и в списке участников цвет относится только к имени. */
+.chatsurface .msg .nick-action.role-guest,
+.chatsurface .msg .nick-action.role-auth,
+.people .person .person-action.role-guest,
+.people .person .person-action.role-auth{color:var(--nick-listener)!important;font-weight:400!important}
+.chatsurface .msg .nick-action.role-dj,
+.people .person .person-action.role-dj{color:var(--nick-dj)!important;font-weight:700!important}
+.chatsurface .msg .nick-action.role-owner,
+.people .person .person-action.role-owner{color:var(--nick-owner)!important;font-weight:700!important}
+.chatsurface .msg .nick-action.role-moderator,
+.people .person .person-action.role-moderator{color:var(--nick-moderator)!important;font-weight:700!important}
+/* При наведении не подменяем ролевой цвет; обозначаем ссылку подчёркиванием. */
+.chatsurface .msg .nick-action:hover,
+.people .person .person-action:hover{text-decoration:underline!important;text-underline-offset:2px}
+/* Тонкие, спокойные разделители участников. */
+.people .person{border-bottom:1px solid #e1e1e1!important}
+.people .person:hover{background:#eeeeee!important}
+.people .person.local-blocked:hover{background:#eeeeee!important}
+/* Чёткое выделение активной вкладки общего чата и личных сообщений. */
+.chat-dialog-tabs{border-bottom:1px solid #888;background:#d3d3d3}
+.chat-dialog-tab{background:#d4d4d4;border-right:1px solid #b0b0b0;color:#4b4b4b}
+.chat-dialog-tab.selected,.chat-dialog-tab[aria-selected="true"]{background:#ffffff!important;color:#242424!important;font-weight:700;border-bottom:2px solid #ffffff;box-shadow:inset 0 2px 0 #737373}
+.chat-dialog-tab:not(.selected):hover{background:#e2e2e2}
+/* Лёгкая обратная связь на кнопках без изменения размеров и прямых углов. */
+#emotesButton:hover,#sendButton:not(:disabled):hover,
+.chat-options-toggle:hover{background:#cacaca;border-color:#777}
+#emotesButton:active,#sendButton:not(:disabled):active,
+.chat-options-toggle:active{background:#bdbdbd}
+</style>
 </head>
 <body><div class="wrap">
 <header class="bevel head radio-header">
