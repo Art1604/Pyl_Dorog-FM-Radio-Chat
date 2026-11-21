@@ -1653,6 +1653,10 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 .chat-options-toggle:active{background:#bdbdbd}
 </style>
 
+<style id="mobile-gif-chat-repair">
+/* Только GIF внутри сообщений: нейтральная кнопка повторной загрузки. */
+.chatsurface .chat-gif-retry,.private-dialog-view .chat-gif-retry{display:inline-block;vertical-align:middle;margin:3px;padding:6px 9px;font:12px Arial,sans-serif;background:#e5e5e5;border:1px solid #aaa;color:#555;box-shadow:none}
+</style>
 <style id="mobile-radio-theme">
 /* Мобильная версия: изолированное оформление на основе рабочего ПК-клиента. */
 body.mobile-site{background:#c9c9c9;color:#252525;min-width:0}
@@ -3035,7 +3039,53 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
    setTimeout(()=>gifVideoEnqueue(video),0);
    return wrap;
   }else{
-   video.addEventListener('error',()=>{const fallback=document.createElement('span');fallback.className='gallery-fallback';fallback.textContent='Анимация %'+id+'% недоступна';video.replaceWith(fallback);});
+   // MP4 внутри сообщений: временный сбой загрузки не уничтожает <video>.
+   // На мобильных браузерах много одновременных роликов иногда дают error;
+   // сохраняем элемент и пробуем повторно, не затрагивая галерею GIF.
+   const CHAT_GIF_RETRY_DELAYS=[2000,5000,11000];
+   let chatGifRetries=0;
+   let chatGifRetryTimer=null;
+   let chatGifErrorLabel=null;
+   const clearChatGifError=()=>{
+    video.dataset.chatGifFailed='';
+    if(chatGifErrorLabel){chatGifErrorLabel.remove();chatGifErrorLabel=null;}
+    video.style.display='';
+   };
+   const startChatGif=()=>{
+    if(!video.isConnected)return;
+    if(document.hidden){chatGifRetryTimer=setTimeout(startChatGif,4000);return;}
+    video.removeAttribute('src');
+    video.load();
+    video.src=video.dataset.src;
+    video.load();
+    video.play().catch(()=>{});
+   };
+   video.addEventListener('loadeddata',()=>{
+    if(chatGifRetryTimer!==null){clearTimeout(chatGifRetryTimer);chatGifRetryTimer=null;}
+    chatGifRetries=0;clearChatGifError();
+    video.play().catch(()=>{});
+   });
+   video.addEventListener('error',()=>{
+    if(!video.isConnected)return;
+    if(chatGifRetryTimer!==null)return;
+    if(chatGifRetries<CHAT_GIF_RETRY_DELAYS.length){
+     const delay=CHAT_GIF_RETRY_DELAYS[chatGifRetries++];
+     chatGifRetryTimer=setTimeout(()=>{chatGifRetryTimer=null;startChatGif();},delay);
+     return;
+    }
+    // Оставляем пользователю ручное восстановление без F5.
+    video.dataset.chatGifFailed='1';video.style.display='none';
+    if(!chatGifErrorLabel){
+     chatGifErrorLabel=document.createElement('button');
+     chatGifErrorLabel.type='button';chatGifErrorLabel.className='gallery-fallback chat-gif-retry';
+     chatGifErrorLabel.textContent='GIF %'+id+'%: повторить загрузку';
+     chatGifErrorLabel.title='Повторить загрузку анимации без обновления страницы';
+     chatGifErrorLabel.addEventListener('click',()=>{
+      chatGifRetries=0;clearChatGifError();startChatGif();
+     });
+     video.after(chatGifErrorLabel);
+    }
+   });
    if(videoObserver)videoObserver.observe(video);
    else {video.src=s.file;video.play().catch(()=>{});}
   }
