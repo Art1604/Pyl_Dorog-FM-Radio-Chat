@@ -3071,6 +3071,7 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
   const video=document.createElement('video');video.className='smiley-media';
   video.dataset.src=s.file;video.loop=true;video.preload=inGallery?'none':'metadata';video.muted=true;
   video.playsInline=true;video.setAttribute('playsinline','');video.setAttribute('aria-label','Анимация '+id);
+  video.autoplay=true;video.setAttribute('autoplay','');
   if(inGallery){
    const wrap=document.createElement('span');wrap.className='gallery-video-wrap';
    const poster=document.createElement('span');poster.className='gallery-video-poster';poster.textContent='GIF';
@@ -3121,17 +3122,19 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
      }catch{} // Постер не должен мешать самому MP4.
     }
    };
-   let awaitingFirstFrame=false;
+   // Не ждём requestVideoFrameCallback бесконечно: некоторые Android-браузеры
+   // не вызывают его для muted MP4, хотя видео уже декодировано и играет.
+   let firstFrameFallback=null;
    const revealWhenPainted=()=>{
-    if(!video.isConnected||chatWrap.classList.contains('has-frame')||awaitingFirstFrame)return;
-    if(typeof video.requestVideoFrameCallback==='function'){
-     try{
-      awaitingFirstFrame=true;
-      video.requestVideoFrameCallback(()=>{awaitingFirstFrame=false;revealFrame();});
-      return;
-     }catch{awaitingFirstFrame=false;}
-    }
-    revealFrame();
+    if(!video.isConnected||chatWrap.classList.contains('has-frame'))return;
+    if(video.readyState<HTMLMediaElement.HAVE_CURRENT_DATA)return;
+    // loadeddata означает, что текущий видеокадр действительно доступен.
+    // Дать браузеру один цикл отрисовки и показать живое видео над постером.
+    if(firstFrameFallback!==null)return;
+    firstFrameFallback=setTimeout(()=>{
+     firstFrameFallback=null;
+     if(video.isConnected&&video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA)revealFrame();
+    },120);
    };
    // Готовые ролики сохраняются, а проблемные восстанавливаются отдельно.
    const delays=[4000,9000,18000,30000];
@@ -3145,12 +3148,17 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
    const releasePending=()=>{
     if(retryTimer!==null){clearTimeout(retryTimer);retryTimer=null;}
    };
+   const resumeChatGif=()=>{
+    if(!video.isConnected||document.hidden||video.error)return;
+    // Не вызываем load() для уже загруженного GIF: он продолжает с того же места.
+    if(video.paused){const result=video.play();if(result?.catch)result.catch(()=>{});}
+   };
    const playExisting=()=>{
     if(!video.isConnected)return;
     if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){
      clearFailure();retries=0;releasePending();
      revealWhenPainted();
-     if(!document.hidden)video.play().catch(()=>{});
+     resumeChatGif();
     }
    };
    const attempt=()=>{
@@ -3163,7 +3171,11 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
    };
    video.__chatGifStart=attempt;
    video.addEventListener('loadeddata',playExisting);
-   video.addEventListener('playing',playExisting);
+   video.addEventListener('canplay',playExisting);
+   video.addEventListener('playing',revealWhenPainted);
+   // На Android после первого кадра воспроизведение иногда остаётся на паузе.
+   // Пробуем возобновить без повторного скачивания при возврате в чат.
+   video.addEventListener('pause',()=>{if(!document.hidden&&video.isConnected&&video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){setTimeout(resumeChatGif,450);}});
    video.addEventListener('error',()=>{
     if(!video.isConnected)return;
     if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){playExisting();return;}
