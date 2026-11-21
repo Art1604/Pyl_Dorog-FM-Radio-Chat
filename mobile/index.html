@@ -1657,6 +1657,14 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 /* Только GIF внутри сообщений: нейтральная кнопка повторной загрузки. */
 .chatsurface .chat-gif-retry,.private-dialog-view .chat-gif-retry{display:inline-block;vertical-align:middle;margin:3px;padding:6px 9px;font:12px Arial,sans-serif;background:#e5e5e5;border:1px solid #aaa;color:#555;box-shadow:none}
 </style>
+<style id="mobile-composer-gif-stability">
+/* Устойчивый предпросмотр MP4 в строке сообщения на смартфоне. */
+#sendForm .rich-smile .composer-gif-thumb{display:inline-flex;position:relative;width:27px;height:27px;align-items:center;justify-content:center;overflow:hidden;background:#e8e8e8;vertical-align:middle}
+#sendForm .rich-smile .composer-gif-poster{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 9px Arial,sans-serif;color:#6a6a6a}
+#sendForm .rich-smile .composer-gif-poster img{width:100%;height:100%;object-fit:contain;display:block}
+#sendForm .rich-smile video.composer-gif-video{position:relative;z-index:1;display:block;width:27px!important;height:27px!important;max-width:27px!important;max-height:27px!important;object-fit:contain;opacity:0;background:transparent}
+#sendForm .rich-smile .composer-gif-thumb.composer-gif-ready video.composer-gif-video{opacity:1}
+</style>
 <style id="mobile-radio-theme">
 /* Мобильная версия: изолированное оформление на основе рабочего ПК-клиента. */
 body.mobile-site{background:#c9c9c9;color:#252525;min-width:0}
@@ -3113,10 +3121,45 @@ function composerText(){
 }
 function refreshComposerSmilePreview(){E.input.value=composerText();}
 function composerClear(){richEditor.replaceChildren();refreshComposerSmilePreview();}
+// Миниатюра MP4 внутри редактора независима от очереди видео в ленте чата.
+// Отправляемый протокол остаётся прежним: dataset.smileId -> %id%.
+function makeComposerGifPreview(id,file){
+ const holder=document.createElement('span');holder.className='composer-gif-thumb';
+ const poster=document.createElement('span');poster.className='composer-gif-poster';poster.textContent='GIF';
+ const video=document.createElement('video');
+ video.className='composer-gif-video';video.muted=true;video.loop=true;video.playsInline=true;
+ video.setAttribute('playsinline','');video.setAttribute('aria-hidden','true');
+ video.preload='metadata';video.disablePictureInPicture=true;
+ // Если этот GIF уже просматривали в галерее, покажем сохранённый первый кадр.
+ getGifPoster(file).then(data=>{
+  if(!data||!holder.isConnected)return;
+  const img=document.createElement('img');img.src=data;img.alt='';poster.replaceChildren(img);
+ });
+ let failures=0;
+ const begin=()=>{
+  if(!holder.isConnected)return;
+  video.src=file;video.load();video.play().catch(()=>{});
+ };
+ const show=()=>{holder.classList.add('composer-gif-ready');video.play().catch(()=>{});};
+ video.addEventListener('loadeddata',show);
+ video.addEventListener('playing',()=>{if(video.readyState>=2)show();});
+ video.addEventListener('error',()=>{
+  holder.classList.remove('composer-gif-ready');
+  if(failures++>=1||!holder.isConnected)return; // Постер остаётся, если MP4 не загрузился.
+  setTimeout(()=>{if(holder.isConnected){video.removeAttribute('src');video.load();begin();}},4000);
+ });
+ holder.append(poster,video);
+ // Старт после вставки в DOM: на мобильных браузерах иначе иногда нет кадра.
+ setTimeout(begin,0);
+ return holder;
+}
 function makeComposerSmile(id){
  const atom=document.createElement('span');atom.className='rich-smile';atom.contentEditable='false';atom.dataset.smileId=id;
  atom.title='Смайл %'+id+'%';atom.setAttribute('aria-label','Смайл '+id);
- atom.append(smileNode(id));return atom;
+ const smile=SMILES[id];
+ if(smile?.kind==='mp4')atom.append(makeComposerGifPreview(id,smile.file));
+ else atom.append(smileNode(id));
+ return atom;
 }
 function composerRange(){
  const sel=window.getSelection();if(sel&&sel.rangeCount){const r=sel.getRangeAt(0);if(richEditor.contains(r.commonAncestorContainer))return r;}
