@@ -2746,9 +2746,34 @@ function notifyIfPrivate(payload,cmd){
 const retryDelays=[2000,4000,8000,15000,30000];
 // Медиа в чате используют прежний механизм. В GIF-галерее все MP4
 // ставятся в очередь сразу; ограничено число одновременных стартов загрузки.
+// Пользовательский режим: без искусственного ограничения числа одновременно
+// запускаемых GIF в сообщениях. Браузер самостоятельно управляет ресурсами.
+// Галерея, повторные попытки и максимальная длина текста не затронуты.
+const CHAT_GIF_START_LIMIT=Infinity;
+let chatGifStarting=0;
+const chatGifStartQueue=[];
+function chatGifQueueStart(video,launch){
+ if(!video.isConnected||video.dataset.chatGifQueued==='1'||video.dataset.chatGifStarted==='1')return;
+ video.dataset.chatGifQueued='1';
+ chatGifStartQueue.push({video,launch});chatGifPump();
+}
+function chatGifPump(){
+ while(chatGifStarting<CHAT_GIF_START_LIMIT&&chatGifStartQueue.length){
+  const task=chatGifStartQueue.shift();const v=task.video;
+  if(!v.isConnected){delete v.dataset.chatGifQueued;continue;}
+  delete v.dataset.chatGifQueued;v.dataset.chatGifStarted='1';
+  chatGifStarting++;
+  let released=false;
+  const release=()=>{if(released)return;released=true;chatGifStarting=Math.max(0,chatGifStarting-1);chatGifPump();};
+  v.addEventListener('loadeddata',release,{once:true});
+  v.addEventListener('error',release,{once:true});
+  setTimeout(release,22000);
+  task.launch();
+ }
+}
 const videoObserver=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
  for(const entry of entries){const v=entry.target;
-  if(entry.isIntersecting){if(!v.src)v.src=v.dataset.src||'';v.play().catch(()=>{});}
+  if(entry.isIntersecting){if(v.__chatGifStart)chatGifQueueStart(v,v.__chatGifStart);else {if(!v.getAttribute('src'))v.src=v.dataset.src||'';v.play().catch(()=>{});}}
   // Не останавливаем сообщения с анимациями только из-за ухода браузера в фон.
   // Не приостанавливаем уже запущенные видео при выходе из видимой области.
  }
@@ -3047,55 +3072,63 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
    setTimeout(()=>gifVideoEnqueue(video),0);
    return wrap;
   }else{
-   // MP4 внутри сообщений: временный сбой загрузки не уничтожает <video>.
-   // На мобильных браузерах много одновременных роликов иногда дают error;
-   // сохраняем элемент и пробуем повторно, не затрагивая галерею GIF.
-   const CHAT_GIF_RETRY_DELAYS=[2000,5000,11000];
-   let chatGifRetries=0;
-   let chatGifRetryTimer=null;
-   let chatGifErrorLabel=null;
-   const clearChatGifError=()=>{
-    video.dataset.chatGifFailed='';
-    if(chatGifErrorLabel){chatGifErrorLabel.remove();chatGifErrorLabel=null;}
+   // MP4 в чате: без искусственного лимита одновременных запусков.
+   // Готовые ролики сохраняются, а проблемные восстанавливаются отдельно.
+   const delays=[4000,9000,18000,30000];
+   let retries=0, retryTimer=null, errorButton=null;
+   video.dataset.chatGifStarted='';
+   const clearFailure=()=>{
+    delete video.dataset.chatGifFailed;
+    if(errorButton){errorButton.remove();errorButton=null;}
     video.style.display='';
    };
-   const startChatGif=()=>{
+   const releasePending=()=>{
+    if(retryTimer!==null){clearTimeout(retryTimer);retryTimer=null;}
+   };
+   const playExisting=()=>{
+    if(!video.isConnected||document.hidden)return;
+    if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){
+     clearFailure();retries=0;releasePending();video.play().catch(()=>{});
+    }
+   };
+   const attempt=()=>{
     if(!video.isConnected)return;
-    if(document.hidden){chatGifRetryTimer=setTimeout(startChatGif,4000);return;}
-    video.removeAttribute('src');
-    video.load();
+    if(document.hidden){retryTimer=setTimeout(attempt,4000);return;}
+    // Первую загрузку делаем без лишнего load(); при повторе сбрасываем
+    // только проблемный источник, сохраняя работающие соседние GIF.
+    if(retries>0){video.removeAttribute('src');video.load();}
     video.src=video.dataset.src;
-    video.load();
     video.play().catch(()=>{});
    };
-   video.addEventListener('loadeddata',()=>{
-    if(chatGifRetryTimer!==null){clearTimeout(chatGifRetryTimer);chatGifRetryTimer=null;}
-    chatGifRetries=0;clearChatGifError();
-    video.play().catch(()=>{});
-   });
+   video.__chatGifStart=attempt;
+   video.addEventListener('loadeddata',playExisting);
+   video.addEventListener('playing',playExisting);
    video.addEventListener('error',()=>{
     if(!video.isConnected)return;
-    if(chatGifRetryTimer!==null)return;
-    if(chatGifRetries<CHAT_GIF_RETRY_DELAYS.length){
-     const delay=CHAT_GIF_RETRY_DELAYS[chatGifRetries++];
-     chatGifRetryTimer=setTimeout(()=>{chatGifRetryTimer=null;startChatGif();},delay);
+    if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){playExisting();return;}
+    if(retryTimer!==null)return;
+    if(retries<delays.length){
+     const delay=delays[retries++];
+     retryTimer=setTimeout(()=>{retryTimer=null;attempt();},delay);
      return;
     }
-    // Оставляем пользователю ручное восстановление без F5.
+    // Вместо навсегда пустого блока даём ручную попытку.
     video.dataset.chatGifFailed='1';video.style.display='none';
-    if(!chatGifErrorLabel){
-     chatGifErrorLabel=document.createElement('button');
-     chatGifErrorLabel.type='button';chatGifErrorLabel.className='gallery-fallback chat-gif-retry';
-     chatGifErrorLabel.textContent='GIF %'+id+'%: повторить загрузку';
-     chatGifErrorLabel.title='Повторить загрузку анимации без обновления страницы';
-     chatGifErrorLabel.addEventListener('click',()=>{
-      chatGifRetries=0;clearChatGifError();startChatGif();
+    if(!errorButton){
+     errorButton=document.createElement('button');errorButton.type='button';
+     errorButton.className='gallery-fallback chat-gif-retry';
+     errorButton.textContent='GIF %'+id+'%: повторить загрузку';
+     errorButton.addEventListener('click',()=>{
+      retries=0;clearFailure();
+      video.removeAttribute('src');video.load();
+      attempt();
      });
-     video.after(chatGifErrorLabel);
+     video.after(errorButton);
     }
    });
    if(videoObserver)videoObserver.observe(video);
-   else {video.src=s.file;video.play().catch(()=>{});}
+   else chatGifQueueStart(video,attempt);
+
   }
   return video;
  }
