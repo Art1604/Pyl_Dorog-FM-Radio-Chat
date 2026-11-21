@@ -3145,7 +3145,7 @@ function sharedGifEnsureHost(){
  if(sharedGifHost?.isConnected)return sharedGifHost;
  sharedGifHost=document.createElement('div');
  sharedGifHost.id='sharedGifDecoders';sharedGifHost.setAttribute('aria-hidden','true');
- sharedGifHost.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;overflow:hidden;opacity:0.001;pointer-events:none;z-index:-1';
+ sharedGifHost.style.cssText='position:fixed;top:0;left:0;width:64px;height:64px;overflow:hidden;opacity:0.015;pointer-events:none;z-index:-1';
  document.body.append(sharedGifHost);
  return sharedGifHost;
 }
@@ -3157,8 +3157,8 @@ function sharedGifPlayer(file){
  video.playsInline=true;video.preload='auto';video.disablePictureInPicture=true;
  video.setAttribute('muted','');video.setAttribute('autoplay','');
  video.setAttribute('playsinline','');video.setAttribute('webkit-playsinline','');
- video.style.cssText='display:block;width:1px;height:1px';
- entry={file,video,views:new Set(),started:false,lastDraw:0,lastTry:0,failures:0,retryAt:0,raf:0,lastUsed:Date.now()};
+ video.style.cssText='display:block;width:64px;height:64px;object-fit:contain';
+ entry={file,video,views:new Set(),started:false,lastDraw:0,lastTry:0,failures:0,retryAt:0,raf:0,lastUsed:Date.now(),lastMediaTime:-1,lastProgress:0,lastRecovery:0};
  sharedGifPlayers.set(file,entry);
  // Не назначаем src при создании всех миниатюр, пока GIF не виден.
  video.addEventListener('error',()=>{
@@ -3166,8 +3166,9 @@ function sharedGifPlayer(file){
   entry.retryAt=Date.now()+Math.min(15000,1500*entry.failures);
   entry.started=false;
  });
- video.addEventListener('loadeddata',()=>{entry.failures=0;entry.retryAt=0;});
- video.addEventListener('playing',()=>{entry.failures=0;entry.retryAt=0;});
+ video.addEventListener('loadeddata',()=>{entry.failures=0;entry.retryAt=0;entry.lastProgress=performance.now();});
+ video.addEventListener('playing',()=>{entry.failures=0;entry.retryAt=0;entry.lastProgress=performance.now();});
+ video.addEventListener('timeupdate',()=>{entry.lastMediaTime=video.currentTime;entry.lastProgress=performance.now();});
  sharedGifEnsureHost().append(video);
  return entry;
 }
@@ -3177,6 +3178,7 @@ function sharedGifPlay(entry){
  if(!video.isConnected)sharedGifEnsureHost().append(video);
  if(!entry.started){
   entry.started=true;
+  entry.lastProgress=performance.now();
   video.src=entry.file;
  }
  if(video.paused&&Date.now()-entry.lastTry>900){
@@ -3199,6 +3201,35 @@ function sharedGifPaint(entry,now){
  }
  sharedGifPlay(entry);
  const video=entry.video;
+ // Если видео дало первый кадр, но декодер перестал продвигаться,
+ // сначала повторяем play(), не затрагивая уже загруженный буфер.
+ if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){
+  const elapsed=now-(entry.lastProgress||now);
+  if(Math.abs(video.currentTime-entry.lastMediaTime)>0.035){
+   entry.lastMediaTime=video.currentTime;entry.lastProgress=now;
+  }else if(elapsed>3600){
+   // Не обновлять lastRecovery до проверки: иначе ветка глубокой
+   // разблокировки никогда не выполнялась (now-lastRecovery было равно 0).
+   const sinceRecovery=now-entry.lastRecovery;
+   if(video.paused){
+    // Повторяем play() без сброса буфера, не чаще раза в 3 секунды.
+    if(sinceRecovery>3000){
+     entry.lastRecovery=now;
+     try{const promise=video.play();if(promise?.catch)promise.catch(()=>{});}catch{}
+    }
+   }else if(elapsed>9500&&sinceRecovery>10000){
+    // Перезапускаем только действительно застывший декодер.
+    // src остаётся прежним: браузер может использовать уже загруженный файл.
+    entry.lastRecovery=now;
+    try{
+     video.pause();
+     video.load();
+     const promise=video.play();if(promise?.catch)promise.catch(()=>{});
+    }catch{}
+    entry.lastProgress=now;
+   }
+  }
+ }
  if(video.readyState<HTMLMediaElement.HAVE_CURRENT_DATA||!video.videoWidth||!video.videoHeight)return;
  for(const view of entry.views){
   if(!sharedGifVisible(view.canvas))continue;
@@ -3249,14 +3280,15 @@ function sharedGifView(file,role,id){
  canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Анимация '+id);
  holder.append(poster,canvas);
  const view={holder,canvas,poster,posterSaved:false};
+ canvas.__sharedGifEntry=entry;
  entry.views.add(view);entry.lastUsed=Date.now();
  getGifPoster(file).then(data=>{
   if(!data||!holder.isConnected||holder.classList.contains('has-frame'))return;
   const img=document.createElement('img');img.alt='';img.src=data;poster.replaceChildren(img);
  });
  if(!sharedGifTicker)sharedGifTicker=requestAnimationFrame(sharedGifTick);
- // Непосредственный пользовательский выбор GIF запускает видео в текущем жесте.
- if(role==='composer')setTimeout(()=>sharedGifPlay(entry),0);
+ // GIF запускается после реальной вставки в DOM (в пользовательском клике),
+ // чтобы autoplay-политика браузера не блокировала отложенный setTimeout().
  return holder;
 }
 // При возвращении в браузер запускаем те же декодеры без перезагрузки MP4.
@@ -3362,16 +3394,18 @@ function insertComposerNodes(nodes){
  range.insertNode(frag);
  if(last){range.setStartAfter(last);range.collapse(true);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);}
  refreshComposerSmilePreview();richEditor.scrollLeft=richEditor.scrollWidth;
- // Запускаем предпросмотр прямо из пользовательского клика по GIF.
- for(const video of richEditor.querySelectorAll('video.composer-gif-video')){
-  if(video.paused&&video.__resumeComposerGif)video.__resumeComposerGif();
- }
- // После вставки браузер мог асинхронно сменить дерево contenteditable.
- // Повторное play() на существующем src не создаёт новую загрузку.
- requestAnimationFrame(()=>{
-  for(const video of richEditor.querySelectorAll('video.composer-gif-video')){
-   if(video.paused&&video.__resumeComposerGif)video.__resumeComposerGif();
+ // Запускаем общий декодер непосредственно внутри пользовательского действия.
+ // Это важно для браузеров с жёсткой политикой autoplay.
+ const seenGifEntries=new Set();
+ for(const canvas of richEditor.querySelectorAll('canvas.shared-gif-canvas')){
+  const entry=canvas.__sharedGifEntry;
+  if(entry&&!seenGifEntries.has(entry)){
+   seenGifEntries.add(entry);sharedGifPlay(entry);
   }
+ }
+ // Повторная проверка после отрисовки не сбрасывает src/буфер MP4.
+ requestAnimationFrame(()=>{
+  for(const entry of seenGifEntries)if(entry.video.paused)sharedGifPlay(entry);
  });
 }
 function composerInsertText(text){
