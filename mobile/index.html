@@ -1657,6 +1657,16 @@ button,.gallery-tile,.gallery-tabs button,input,textarea,.chat-grid,.chatsurface
 /* Только GIF внутри сообщений: нейтральная кнопка повторной загрузки. */
 .chatsurface .chat-gif-retry,.private-dialog-view .chat-gif-retry{display:inline-block;vertical-align:middle;margin:3px;padding:6px 9px;font:12px Arial,sans-serif;background:#e5e5e5;border:1px solid #aaa;color:#555;box-shadow:none}
 </style>
+
+<style id="mobile-chat-gif-poster-fix">
+/* Показываем постер до настоящего видеокадра; пустой video не перекрывает его. */
+.chatsurface .chat-gif-wrap,.private-dialog-view .chat-gif-wrap{position:relative;display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:100px;height:100px;max-width:100%;margin:2px 3px;overflow:hidden;background:#e5e5e5;border:1px solid #d1d1d1}
+.chat-gif-wrap .chat-gif-poster{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#e5e5e5;color:#666;font:11px Arial,sans-serif;text-align:center;pointer-events:none;padding:3px}
+.chat-gif-wrap .chat-gif-poster img{display:block;width:100%;height:100%;object-fit:contain}
+.chat-gif-wrap video.smiley-media{position:relative;z-index:1;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;background:transparent;opacity:0}
+.chat-gif-wrap.has-frame video.smiley-media{opacity:1}
+.chat-gif-wrap .chat-gif-retry{position:absolute;inset:auto 2px 2px;z-index:2;white-space:normal;font-size:10px;padding:3px}
+</style>
 <style id="mobile-composer-gif-stability">
 /* Устойчивый предпросмотр MP4 в строке сообщения на смартфоне. */
 #sendForm .rich-smile .composer-gif-thumb{display:inline-flex;position:relative;width:27px;height:27px;align-items:center;justify-content:center;overflow:hidden;background:#e8e8e8;vertical-align:middle}
@@ -2835,12 +2845,20 @@ function showGifFrame(video){
 }
 function gifFrameArrived(video){
  if(!video.isConnected)return;
- // Некоторые браузеры задерживают requestVideoFrameCallback в фоне или при
- // большом числе MP4. Не оставляем миниатюру невидимой из-за этой задержки.
- if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA)showGifFrame(video);
- if('requestVideoFrameCallback' in video){
-  try{video.requestVideoFrameCallback(()=>showGifFrame(video));}catch{}
+ // В мобильном браузере loadeddata ещё не гарантирует, что кадр нарисован.
+ // Постер остаётся виден до первого отображённого кадра.
+ if(typeof video.requestVideoFrameCallback==='function'){
+  if(video.dataset.awaitingGifFrame==='1')return;
+  try{
+   video.dataset.awaitingGifFrame='1';
+   video.requestVideoFrameCallback(()=>{
+    delete video.dataset.awaitingGifFrame;
+    if(video.isConnected)showGifFrame(video);
+   });
+   return;
+  }catch{delete video.dataset.awaitingGifFrame;}
  }
+ if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA)showGifFrame(video);
 }
 
 const GIF_VIDEO_LIMIT=5;
@@ -3072,7 +3090,49 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
    setTimeout(()=>gifVideoEnqueue(video),0);
    return wrap;
   }else{
-   // MP4 в чате: без искусственного лимита одновременных запусков.
+   // MP4 в чате: без лимита количества, с безопасным постером до первого кадра.
+   const chatWrap=document.createElement('span');chatWrap.className='chat-gif-wrap';
+   const chatPoster=document.createElement('span');chatPoster.className='chat-gif-poster';
+   chatPoster.textContent='GIF загружается';
+   chatWrap.append(chatPoster,video);
+   getGifPoster(s.file).then(data=>{
+    if(!data||!chatWrap.isConnected)return;
+    const image=document.createElement('img');image.src=data;image.alt='';
+    chatPoster.replaceChildren(image);
+   });
+   const revealFrame=()=>{
+    if(!video.isConnected||video.readyState<HTMLMediaElement.HAVE_CURRENT_DATA)return;
+    chatWrap.classList.add('has-frame');
+    if(!video.dataset.chatPosterSaved&&video.videoWidth&&video.videoHeight){
+     try{
+      const c=document.createElement('canvas');c.width=96;c.height=90;
+      const ctx=c.getContext('2d',{alpha:false});
+      if(ctx){
+       ctx.fillStyle='#e4e4e4';ctx.fillRect(0,0,96,90);
+       const r=Math.min(96/video.videoWidth,90/video.videoHeight);
+       const w=video.videoWidth*r,h=video.videoHeight*r;
+       ctx.drawImage(video,(96-w)/2,(90-h)/2,w,h);
+       const data=c.toDataURL('image/jpeg',.7);
+       video.dataset.chatPosterSaved='1';saveGifPoster(s.file,data);
+       if(!chatPoster.querySelector('img')){
+        const image=document.createElement('img');image.src=data;image.alt='';chatPoster.replaceChildren(image);
+       }
+      }
+     }catch{} // Постер не должен мешать самому MP4.
+    }
+   };
+   let awaitingFirstFrame=false;
+   const revealWhenPainted=()=>{
+    if(!video.isConnected||chatWrap.classList.contains('has-frame')||awaitingFirstFrame)return;
+    if(typeof video.requestVideoFrameCallback==='function'){
+     try{
+      awaitingFirstFrame=true;
+      video.requestVideoFrameCallback(()=>{awaitingFirstFrame=false;revealFrame();});
+      return;
+     }catch{awaitingFirstFrame=false;}
+    }
+    revealFrame();
+   };
    // Готовые ролики сохраняются, а проблемные восстанавливаются отдельно.
    const delays=[4000,9000,18000,30000];
    let retries=0, retryTimer=null, errorButton=null;
@@ -3086,17 +3146,18 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
     if(retryTimer!==null){clearTimeout(retryTimer);retryTimer=null;}
    };
    const playExisting=()=>{
-    if(!video.isConnected||document.hidden)return;
+    if(!video.isConnected)return;
     if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){
-     clearFailure();retries=0;releasePending();video.play().catch(()=>{});
+     clearFailure();retries=0;releasePending();
+     revealWhenPainted();
+     if(!document.hidden)video.play().catch(()=>{});
     }
    };
    const attempt=()=>{
     if(!video.isConnected)return;
     if(document.hidden){retryTimer=setTimeout(attempt,4000);return;}
-    // Первую загрузку делаем без лишнего load(); при повторе сбрасываем
-    // только проблемный источник, сохраняя работающие соседние GIF.
-    if(retries>0){video.removeAttribute('src');video.load();}
+    // При повторе скрываем неготовый видеокадр, но сохраняем постер.
+    if(retries>0){chatWrap.classList.remove('has-frame');video.removeAttribute('src');video.load();}
     video.src=video.dataset.src;
     video.play().catch(()=>{});
    };
@@ -3113,7 +3174,8 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
      return;
     }
     // Вместо навсегда пустого блока даём ручную попытку.
-    video.dataset.chatGifFailed='1';video.style.display='none';
+    video.dataset.chatGifFailed='1';chatWrap.classList.remove('has-frame');
+    if(!chatPoster.querySelector('img'))chatPoster.textContent='GIF не загрузился';
     if(!errorButton){
      errorButton=document.createElement('button');errorButton.type='button';
      errorButton.className='gallery-fallback chat-gif-retry';
@@ -3128,7 +3190,7 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
    });
    if(videoObserver)videoObserver.observe(video);
    else chatGifQueueStart(video,attempt);
-
+   return chatWrap;
   }
   return video;
  }
