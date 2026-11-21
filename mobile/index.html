@@ -3185,7 +3185,6 @@ function sharedGifPlay(entry){
  }
 }
 function sharedGifPaint(entry,now){
- if(!sharedGifTicker)sharedGifTicker=requestAnimationFrame(sharedGifTick);
  if(now-entry.lastDraw<75)return;
  entry.lastDraw=now;
  let visible=0;
@@ -3219,6 +3218,24 @@ function sharedGifPaint(entry,now){
   }catch{}
  }
 }
+// Единый цикл отрисовки для уже вставленных canvas. Без него обработчик
+// выбора GIF падал с ReferenceError и не вставлял смайл в редактор.
+function sharedGifTick(now){
+ sharedGifTicker=0;
+ let hasViews=false;
+ for(const entry of sharedGifPlayers.values()){
+  for(const view of [...entry.views]){
+   if(!view.canvas.isConnected)entry.views.delete(view);
+  }
+  if(!entry.views.size){
+   if(!entry.video.paused)entry.video.pause();
+   continue;
+  }
+  hasViews=true;
+  sharedGifPaint(entry,now);
+ }
+ if(hasViews)sharedGifTicker=requestAnimationFrame(sharedGifTick);
+}
 function sharedGifView(file,role,id){
  const entry=sharedGifPlayer(file);
  const holder=document.createElement('span');
@@ -3237,7 +3254,7 @@ function sharedGifView(file,role,id){
   if(!data||!holder.isConnected||holder.classList.contains('has-frame'))return;
   const img=document.createElement('img');img.alt='';img.src=data;poster.replaceChildren(img);
  });
- if(!entry.raf)if(!sharedGifTicker)sharedGifTicker=requestAnimationFrame(sharedGifTick);
+ if(!sharedGifTicker)sharedGifTicker=requestAnimationFrame(sharedGifTick);
  // Непосредственный пользовательский выбор GIF запускает видео в текущем жесте.
  if(role==='composer')setTimeout(()=>sharedGifPlay(entry),0);
  return holder;
