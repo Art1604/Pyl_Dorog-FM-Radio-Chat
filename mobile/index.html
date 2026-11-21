@@ -3046,6 +3046,22 @@ document.addEventListener('visibilitychange',()=>{
  }
 });
 
+// На смартфонах часть MP4 может получить первый кадр, но остаться на паузе
+// до следующего взаимодействия/возвращения на страницу. Повторяем play()
+// на существующем src, не скачивая файл заново и не ограничивая число GIF.
+function resumeVisibleChatAnimations(){
+ if(document.hidden)return;
+ for(const v of document.querySelectorAll('#messages video.smiley-media, #privateDialogView video.smiley-media, #richMessageInput video.composer-gif-video')){
+  if(!v.isConnected||v.error||!v.paused)continue;
+  const r=v.getBoundingClientRect();
+  if(r.width<=0||r.height<=0||r.bottom<0||r.top>innerHeight)continue;
+  if(v.classList.contains('composer-gif-video')&&v.__resumeComposerGif){v.__resumeComposerGif();continue;}
+  if(v.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){v.play().catch(()=>{});}
+ }
+}
+setInterval(resumeVisibleChatAnimations,3000);
+document.addEventListener('pointerdown',resumeVisibleChatAnimations,{passive:true});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(resumeVisibleChatAnimations,200);});
 const clock=()=>new Date().toLocaleTimeString('ru-RU',{hour12:false});
 function log(t){E.log.textContent+=`[${clock()}] ${t}\n`;if(E.log.textContent.length>12000)E.log.textContent=E.log.textContent.slice(-9000);E.log.scrollTop=E.log.scrollHeight;}
 function info(t,cls=''){E.status.className='state'+(cls?' '+cls:'');E.status.textContent=t;log(t);}
@@ -3157,8 +3173,8 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
     if(!video.isConnected)return;
     if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){
      clearFailure();retries=0;releasePending();
-     revealWhenPainted();
      resumeChatGif();
+     if(!video.paused&&!video.ended)revealWhenPainted();
     }
    };
    const attempt=()=>{
@@ -3172,7 +3188,7 @@ function smileNode(id,inGallery=false){const s=SMILES[id];if(!s){const text=docu
    video.__chatGifStart=attempt;
    video.addEventListener('loadeddata',playExisting);
    video.addEventListener('canplay',playExisting);
-   video.addEventListener('playing',revealWhenPainted);
+   video.addEventListener('playing',()=>{clearFailure();releasePending();revealWhenPainted();});
    // На Android после первого кадра воспроизведение иногда остаётся на паузе.
    // Пробуем возобновить без повторного скачивания при возврате в чат.
    video.addEventListener('pause',()=>{if(!document.hidden&&video.isConnected&&video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA){setTimeout(resumeChatGif,450);}});
@@ -3243,20 +3259,32 @@ function makeComposerGifPreview(id,file){
   const img=document.createElement('img');img.src=data;img.alt='';poster.replaceChildren(img);
  });
  let failures=0;
+ let starting=false;
  const begin=()=>{
-  if(!holder.isConnected)return;
-  video.src=file;video.load();video.play().catch(()=>{});
+  if(!holder.isConnected||starting)return;
+  starting=true;
+  // Повторный вызов не сбрасывает уже скачанные кадры и сетевой кэш.
+  if(!video.getAttribute('src'))video.src=file;
+  const task=video.play();
+  if(task?.catch)task.catch(()=>{});
+  starting=false;
  };
- const show=()=>{holder.classList.add('composer-gif-ready');video.play().catch(()=>{});};
- video.addEventListener('loadeddata',show);
- video.addEventListener('playing',()=>{if(video.readyState>=2)show();});
+ video.__resumeComposerGif=begin;
+ // loadeddata = готов первый кадр, а не подтверждение живой анимации.
+ video.addEventListener('loadeddata',begin);
+ video.addEventListener('canplay',begin);
+ video.addEventListener('playing',()=>{holder.classList.add('composer-gif-ready');failures=0;});
+ video.addEventListener('pause',()=>{
+  // Не заменяем проигрыватель постером при обычной фоновой паузе браузера.
+  if(!document.hidden&&holder.isConnected)setTimeout(begin,450);
+ });
  video.addEventListener('error',()=>{
   holder.classList.remove('composer-gif-ready');
-  if(failures++>=1||!holder.isConnected)return; // Постер остаётся, если MP4 не загрузился.
-  setTimeout(()=>{if(holder.isConnected){video.removeAttribute('src');video.load();begin();}},4000);
+  if(failures++>=2||!holder.isConnected)return;
+  setTimeout(()=>{if(holder.isConnected){video.removeAttribute('src');video.load();begin();}},4000*failures);
  });
  holder.append(poster,video);
- // Старт после вставки в DOM: на мобильных браузерах иначе иногда нет кадра.
+ // Начало происходит после вставки в DOM; дополнительно запускаем в обработчике выбора GIF.
  setTimeout(begin,0);
  return holder;
 }
@@ -3280,6 +3308,10 @@ function insertComposerNodes(nodes){
  range.insertNode(frag);
  if(last){range.setStartAfter(last);range.collapse(true);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);}
  refreshComposerSmilePreview();richEditor.scrollLeft=richEditor.scrollWidth;
+ // Запускаем предпросмотр прямо из пользовательского клика по GIF.
+ for(const video of richEditor.querySelectorAll('video.composer-gif-video')){
+  if(video.paused&&video.__resumeComposerGif)video.__resumeComposerGif();
+ }
 }
 function composerInsertText(text){
  const clean=String(text).replace(/[\r\n]+/g,' ');
