@@ -1,29 +1,91 @@
-name: Update public radio on-air information
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "*/5 * * * *"
-permissions:
-  contents: write
-jobs:
-  update:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: python -m pip install "beautifulsoup4>=4.12,<5"
-      - name: Update only public metadata
-        run: python scripts/update_onair.py
-      - name: Commit if changed
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/onair.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Update public on-air metadata"
-            git push
-          fi
+
+#!/usr/bin/env python3
+"""Получение публичной информации об эфире ПыЛь_ДоРоГ FM."""
+
+import json
+from pathlib import Path
+from datetime import datetime, timezone
+from urllib.request import Request, urlopen
+from bs4 import BeautifulSoup
+
+URL = "https://volnorez.com/pyl_dorog-fm?lang=ru"
+OUT = Path("data/onair.json")
+
+
+def extract(html):
+    doc = BeautifulSoup(html, "html.parser")
+
+    topic_el = doc.select_one(
+        "#desktop_single .channel_BroadcastTheme"
+    )
+    host_el = doc.select_one(
+        "#desktop_single .channel_OnAirList"
+    )
+    track_el = doc.select_one(
+        "#desktop_single .channel_MediaOnAir.active "
+        ".channel_MediaOnAirText"
+    )
+
+    def cleaned(el):
+        if not el:
+            return ""
+        return " ".join(el.stripped_strings)[:200]
+
+    return {
+        "host": cleaned(host_el),
+        "topic": cleaned(topic_el),
+        "track": cleaned(track_el),
+    }
+
+
+def main():
+    print("Подключение к Волнорезу...", flush=True)
+
+    req = Request(
+        URL,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 "
+                "(compatible; PylDorogFM-public-metadata/1.0)"
+            ),
+            "Accept-Language": "ru",
+        },
+    )
+
+    with urlopen(req, timeout=30) as response:
+        html = response.read(3_000_000).decode(
+            "utf-8", errors="replace"
+        )
+
+    if 'id="desktop_single"' not in html:
+        raise RuntimeError(
+            "Страница радиостанции не найдена. "
+            "Предыдущие данные сохранены."
+        )
+
+    result = extract(html)
+
+    # Не заменяем прежние данные пустой информацией,
+    # если структура страницы Волнореза изменилась.
+    if not any(result.values()):
+        raise RuntimeError(
+            "Данные эфира не найдены. "
+            "Предыдущая информация сохранена."
+        )
+
+    result["updated_at"] = datetime.now(
+        timezone.utc
+    ).isoformat(timespec="seconds")
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+
+    OUT.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    print("Информация об эфире обновлена:", result)
+
+
+if __name__ == "__main__":
+    main()
